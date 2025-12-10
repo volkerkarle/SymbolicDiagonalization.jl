@@ -1,0 +1,52 @@
+# Julia
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+deps/deps.jl
+Manifest.toml
+
+# Documentation builds
+docs/build/
+docs/site/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Local Julia depot (if accidentally created in project)
+.julia_depot/
+
+# Editor and IDE
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+._.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Build artifacts
+*.o
+*.so
+*.dylib
+*.dll
+
+# Test coverage
+*.cov
+lcov.info
+coverage/
+
+# Package development
+*.jl.mem
+.julia/
+LocalPreferences.toml
