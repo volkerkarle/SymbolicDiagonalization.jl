@@ -25,7 +25,6 @@ makedocs(;
         assets = String[],
         repolink = "https://github.com/volkerkarle/SymbolicDiagonalization.jl",
     ),
-    logo = "assets/logo.png",
 )
 
 # Deploy documentation to GitHub Pages
