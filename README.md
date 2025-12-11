@@ -4,8 +4,6 @@
 
 A Julia package for symbolic matrix diagonalization using closed-form root solvers.
 
-## Vision
-
 The ultimate goal here is to build a practical symbolic eigenvalue solver that goes beyond simple 3x3 matrices. Closed-form solutions only exist for polynomials up to degree 4 (Abel-Ruffini theorem); this means we can't solve general 5×5+ matrices symbolically. However, many real-world matrices have exploitable structure. If we can automatically detect and exploit these structures, we can potentially solve much larger symbolic problems.
 
 **What we're building**:
