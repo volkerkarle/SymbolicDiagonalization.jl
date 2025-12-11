@@ -8,11 +8,11 @@ SymbolicDiagonalization.jl provides symbolic matrix diagonalization for Julia us
 
 ## Vision
 
-The Abel-Ruffini theorem limits closed-form solutions to polynomials of degree ≤4, meaning general 5×5+ matrices cannot be solved symbolically. However, many real-world matrices have exploitable structure.
+The Abel-Ruffini theorem limits closed-form solutions to polynomials of degree $\leq 4$, meaning general $5 \times 5$+ matrices cannot be solved symbolically. However, many real-world matrices have exploitable structure.
 
 **Goal**: Build automatic structure detection to solve larger symbolic problems by recognizing and exploiting special patterns (block-diagonal, persymmetric, tridiagonal, circulant, Kronecker products, etc.).
 
-**Current state**: Functional prototype with 9 special pattern solvers working for any size n. Comprehensive test coverage (172 tests, all passing). Ready for experimental use.
+**Current state**: Functional prototype with 9 special pattern solvers working for any size $n$. Comprehensive test coverage (172 tests, all passing). Ready for experimental use.
 
 ## Quick Start
 
@@ -119,30 +119,30 @@ vals = eigvals(mat)
 ## Implementation Details
 
 ### Characteristic Polynomial
-- Computed via fraction-free Bareiss determinant on `λI - A`
-- Coefficients extracted by differentiating at `λ = 0`
+- Computed via fraction-free Bareiss determinant on $\lambda I - A$
+- Coefficients extracted by differentiating at $\lambda = 0$
 - Works with symbolic rings
 
 ### Closed-Form Root Solvers (Degrees 1-4)
 - Linear, quadratic, cubic (Cardano), quartic (Ferrari)
 - Quartic produces very large expressions for fully symbolic matrices
-- Degrees ≥5 require structure detection or throw error
+- Degrees $\geq 5$ require structure detection or throw error
 
 ### Structure Detection (13 Patterns Implemented)
 
 **Successfully implemented patterns:**
-1. **Diagonal** - Trivial O(n) eigenvalue extraction
+1. **Diagonal** - Trivial $O(n)$ eigenvalue extraction
 2. **Triangular** - Diagonal elements are eigenvalues
 3. **Block-Diagonal** - Recursive detection and solving (works with any block sizes)
-4. **Persymmetric** - `Q[i,j] = Q[n+1-j,n+1-i]`, splits into half-sized eigenproblems
-5. **Circulant** - Uses DFT, works for any size n
+4. **Persymmetric** - $Q[i,j] = Q[n+1-j,n+1-i]$, splits into half-sized eigenproblems
+5. **Circulant** - Uses DFT, works for any size $n$
 6. **Block Circulant** - Block-level DFT approach
-7. **Symmetric Toeplitz Tridiagonal** - Closed-form cosine formula for any n
-8. **Anti-Diagonal** - Eigenvalues come in ± pairs
+7. **Symmetric Toeplitz Tridiagonal** - Closed-form cosine formula for any $n$
+8. **Anti-Diagonal** - Eigenvalues come in $\pm$ pairs
 9. **Permutation Matrices** - Eigenvalues are roots of unity
 10. **Kronecker Products** - Eigenvalues are products of factor eigenvalues
-11. **Special 5×5 pattern [b,d,b,b]** - Known closed-form solution
-12. **Special 5×5 pattern [b,b,d,b]** - Known closed-form solution
+11. **Special $5 \times 5$ pattern [b,d,b,b]** - Known closed-form solution
+12. **Special $5 \times 5$ pattern [b,b,d,b]** - Known closed-form solution
 13. **Jordan Blocks** - Repeated eigenvalue with known structure
 
 **Detection robustness**: Currently basic pattern matching. Room for improvement with more sophisticated algorithms and tolerance handling for near-patterns.
@@ -156,15 +156,15 @@ vals = eigvals(mat)
 
 ### What Works Well
 
-- **Small matrices (≤4×4)**: Full symbolic diagonalization using closed-form root solvers
-- **Structured matrices (any size)**: 13 special patterns with efficient O(n) to O(n²) algorithms
+- **Small matrices ($\leq 4 \times 4$)**: Full symbolic diagonalization using closed-form root solvers
+- **Structured matrices (any size)**: 13 special patterns with efficient $O(n)$ to $O(n^2)$ algorithms
 - **Mixed symbolic/numeric**: Handles partially symbolic matrices effectively
 - **Comprehensive testing**: 172 passing tests (37.4s) covering diverse scenarios
 
 ### Known Limitations
 
-- **General 5×5+ matrices**: No closed-form solver (Abel-Ruffini theorem) - requires structure detection
-- **Expression complexity**: Fully symbolic 4×4 quartic eigenvalues can be very large (~13.5 MB)
+- **General $5 \times 5$+ matrices**: No closed-form solver (Abel-Ruffini theorem) - requires structure detection
+- **Expression complexity**: Fully symbolic $4 \times 4$ quartic eigenvalues can be very large (~13.5 MB)
 - **Simplification**: Basic simplification only; results may not be in minimal form
 - **Pattern detection robustness**: Exact pattern matching; may miss near-patterns or numerically perturbed structures
 

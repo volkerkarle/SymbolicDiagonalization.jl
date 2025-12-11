@@ -14,25 +14,25 @@ This document explains the mathematical foundations underlying `SymbolicDiagonal
 
 ### Definition
 
-Given an n×n matrix **A**, we seek scalars λ (eigenvalues) and non-zero vectors **v** (eigenvectors) satisfying:
+Given an $n \times n$ matrix $\mathbf{A}$, we seek scalars $\lambda$ (eigenvalues) and non-zero vectors $\mathbf{v}$ (eigenvectors) satisfying:
 
-```
-A v = λ v
+```math
+\mathbf{A} \mathbf{v} = \lambda \mathbf{v}
 ```
 
 Equivalently, we need:
-```
-(A - λI) v = 0
-```
-
-For non-trivial solutions, the matrix (A - λI) must be singular:
-```
-det(A - λI) = 0
+```math
+(\mathbf{A} - \lambda \mathbf{I}) \mathbf{v} = \mathbf{0}
 ```
 
-This determinant is a polynomial in λ called the **characteristic polynomial**:
+For non-trivial solutions, the matrix $(\mathbf{A} - \lambda \mathbf{I})$ must be singular:
+```math
+\det(\mathbf{A} - \lambda \mathbf{I}) = 0
 ```
-p(λ) = det(λI - A) = λⁿ + cₙ₋₁λⁿ⁻¹ + ... + c₁λ + c₀
+
+This determinant is a polynomial in $\lambda$ called the **characteristic polynomial**:
+```math
+p(\lambda) = \det(\lambda \mathbf{I} - \mathbf{A}) = \lambda^n + c_{n-1}\lambda^{n-1} + \cdots + c_1\lambda + c_0
 ```
 
 **The eigenvalue problem reduces to finding roots of a polynomial.**
@@ -41,19 +41,19 @@ p(λ) = det(λI - A) = λⁿ + cₙ₋₁λⁿ⁻¹ + ... + c₁λ + c₀
 
 Eigenvalues reveal fundamental properties of linear transformations:
 
-- **Dynamics**: Matrix powers Aⁿ grow/decay based on eigenvalue magnitudes
+- **Dynamics**: Matrix powers $\mathbf{A}^n$ grow/decay based on eigenvalue magnitudes
 - **Stability**: System stability determined by eigenvalue real parts
 - **Geometry**: Eigenvalues measure stretching/compression along eigenvector directions
-- **Spectral decomposition**: A = PDP⁻¹ where D is diagonal (if A is diagonalizable)
+- **Spectral decomposition**: $\mathbf{A} = \mathbf{P}\mathbf{D}\mathbf{P}^{-1}$ where $\mathbf{D}$ is diagonal (if $\mathbf{A}$ is diagonalizable)
 
 ### The Fundamental Challenge
 
 For general matrices:
-- 2×2 → degree-2 polynomial (quadratic formula)
-- 3×3 → degree-3 polynomial (cubic formula)
-- 4×4 → degree-4 polynomial (quartic formula)
-- 5×5 → degree-5 polynomial (**no general formula!**)
-- n×n → degree-n polynomial (**no general formula for n ≥ 5**)
+- $2 \times 2$ → degree-2 polynomial (quadratic formula)
+- $3 \times 3$ → degree-3 polynomial (cubic formula)
+- $4 \times 4$ → degree-4 polynomial (quartic formula)
+- $5 \times 5$ → degree-5 polynomial (**no general formula!**)
+- $n \times n$ → degree-$n$ polynomial (**no general formula for $n \geq 5$**)
 
 This limitation is not computational—it's a fundamental impossibility proven by the Abel-Ruffini theorem.
 
@@ -65,36 +65,36 @@ This limitation is not computational—it's a fundamental impossibility proven b
 
 ### What This Means
 
-- **Degree ≤ 4**: Closed-form formulas exist using +, -, ×, ÷, and nth roots
-- **Degree ≥ 5**: No general formula exists using these operations
-- **Specific polynomials**: May still have closed-form solutions (e.g., λ⁵ - 1 = 0)
+- **Degree $\leq 4$**: Closed-form formulas exist using $+$, $-$, $\times$, $\div$, and $n$th roots
+- **Degree $\geq 5$**: No general formula exists using these operations
+- **Specific polynomials**: May still have closed-form solutions (e.g., $\lambda^5 - 1 = 0$)
 
 ### Implications for Symbolic Eigenvalues
 
 ✅ **Can solve symbolically**:
-- All 1×1, 2×2, 3×3, 4×4 general matrices
+- All $1 \times 1$, $2 \times 2$, $3 \times 3$, $4 \times 4$ general matrices
 - Larger matrices with exploitable structure
 
 ❌ **Cannot solve symbolically** (in general):
-- Generic 5×5, 6×6, ..., n×n matrices
-- Matrices whose structure doesn't reduce to degree ≤ 4
+- Generic $5 \times 5$, $6 \times 6$, ..., $n \times n$ matrices
+- Matrices whose structure doesn't reduce to degree $\leq 4$
 
 ### Galois Theory Background
 
 The Abel-Ruffini theorem is a consequence of Galois theory:
 
 1. **Solvable groups**: Polynomial roots can be expressed in radicals iff its Galois group is solvable
-2. **Symmetric groups**: The generic degree-n polynomial has Galois group Sₙ (symmetric group)
-3. **Non-solvability**: Sₙ is not solvable for n ≥ 5
-4. **Conclusion**: No general radical formula for degree ≥ 5
+2. **Symmetric groups**: The generic degree-$n$ polynomial has Galois group $S_n$ (symmetric group)
+3. **Non-solvability**: $S_n$ is not solvable for $n \geq 5$
+4. **Conclusion**: No general radical formula for degree $\geq 5$
 
-**Key insight**: Specific polynomials may have special Galois groups that ARE solvable, even for degree ≥ 5. This is why structure detection is crucial.
+**Key insight**: Specific polynomials may have special Galois groups that ARE solvable, even for degree $\geq 5$. This is why structure detection is crucial.
 
 ## Why Structure Matters
 
 ### The Structure-Exploitation Strategy
 
-Since we can't solve general n×n matrices for n ≥ 5, we must:
+Since we can't solve general $n \times n$ matrices for $n \geq 5$, we must:
 
 1. **Detect structure** in the matrix
 2. **Exploit structure** to reduce problem complexity
@@ -105,53 +105,61 @@ Since we can't solve general n×n matrices for n ≥ 5, we must:
 #### 1. Reducible Structure
 
 **Block-diagonal matrices**:
+```math
+\mathbf{A} = \begin{bmatrix}
+\mathbf{A}_1 & \mathbf{0} & \mathbf{0} \\
+\mathbf{0} & \mathbf{A}_2 & \mathbf{0} \\
+\mathbf{0} & \mathbf{0} & \mathbf{A}_3
+\end{bmatrix}
 ```
-A = [A₁  0   0 ]
-    [0   A₂  0 ]
-    [0   0   A₃]
-```
-Eigenvalues: λ(A) = λ(A₁) ∪ λ(A₂) ∪ λ(A₃)
+Eigenvalues: $\lambda(\mathbf{A}) = \lambda(\mathbf{A}_1) \cup \lambda(\mathbf{A}_2) \cup \lambda(\mathbf{A}_3)$
 
-**Why this helps**: An 8×8 block diagonal with 2×2 blocks requires solving 4 quadratic equations, not one degree-8 equation.
+**Why this helps**: An $8 \times 8$ block diagonal with $2 \times 2$ blocks requires solving 4 quadratic equations, not one degree-8 equation.
 
 #### 2. Symmetry Structure
 
 **Circulant matrices**: Each row is cyclic shift of previous
-```
-C = [c₀  c₁  c₂  ...  cₙ₋₁]
-    [cₙ₋₁ c₀  c₁  ...  cₙ₋₂]
-    [cₙ₋₂ cₙ₋₁ c₀  ...  cₙ₋₃]
-    ...
+```math
+\mathbf{C} = \begin{bmatrix}
+c_0 & c_1 & c_2 & \cdots & c_{n-1} \\
+c_{n-1} & c_0 & c_1 & \cdots & c_{n-2} \\
+c_{n-2} & c_{n-1} & c_0 & \cdots & c_{n-3} \\
+\vdots & \vdots & \vdots & \ddots & \vdots
+\end{bmatrix}
 ```
 
-Eigenvalues: λₖ = Σⱼ cⱼ · ωᵏʲ where ω = exp(2πi/n)
+Eigenvalues: $\lambda_k = \sum_{j=0}^{n-1} c_j \cdot \omega^{kj}$ where $\omega = \exp(2\pi i/n)$
 
-**Why this helps**: The DFT matrix diagonalizes ALL circulant matrices, giving closed form for any n.
+**Why this helps**: The DFT matrix diagonalizes ALL circulant matrices, giving closed form for any $n$.
 
 #### 3. Tensor Product Structure
 
-**Kronecker products**: A ⊗ B
-```
-A ⊗ B = [a₁₁B  a₁₂B  ...
-         a₂₁B  a₂₂B  ...
-         ...]
+**Kronecker products**: $\mathbf{A} \otimes \mathbf{B}$
+```math
+\mathbf{A} \otimes \mathbf{B} = \begin{bmatrix}
+a_{11}\mathbf{B} & a_{12}\mathbf{B} & \cdots \\
+a_{21}\mathbf{B} & a_{22}\mathbf{B} & \cdots \\
+\vdots & \vdots & \ddots
+\end{bmatrix}
 ```
 
-Eigenvalues: λ(A ⊗ B) = {λᵢ(A) · λⱼ(B) : all i,j}
+Eigenvalues: $\lambda(\mathbf{A} \otimes \mathbf{B}) = \{\lambda_i(\mathbf{A}) \cdot \lambda_j(\mathbf{B}) : \text{all } i,j\}$
 
-**Why this helps**: A 6×6 = (2×2) ⊗ (3×3) reduces to quadratic + cubic, not degree-6.
+**Why this helps**: A $6 \times 6 = (2 \times 2) \otimes (3 \times 3)$ reduces to quadratic + cubic, not degree-6.
 
 #### 4. Special Pattern Structure
 
 **Symmetric Toeplitz tridiagonal**: Constant diagonals
-```
-T = [a  b  0  0  ...
-     b  a  b  0  ...
-     0  b  a  b  ...
-     ...]
+```math
+\mathbf{T} = \begin{bmatrix}
+a & b & 0 & 0 & \cdots & 0 \\
+b & a & b & 0 & \cdots & 0 \\
+0 & b & a & b & \cdots & 0 \\
+\vdots & \vdots & \vdots & \vdots & \ddots & \vdots
+\end{bmatrix}
 ```
 
-Eigenvalues: λₖ = a + 2b cos(kπ/(n+1)) for k = 1, 2, ..., n
+Eigenvalues: $\lambda_k = a + 2b \cos\left(\frac{k\pi}{n+1}\right)$ for $k = 1, 2, \ldots, n$
 
 **Why this helps**: Known eigenvector basis (discrete sine transform) gives closed-form eigenvalues.
 
@@ -159,71 +167,71 @@ Eigenvalues: λₖ = a + 2b cos(kπ/(n+1)) for k = 1, 2, ..., n
 
 **Matrices with structure have special Galois groups.**
 
-The characteristic polynomial of a structured matrix isn't generic—it has symmetries that make its Galois group smaller or more solvable, even for degree ≥ 5.
+The characteristic polynomial of a structured matrix isn't generic—it has symmetries that make its Galois group smaller or more solvable, even for degree $\geq 5$.
 
 **Examples**:
-- Circulant n×n: Galois group is cyclic ℤₙ (always solvable)
-- Generic n×n: Galois group is symmetric Sₙ (not solvable for n ≥ 5)
+- Circulant $n \times n$: Galois group is cyclic $\mathbb{Z}_n$ (always solvable)
+- Generic $n \times n$: Galois group is symmetric $S_n$ (not solvable for $n \geq 5$)
 
 ## Closed-Form Root Formulas
 
 ### Degree 1: Linear
 
-Equation: λ + c₀ = 0
+Equation: $\lambda + c_0 = 0$
 
-**Solution**: λ = -c₀
+**Solution**: $\lambda = -c_0$
 
 ### Degree 2: Quadratic
 
-Equation: λ² + c₁λ + c₀ = 0
+Equation: $\lambda^2 + c_1\lambda + c_0 = 0$
 
 **Solution** (Quadratic formula):
-```
-λ = (-c₁ ± √(c₁² - 4c₀)) / 2
+```math
+\lambda = \frac{-c_1 \pm \sqrt{c_1^2 - 4c_0}}{2}
 ```
 
-**Discriminant**: Δ = c₁² - 4c₀
-- Δ > 0: Two real roots
-- Δ = 0: One repeated root
-- Δ < 0: Two complex conjugate roots
+**Discriminant**: $\Delta = c_1^2 - 4c_0$
+- $\Delta > 0$: Two real roots
+- $\Delta = 0$: One repeated root
+- $\Delta < 0$: Two complex conjugate roots
 
 ### Degree 3: Cubic (Cardano's Formula)
 
-Equation: λ³ + c₂λ² + c₁λ + c₀ = 0
+Equation: $\lambda^3 + c_2\lambda^2 + c_1\lambda + c_0 = 0$
 
-**Strategy**: Eliminate quadratic term via substitution λ = t - c₂/3
+**Strategy**: Eliminate quadratic term via substitution $\lambda = t - c_2/3$
 
-Reduced form: t³ + pt + q = 0
+Reduced form: $t^3 + pt + q = 0$
 
 **Solution**:
-```
-t = ∛(-q/2 + √(q²/4 + p³/27)) + ∛(-q/2 - √(q²/4 + p³/27))
+```math
+t = \sqrt[3]{-\frac{q}{2} + \sqrt{\frac{q^2}{4} + \frac{p^3}{27}}} + \sqrt[3]{-\frac{q}{2} - \sqrt{\frac{q^2}{4} + \frac{p^3}{27}}}
 ```
 
-**Discriminant**: Δ = -4p³ - 27q²
-- Δ > 0: Three distinct real roots
-- Δ = 0: Repeated root
-- Δ < 0: One real root, two complex conjugates
+**Discriminant**: $\Delta = -4p^3 - 27q^2$
+- $\Delta > 0$: Three distinct real roots
+- $\Delta = 0$: Repeated root
+- $\Delta < 0$: One real root, two complex conjugates
 
 **Historical note**: Cardano published this in 1545, but Tartaglia discovered it earlier.
 
 ### Degree 4: Quartic (Ferrari's Method)
 
-Equation: λ⁴ + c₃λ³ + c₂λ² + c₁λ + c₀ = 0
+Equation: $\lambda^4 + c_3\lambda^3 + c_2\lambda^2 + c_1\lambda + c_0 = 0$
 
 **Strategy**: 
-1. Eliminate cubic term: λ = t - c₃/4
+1. Eliminate cubic term: $\lambda = t - c_3/4$
 2. Add and subtract clever term to create perfect squares
 3. Reduce to solving a cubic (Cardano) plus quadratics
 
 **Solution** (simplified outline):
-1. Solve cubic resolvent: y³ + p₂y² + p₁y + p₀ = 0 (use Cardano)
-2. Use root y to decompose into two quadratics
+1. Solve cubic resolvent: $y^3 + p_2y^2 + p_1y + p_0 = 0$ (use Cardano)
+2. Use root $y$ to decompose into two quadratics
 3. Solve quadratics for final four roots
 
 **Complexity**: Formula involves nested cube roots and square roots, producing extremely large expressions.
 
-**Expression size**: For fully symbolic 4×4 matrix, each eigenvalue is ~13.5 MB of symbolic expressions!
+**Expression size**: For fully symbolic $4 \times 4$ matrix, each eigenvalue is ~13.5 MB of symbolic expressions!
 
 ### Degree ≥ 5: No General Formula
 
@@ -239,19 +247,19 @@ A matrix pattern has closed-form eigenvalues if one of these conditions holds:
 
 #### 1. Commutes with Known Transformation
 
-If **AU = UΛ** where:
-- **U** is a known unitary matrix (independent of matrix entries)
-- **Λ** is diagonal
+If $\mathbf{A}\mathbf{U} = \mathbf{U}\mathbf{\Lambda}$ where:
+- $\mathbf{U}$ is a known unitary matrix (independent of matrix entries)
+- $\mathbf{\Lambda}$ is diagonal
 
-Then U diagonalizes A, and eigenvalues are diagonal entries of Λ = U†AU.
+Then $\mathbf{U}$ diagonalizes $\mathbf{A}$, and eigenvalues are diagonal entries of $\mathbf{\Lambda} = \mathbf{U}^\dagger\mathbf{A}\mathbf{U}$.
 
 **Examples**:
-- Circulant: U = DFT matrix
-- Symmetric Toeplitz tridiagonal: U = discrete sine transform
+- Circulant: $\mathbf{U}$ = DFT matrix
+- Symmetric Toeplitz tridiagonal: $\mathbf{U}$ = discrete sine transform
 
 #### 2. Reducible via Transformation
 
-If a known transformation splits A into independent subproblems of degree ≤ 4.
+If a known transformation splits $\mathbf{A}$ into independent subproblems of degree $\leq 4$.
 
 **Examples**:
 - Block-diagonal: Already split
@@ -260,13 +268,13 @@ If a known transformation splits A into independent subproblems of degree ≤ 4.
 
 #### 3. Tensor Product Structure
 
-If A = B ⊗ C, then λ(A) = {λᵢ(B) · λⱼ(C)}.
+If $\mathbf{A} = \mathbf{B} \otimes \mathbf{C}$, then $\lambda(\mathbf{A}) = \{\lambda_i(\mathbf{B}) \cdot \lambda_j(\mathbf{C})\}$.
 
 **Works when**: Can detect Kronecker product structure.
 
 #### 4. Polynomial in Simple Matrix
 
-If A = f(J) where J is a simple matrix (e.g., shift operator, permutation).
+If $\mathbf{A} = f(\mathbf{J})$ where $\mathbf{J}$ is a simple matrix (e.g., shift operator, permutation).
 
 **Examples**:
 - Circulant: Polynomial in cyclic shift matrix
@@ -279,7 +287,7 @@ If the matrix has a symmetry group that:
 - Reduces to solvable subproblems
 
 **Examples**:
-- Anti-diagonal: Persymmetric symmetry forces ±pairs
+- Anti-diagonal: Persymmetric symmetry forces $\pm$ pairs
 - Permutation: Cycle structure gives roots of unity
 
 ### The Discovery Process

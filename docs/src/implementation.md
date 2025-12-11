@@ -21,7 +21,7 @@ SymbolicDiagonalization.jl uses a multi-layered approach to compute eigenvalues 
 
 1. **Structure Detection**: Identify exploitable matrix patterns
 2. **Pattern-Specific Solvers**: Use specialized algorithms for detected patterns
-3. **Characteristic Polynomial**: Compute det(λI - A) using Bareiss algorithm
+3. **Characteristic Polynomial**: Compute $\det(\lambda I - A)$ using Bareiss algorithm
 4. **Root Finding**: Solve polynomials up to degree 4 using closed-form formulas
 5. **Eigenvector Computation**: Use RREF-based nullspace or adjugate method
 
@@ -33,19 +33,19 @@ The implementation prioritizes **symbolic correctness** over numeric efficiency,
 
 ### Algorithm: Bareiss Determinant
 
-The characteristic polynomial det(λI - A) is computed using the **Bareiss algorithm**, a fraction-free variant of Gaussian elimination.
+The characteristic polynomial $\det(\lambda I - A)$ is computed using the **Bareiss algorithm**, a fraction-free variant of Gaussian elimination.
 
 **File**: `src/charpoly.jl`
 
 ### Why Bareiss?
 
 Standard Gaussian elimination requires division, which causes intermediate expression blowup in symbolic computation:
-- **Standard GE**: Expressions grow like O(2^n) due to nested divisions
+- **Standard GE**: Expressions grow like $O(2^n)$ due to nested divisions
 - **Bareiss**: Keeps expressions polynomial-sized by avoiding division until the end
 
 ### Algorithm Description
 
-Given matrix M, Bareiss computes det(M) without fractions:
+Given matrix $M$, Bareiss computes $\det(M)$ without fractions:
 
 ```julia
 function _bareiss_det(M)
@@ -75,9 +75,9 @@ end
 
 ### Complexity
 
-- **Time**: O(n³) symbolic operations
+- **Time**: $O(n^3)$ symbolic operations
 - **Expression size**: Polynomial growth (much better than standard methods)
-- **Space**: O(n²) for the matrix
+- **Space**: $O(n^2)$ for the matrix
 
 ### Coefficient Extraction
 
@@ -100,7 +100,7 @@ function _collect_coefficients(poly, λ, degree)
 end
 ```
 
-This uses the Taylor series expansion: `p(λ) = Σ (p^(k)(0) / k!) * λ^k`
+This uses the Taylor series expansion: $p(\lambda) = \sum_k \frac{p^{(k)}(0)}{k!} \lambda^k$
 
 ---
 
@@ -121,17 +121,17 @@ SymbolicDiagonalization.jl implements closed-form root solvers for polynomials u
 
 ### Linear Solver (Degree 1)
 
-For `ax + b = 0`:
+For $ax + b = 0$:
 
 ```julia
 _roots_linear(c) = [-c[1] / c[2]]  # c = [b, a]
 ```
 
-**Complexity**: O(1) symbolic operations
+**Complexity**: $O(1)$ symbolic operations
 
 ### Quadratic Solver (Degree 2)
 
-For `ax² + bx + c = 0`:
+For $ax^2 + bx + c = 0$:
 
 ```julia
 function _roots_quadratic(c)
@@ -147,23 +147,23 @@ end
 - Discriminant simplification to reduce expression size
 - Symbolic square root handling
 
-**Complexity**: O(n²) where n is the expression size
+**Complexity**: $O(n^2)$ where $n$ is the expression size
 
 ### Cubic Solver (Degree 3)
 
-For `ax³ + bx² + cx + d = 0`, we use **Cardano's method**:
+For $ax^3 + bx^2 + cx + d = 0$, we use **Cardano's method**:
 
-**Step 1**: Depress the cubic (eliminate x² term)
+**Step 1**: Depress the cubic (eliminate $x^2$ term)
 
-Substitution `x = y - b/(3a)` transforms to: `y³ + py + q = 0`
+Substitution $x = y - \frac{b}{3a}$ transforms to: $y^3 + py + q = 0$
 
 where:
-- `p = c/a - b²/(3a²)`
-- `q = 2b³/(27a³) - bc/(3a²) + d/a`
+- $p = \frac{c}{a} - \frac{b^2}{3a^2}$
+- $q = \frac{2b^3}{27a^3} - \frac{bc}{3a^2} + \frac{d}{a}$
 
 **Step 2**: Compute discriminant
 
-`Δ = (q/2)² + (p/3)³`
+$\Delta = \left(\frac{q}{2}\right)^2 + \left(\frac{p}{3}\right)^3$
 
 **Step 3**: Compute cube roots
 
@@ -174,7 +174,7 @@ D = cbrt(-q/2 - √Δ)
 
 **Step 4**: Construct roots
 
-Let `ω = exp(2πi/3) = -1/2 + (√3/2)i` be a primitive cube root of unity.
+Let $\omega = e^{2\pi i/3} = -\frac{1}{2} + \frac{\sqrt{3}}{2}i$ be a primitive cube root of unity.
 
 ```julia
 roots = [
@@ -186,43 +186,43 @@ roots = [
 
 **Step 5**: Shift back
 
-`x = y - b/(3a)`
+$x = y - \frac{b}{3a}$
 
-**Complexity**: O(n³) where n is the expression size
+**Complexity**: $O(n^3)$ where $n$ is the expression size
 
 **Implementation notes**:
-- Aggressive simplification applied to `p`, `q`, and `Δ`
+- Aggressive simplification applied to $p$, $q$, and $\Delta$
 - Complex arithmetic handled symbolically
 - Numeric cube roots used with symbolic coefficients
 
 ### Quartic Solver (Degree 4)
 
-For `ax⁴ + bx³ + cx² + dx + e = 0`, we use **Ferrari's method** via a resolvent cubic.
+For $ax^4 + bx^3 + cx^2 + dx + e = 0$, we use **Ferrari's method** via a resolvent cubic.
 
-**Step 1**: Depress the quartic (eliminate x³ term)
+**Step 1**: Depress the quartic (eliminate $x^3$ term)
 
-Substitution `x = y - b/(4a)` transforms to: `y⁴ + py² + qy + r = 0`
+Substitution $x = y - \frac{b}{4a}$ transforms to: $y^4 + py^2 + qy + r = 0$
 
 where:
-- `p = c/a - 3b²/(8a²)`
-- `q = d/a + b³/(8a³) - bc/(2a²)`
-- `r = e/a - 3b⁴/(256a⁴) + b²c/(16a³) - bd/(4a²)`
+- $p = \frac{c}{a} - \frac{3b^2}{8a^2}$
+- $q = \frac{d}{a} + \frac{b^3}{8a^3} - \frac{bc}{2a^2}$
+- $r = \frac{e}{a} - \frac{3b^4}{256a^4} + \frac{b^2c}{16a^3} - \frac{bd}{4a^2}$
 
 **Step 2**: Solve resolvent cubic
 
-The resolvent cubic is: `8z³ - 4pz² - 8rz + (4pr - q²) = 0`
+The resolvent cubic is: $8z^3 - 4pz^2 - 8rz + (4pr - q^2) = 0$
 
-Let α be any root of this cubic (we use the first one).
+Let $\alpha$ be any root of this cubic (we use the first one).
 
 **Step 3**: Decompose into two quadratics
 
 The depressed quartic factors as:
 
-`(y² + β*y + (α + γ))(y² - β*y + (α - γ)) = 0`
+$(y^2 + \beta y + (\alpha + \gamma))(y^2 - \beta y + (\alpha - \gamma)) = 0$
 
 where:
-- `β² = 2α - p`
-- `γ = -q/(2β)`
+- $\beta^2 = 2\alpha - p$
+- $\gamma = -\frac{q}{2\beta}$
 
 **Step 4**: Solve quadratics
 
@@ -230,9 +230,9 @@ Each quadratic gives two roots using the quadratic formula.
 
 **Step 5**: Shift back
 
-`x = y - b/(4a)`
+$x = y - \frac{b}{4a}$
 
-**Complexity**: O(n⁴) where n is the expression size
+**Complexity**: $O(n^4)$ where $n$ is the expression size
 
 **Implementation details**:
 ```julia
@@ -281,7 +281,7 @@ function _roots_quartic(c)
 end
 ```
 
-**Warning**: Quartic formulas produce **extremely large expressions** for fully symbolic 4×4 matrices (~13.5 MB per eigenvalue).
+**Warning**: Quartic formulas produce **extremely large expressions** for fully symbolic $4 \times 4$ matrices (~13.5 MB per eigenvalue).
 
 ---
 
@@ -362,7 +362,7 @@ function _is_diagonal(mat)
 end
 ```
 
-**Complexity**: O(n²) symbolic zero checks
+**Complexity**: $O(n^2)$ symbolic zero checks
 
 #### Block-Diagonal Detection
 
@@ -400,7 +400,7 @@ function _detect_multiple_blocks(mat)
 end
 ```
 
-**Complexity**: O(n⁴) symbolic operations in worst case
+**Complexity**: $O(n^4)$ symbolic operations in worst case
 
 #### Circulant Detection
 
@@ -423,11 +423,11 @@ function _is_circulant(mat)
 end
 ```
 
-**Complexity**: O(n²) symbolic zero checks
+**Complexity**: $O(n^2)$ symbolic zero checks
 
 #### Block Circulant Detection
 
-Tries different block sizes k where n is divisible by k:
+Tries different block sizes $k$ where $n$ is divisible by $k$:
 
 ```julia
 function _is_block_circulant(mat)
@@ -470,11 +470,11 @@ function _is_block_circulant(mat)
 end
 ```
 
-**Complexity**: O(n⁴) in worst case (trying all block sizes)
+**Complexity**: $O(n^4)$ in worst case (trying all block sizes)
 
 #### Kronecker Product Detection
 
-Tries different factorizations N = m × n:
+Tries different factorizations $N = m \times n$:
 
 ```julia
 function _is_kronecker_product(mat)
@@ -514,7 +514,7 @@ function _is_kronecker_product(mat)
 end
 ```
 
-**Complexity**: O(n⁵) in worst case
+**Complexity**: $O(n^5)$ in worst case
 
 #### Permutation Matrix Detection
 
@@ -543,7 +543,7 @@ function _is_permutation_matrix(A)
 end
 ```
 
-**Complexity**: O(n²) symbolic zero checks
+**Complexity**: $O(n^2)$ symbolic zero checks
 
 ---
 
@@ -553,11 +553,11 @@ end
 
 **Theory**: A circulant matrix has eigenvalues given by the DFT of its first row.
 
-For circulant matrix C = circ(c₀, c₁, ..., c_{n-1}):
+For circulant matrix $C = \text{circ}(c_0, c_1, \ldots, c_{n-1})$:
 
-`λⱼ = Σₖ cₖ ωʲᵏ` for j = 0, 1, ..., n-1
+$\lambda_j = \sum_{k} c_k \omega^{jk}$ for $j = 0, 1, \ldots, n-1$
 
-where ω = exp(2πi/n).
+where $\omega = e^{2\pi i/n}$.
 
 ```julia
 function _circulant_eigenvalues(mat)
@@ -581,17 +581,17 @@ function _circulant_eigenvalues(mat)
 end
 ```
 
-**Complexity**: O(n²) symbolic operations (much better than O(n³) for general case)
+**Complexity**: $O(n^2)$ symbolic operations (much better than $O(n^3)$ for general case)
 
 ### Block Circulant Matrices
 
-**Theory**: Block circulant reduces to n separate k×k eigenvalue problems.
+**Theory**: Block circulant reduces to $n$ separate $k \times k$ eigenvalue problems.
 
-For block circulant with blocks [A₀, A₁, ..., A_{n-1}]:
+For block circulant with blocks $[A_0, A_1, \ldots, A_{n-1}]$:
 
-Eigenvalues = ⋃ⱼ eigvals(Dⱼ)
+Eigenvalues = $\bigcup_j \text{eigvals}(D_j)$
 
-where `Dⱼ = Σₖ ωʲᵏ Aₖ` and ω = exp(2πi/n).
+where $D_j = \sum_k \omega^{jk} A_k$ and $\omega = e^{2\pi i/n}$.
 
 ```julia
 function _block_circulant_eigenvalues(mat, n_blocks, block_size, blocks)
@@ -617,15 +617,15 @@ function _block_circulant_eigenvalues(mat, n_blocks, block_size, blocks)
 end
 ```
 
-**Complexity**: O(n × T(k)) where T(k) is time to solve k×k matrix
+**Complexity**: $O(n \times T(k))$ where $T(k)$ is time to solve $k \times k$ matrix
 
 ### Toeplitz Tridiagonal Matrices
 
 **Theory**: Symmetric Toeplitz tridiagonal has closed-form eigenvalues via orthogonal polynomials.
 
-For matrix with diagonal a and off-diagonals b:
+For matrix with diagonal $a$ and off-diagonals $b$:
 
-`λₖ = a + 2b cos(kπ/(n+1))` for k = 1, 2, ..., n
+$\lambda_k = a + 2b \cos\left(\frac{k\pi}{n+1}\right)$ for $k = 1, 2, \ldots, n$
 
 ```julia
 function _toeplitz_tridiagonal_eigenvalues(n, a, b, c)
@@ -641,11 +641,11 @@ function _toeplitz_tridiagonal_eigenvalues(n, a, b, c)
 end
 ```
 
-**Complexity**: O(n) symbolic operations (optimal!)
+**Complexity**: $O(n)$ symbolic operations (optimal!)
 
 ### Kronecker Products
 
-**Theory**: If A has eigenvalues {λᵢ} and B has eigenvalues {μⱼ}, then A ⊗ B has eigenvalues {λᵢ μⱼ}.
+**Theory**: If $A$ has eigenvalues $\{\lambda_i\}$ and $B$ has eigenvalues $\{\mu_j\}$, then $A \otimes B$ has eigenvalues $\{\lambda_i \mu_j\}$.
 
 ```julia
 function _kronecker_eigenvalues(A, B, m, n)
@@ -665,13 +665,13 @@ function _kronecker_eigenvalues(A, B, m, n)
 end
 ```
 
-**Complexity**: O(T(m) + T(n) + mn) where T(k) is time to solve k×k matrix
+**Complexity**: $O(T(m) + T(n) + mn)$ where $T(k)$ is time to solve $k \times k$ matrix
 
 ### Permutation Matrices
 
 **Theory**: Eigenvalues are roots of unity determined by cycle structure.
 
-For a cycle of length k: eigenvalues are `exp(2πij/k)` for j = 0, 1, ..., k-1
+For a cycle of length $k$: eigenvalues are $e^{2\pi ij/k}$ for $j = 0, 1, \ldots, k-1$
 
 ```julia
 function _compute_permutation_eigenvalues(A)
@@ -696,15 +696,15 @@ function _compute_permutation_eigenvalues(A)
 end
 ```
 
-**Complexity**: O(n) to find cycles, O(n) to generate eigenvalues
+**Complexity**: $O(n)$ to find cycles, $O(n)$ to generate eigenvalues
 
 ### Anti-Diagonal Matrices
 
-**Theory**: Symmetric anti-diagonal has eigenvalues in ±pairs.
+**Theory**: Symmetric anti-diagonal has eigenvalues in $\pm$ pairs.
 
-For anti-diagonal entries [a₁, a₂, ..., aₙ]:
-- Odd n: eigenvalues are [a_{mid}, ±a₁, ±a₂, ..., ±a_{mid-1}]
-- Even n: eigenvalues are [±a₁, ±a₂, ..., ±a_{n/2}]
+For anti-diagonal entries $[a_1, a_2, \ldots, a_n]$:
+- Odd $n$: eigenvalues are $[a_{\text{mid}}, \pm a_1, \pm a_2, \ldots, \pm a_{\text{mid}-1}]$
+- Even $n$: eigenvalues are $[\pm a_1, \pm a_2, \ldots, \pm a_{n/2}]$
 
 ```julia
 function _antidiagonal_eigenvalues(mat)
@@ -730,11 +730,11 @@ function _antidiagonal_eigenvalues(mat)
 end
 ```
 
-**Complexity**: O(n) symbolic operations
+**Complexity**: $O(n)$ symbolic operations
 
 ### Persymmetric Splitting
 
-**Theory**: Symmetric persymmetric matrices (Q[i,j] = Q[n+1-j, n+1-i]) can be split into two half-sized blocks.
+**Theory**: Symmetric persymmetric matrices ($Q[i,j] = Q[n+1-j, n+1-i]$) can be split into two half-sized blocks.
 
 ```julia
 function _persymmetric_split(mat)
@@ -770,7 +770,7 @@ function _persymmetric_split(mat)
 end
 ```
 
-**Complexity**: O(n³) for matrix multiplication
+**Complexity**: $O(n^3)$ for matrix multiplication
 
 ---
 
@@ -780,14 +780,14 @@ end
 
 SymbolicDiagonalization.jl uses two complementary methods:
 
-1. **Adjugate method** (for small matrices, ≤ 3×3)
+1. **Adjugate method** (for small matrices, $\leq 3 \times 3$)
 2. **RREF-based nullspace** (general case)
 
 **File**: `src/rref.jl`, `src/diagonalize.jl`
 
 ### Adjugate Method
 
-For A - λI singular (λ is eigenvalue), the adjugate matrix adj(A - λI) has all columns in the nullspace.
+For $A - \lambda I$ singular ($\lambda$ is eigenvalue), the adjugate matrix $\text{adj}(A - \lambda I)$ has all columns in the nullspace.
 
 ```julia
 function _adjugate_vectors(M)
@@ -824,7 +824,7 @@ end
 - More compact expressions for small matrices
 
 **Disadvantages**:
-- Only works for n ≤ 3 (determinant computation explodes)
+- Only works for $n \leq 3$ (determinant computation explodes)
 - May return zero vector if unlucky
 
 ### RREF-Based Nullspace
@@ -859,7 +859,7 @@ function _nullspace(M)
 end
 ```
 
-**Complexity**: O(n³) symbolic operations
+**Complexity**: $O(n^3)$ symbolic operations
 
 ### RREF Algorithm
 
@@ -908,7 +908,7 @@ end
 - Symbolic pivot selection (uses `_issymzero`)
 - Full row elimination (not just below pivot)
 
-**Complexity**: O(mn² × s) where s is average expression size
+**Complexity**: $O(mn^2 \times s)$ where $s$ is average expression size
 
 ---
 
@@ -918,8 +918,8 @@ end
 
 Symbolic computation faces a fundamental challenge: **expressions grow exponentially** without careful management.
 
-Example: A 3×3 symbolic matrix can produce eigenvalues with 1000+ terms.
-A 4×4 symbolic matrix can produce eigenvalues with 10,000+ terms (~13.5 MB each!).
+Example: A $3 \times 3$ symbolic matrix can produce eigenvalues with 1000+ terms.
+A $4 \times 4$ symbolic matrix can produce eigenvalues with 10,000+ terms (~13.5 MB each!).
 
 ### Strategy: Aggressive Simplification
 
@@ -947,8 +947,8 @@ end
 
 **Applied in**:
 - Quadratic discriminant
-- Cubic coefficients p, q, Δ
-- Quartic coefficients p, q, r, and intermediate β², γ, t₁, t₂
+- Cubic coefficients $p$, $q$, $\Delta$
+- Quartic coefficients $p$, $q$, $r$, and intermediate $\beta^2$, $\gamma$, $t_1$, $t_2$
 - RREF operations
 - Eigenvector construction
 
@@ -1060,16 +1060,16 @@ end
 
 | Operation | Complexity | Notes |
 |-----------|------------|-------|
-| Bareiss determinant | O(n³) | Polynomial expression growth |
-| Coefficient extraction | O(n) | Using derivatives |
-| Quadratic formula | O(n²) | Expression size grows quadratically |
-| Cubic formula | O(n³) | Cardano's method |
-| Quartic formula | O(n⁴) | Ferrari's method |
-| RREF | O(mn² × s) | s = average expression size |
-| Nullspace | O(n³ × s) | After RREF |
-| Circulant eigenvalues | O(n²) | DFT-based |
-| Tridiagonal eigenvalues | O(n) | Closed-form formula |
-| Block decomposition | O(k × T(n/k)) | k blocks of size n/k |
+| Bareiss determinant | $O(n^3)$ | Polynomial expression growth |
+| Coefficient extraction | $O(n)$ | Using derivatives |
+| Quadratic formula | $O(n^2)$ | Expression size grows quadratically |
+| Cubic formula | $O(n^3)$ | Cardano's method |
+| Quartic formula | $O(n^4)$ | Ferrari's method |
+| RREF | $O(mn^2 \times s)$ | $s$ = average expression size |
+| Nullspace | $O(n^3 \times s)$ | After RREF |
+| Circulant eigenvalues | $O(n^2)$ | DFT-based |
+| Tridiagonal eigenvalues | $O(n)$ | Closed-form formula |
+| Block decomposition | $O(k \times T(n/k))$ | $k$ blocks of size $n/k$ |
 
 ### Bottlenecks
 
@@ -1084,7 +1084,7 @@ end
 1. Use structured matrices (block-diagonal, circulant, tridiagonal)
 2. Substitute numeric values for some variables
 3. Request eigenvalues only (skip eigenvectors)
-4. Use smaller matrices (2×2, 3×3 much faster than 4×4)
+4. Use smaller matrices ($2 \times 2$, $3 \times 3$ much faster than $4 \times 4$)
 5. Set `expand=false` to skip polynomial expansion
 
 **For developers**:
@@ -1096,16 +1096,16 @@ end
 
 ### Memory Usage
 
-Approximate memory usage for fully symbolic n×n matrices:
+Approximate memory usage for fully symbolic $n \times n$ matrices:
 
 | Size | Eigenvalues | With Eigenvectors |
 |------|-------------|-------------------|
-| 2×2 | ~1 KB | ~5 KB |
-| 3×3 | ~100 KB | ~500 KB |
-| 4×4 | ~50 MB | ~200 MB |
-| 5×5 | N/A* | N/A* |
+| $2 \times 2$ | ~1 KB | ~5 KB |
+| $3 \times 3$ | ~100 KB | ~500 KB |
+| $4 \times 4$ | ~50 MB | ~200 MB |
+| $5 \times 5$ | N/A* | N/A* |
 
-*5×5 requires special structure (not general case)
+*$5 \times 5$ requires special structure (not general case)
 
 ### Parallelization Challenges
 
@@ -1154,7 +1154,7 @@ The test suite includes 172 tests covering:
 
 ### Expression Optimization
 
-1. **Perfect square factoring**: Detect and factor (a-b)² + c²
+1. **Perfect square factoring**: Detect and factor $(a-b)^2 + c^2$
 2. **Common subexpression elimination**: Deduplicate repeated subexpressions
 3. **Gröbner basis reduction**: Polynomial ideal membership
 4. **Numerical stability analysis**: Detect ill-conditioned expressions
@@ -1184,7 +1184,7 @@ The test suite includes 172 tests covering:
 
 ### Mathematical Background
 
-6. **Abel, N.H.** (1826). "Beweis der Unmöglichkeit, algebraische Gleichungen von höheren Graden als dem vierten allgemein aufzulösen." Proof that degree ≥5 has no general formula.
+6. **Abel, N.H.** (1826). "Beweis der Unmöglichkeit, algebraische Gleichungen von höheren Graden als dem vierten allgemein aufzulösen." Proof that degree $\geq 5$ has no general formula.
 
 7. **Galois, É.** (1832). "Mémoire sur les conditions de résolubilité des équations par radicaux." Galois theory foundation.
 
