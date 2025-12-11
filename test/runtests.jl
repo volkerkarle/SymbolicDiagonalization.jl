@@ -348,7 +348,9 @@ end
     vals = eigvals(Q; var = λ, complexity_threshold = nothing, timeout = 60)
     @test length(vals) == 4
     
-    # Verify eigenvalues are real (Hermitian matrices have real eigenvalues)
+    # Verify eigenvalues are real for this Hermitian matrix
+    # Note: The package supports complex eigenvalues in general; this test
+    # verifies that Hermitian matrices correctly produce real eigenvalues
     for v in vals
         @test v isa Num
         # Eigenvalues should only depend on the real parts

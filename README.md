@@ -1,6 +1,21 @@
 # SymbolicDiagonalization.jl
 
-A Julia package for symbolic matrix diagonalization. Compute eigenvalues, eigenvectors, and full diagonalizations directly on `Symbolics.jl` expressions using closed-form root solvers and intelligent structure detection.
+**Status: Early Work in Progress**
+
+A Julia package for symbolic matrix diagonalization using closed-form root solvers.
+
+## Vision
+
+The ultimate goal here is to build a practical symbolic eigenvalue solver that goes beyond simple 3x3 matrices. Closed-form solutions only exist for polynomials up to degree 4 (Abel-Ruffini theorem); this means we can't solve general 5×5+ matrices symbolically. However, many real-world matrices have exploitable structure. If we can automatically detect and exploit these structures, we can potentially solve much larger symbolic problems.
+
+**What we're building**:
+
+- Automatic structure detection (block-diagonal, persymmetric, special patterns)
+- Library of special solvable patterns (tridiagonal, circulant, Toeplitz, etc.)
+- Tools to discover new solvable patterns
+- Clean integration with Symbolics.jl ecosystem
+
+**Current state**: Very basic. We have rudimentary block-diagonal detection and one special 5×5 pattern. Most of the vision is unimplemented.
 
 ## Quick Start
 
@@ -8,81 +23,51 @@ A Julia package for symbolic matrix diagonalization. Compute eigenvalues, eigenv
 using Symbolics, SymbolicDiagonalization, LinearAlgebra
 
 @variables a b c
-mat = [a 1 0; 0 b 1; 0 0 c]  # upper-triangular symbolic matrix
+mat = [a 1 0; 0 b 1; 0 0 c]
 
-# Standard LinearAlgebra interface
 E = eigen(mat)        # Eigen object with .values and .vectors
 λ = eigvals(mat)      # eigenvalues only (faster)
 ```
 
-## Features
+## What Works
 
-### Closed-Form Solutions
+### Closed-Form Root Solvers (1-4 variables)
 
-- **Degrees 1-4**: Linear, quadratic, Cardano (cubic), Ferrari (quartic)
-- **Characteristic polynomials**: Fraction-free Bareiss determinant
-- **Symbolic nullspace**: Direct computation of eigenvectors
+- Linear, quadratic, cubic (Cardano), quartic (Ferrari)
+- Characteristic polynomial via Bareiss determinant
+- Works but produces huge expressions for fully symbolic 4×4
 
-### Intelligent Structure Detection
+### Basic Structure Detection (Work in Progress)
 
-- **Block-diagonal matrices**: Automatic decomposition into independent subproblems
-- **Persymmetric matrices**: Specialized optimization for symmetric-about-antidiagonal structure
-- **Special 5×5 tridiagonal patterns**: Closed-form solutions for patterns like `[b, d, b, b]`
-  - Eigenvalues: `a ± √(2b² + d²)`, `a ± b`, `a`
-  - See [docs/research/](docs/research/) for pattern discovery methodology
-
-### Flexible API
-
-- **LinearAlgebra interface**: `eigen()` and `eigvals()` for familiar usage
-- **Original API**: Advanced control with `symbolic_eigenvalues()`, `symbolic_eigenpairs()`, `symbolic_diagonalize()`
-- **Optional Oscar backend**: Use Oscar/Nemo for algebraic numbers without radical expansion (numeric/rational inputs)
+- **Block-diagonal**: Detects and splits into independent subproblems
+- **Persymmetric**: Splits certain symmetric-about-antidiagonal matrices
+- **Special 5×5 tridiagonal**: Specific patterns `[b,d,b,b]` with known eigenvalues
 
 ## Installation
 
-The package is currently local. From the package root:
+From package root:
 
 ```julia
 julia --project -e 'using Pkg; Pkg.instantiate()'
 ```
 
-To develop:
-
-```julia
-julia --project -e 'using Pkg; Pkg.develop(path=".")'
-```
-
 ## Examples
 
-### Basic Usage
+### Block-Diagonal (Works Well)
 
 ```julia
-using SymbolicDiagonalization, Symbolics, LinearAlgebra
-
-# Simple 2×2 matrix
-@variables a b
-A = [a 0; 0 b]
-E = eigen(A)
-E.values   # [a, b]
-E.vectors  # [1 0; 0 1]
-
-# Eigenvalues only (faster)
-λ = eigvals(A)  # [a, b]
-```
-
-### Structured Matrices
-
-```julia
-# Block-diagonal 4×4
 @variables a b c d
 mat = [a  b  0  0;
        b  a  0  0;
        0  0  c  d;
        0  0  d  c]
 
-vals = eigvals(mat; structure=:hermitian)
-# Result: [a+b, a-b, c+d, c-d] - clean and fast!
+vals = eigvals(mat)  # [a+b, a-b, c+d, c-d]
+```
 
-# 5×5 special tridiagonal pattern
+### Special 5×5 Pattern (Experimental)
+
+```julia
 @variables a b d
 mat = [a  b  0  0  0;
        b  a  d  0  0;
@@ -90,136 +75,90 @@ mat = [a  b  0  0  0;
        0  0  b  a  b;
        0  0  0  b  a]
 
-vals = eigvals(mat)
-# Closed-form: a ± √(2b² + d²), a ± b, a
+vals = eigvals(mat)  # a ± √(2b² + d²), a ± b, a
 ```
 
-### Advanced API
+## API
 
-```julia
-# Get characteristic polynomial too
-vals, poly, λ = symbolic_eigenvalues(mat)
+### LinearAlgebra Interface
 
-# Get eigenvalue-eigenvector pairs
-pairs, _, _ = symbolic_eigenpairs(mat)
-for (eigenval, eigenvecs) in pairs
-    println("λ = $eigenval")
-    println("v = $eigenvecs")
-end
+- `eigen(A; kwargs...)` - Returns `Eigen` object with `.values` and `.vectors`
+- `eigvals(A; kwargs...)` - Eigenvalues only (faster)
 
-# Full diagonalization: A = P D P⁻¹
-P, D, _ = symbolic_diagonalize(mat)
-```
+### Direct API
 
-## API Reference
+- `symbolic_eigenvalues(A; kwargs...)` - Returns `(values, poly, λ)`
+- `symbolic_eigenpairs(A; kwargs...)` - Returns `[(λ, [v₁, v₂, ...]), ...]`
+- `symbolic_diagonalize(A; kwargs...)` - Returns `(P, D, pairs)`
 
-### LinearAlgebra Interface (Recommended)
+### Options
 
-- **`eigen(A; kwargs...)`** - Returns `Eigen` object with `.values` and `.vectors` fields
-- **`eigvals(A; kwargs...)`** - Returns eigenvalues only (skips eigenvector computation)
+- `structure` - Hint: `:auto`, `:hermitian`, `:symmetric`, `:unitary`
+- `expand` - Expand polynomials (default: `true`)
+- `complexity_threshold` - Warn if too many variables (default: 5)
+- `timeout` - Max computation time in seconds (default: 300)
+- `max_terms` - Expression complexity limit (default: 10000)
 
-### Original API (Advanced)
+## Current Limitations
 
-- **`symbolic_eigenvalues(A; kwargs...)`** - Returns eigenvalues, characteristic polynomial, and λ symbol
-- **`symbolic_eigenpairs(A; kwargs...)`** - Returns eigenvalue-eigenvector pairs
-- **`symbolic_diagonalize(A; kwargs...)`** - Returns diagonalization matrices `P`, `D`
+- **No general 5×5+ solver**: Only works if structure detected
+- **Structure detection is basic**: Misses most exploitable patterns
+- **Huge expressions**: Fully symbolic 4×4 produces ~13.5 MB symbols per eigenvalue
+- **No simplification**: Results are often not in simplest form
+- **Fragile**: Many edge cases not handled
 
-### Common Options
+## What Needs Work
 
-- **`structure`** - Hint for matrix type: `:auto` (default), `:hermitian`, `:symmetric`, `:unitary`
-- **`expand`** - Expand polynomial (default: `true`); set to `false` for large matrices
-- **`complexity_threshold`** - Warn when symbolic variable count exceeds this (default: 5)
-- **`backend`** - `:symbolics` (default) or `:oscar` (requires Oscar.jl for algebraic numbers)
+### High Priority
 
-## Performance Guide
+- [ ] Robust structure detection algorithms
+- [ ] More special patterns (circulant, Toeplitz, Hankel, tridiagonal families)
+- [ ] Better expression simplification
+- [ ] Comprehensive testing of edge cases
 
-### What Works Well
+### Medium Priority
 
-**✅ Diagonal/Triangular matrices**
+- [ ] Eigenvalue multiplicity handling
+- [ ] Symbolic condition number estimation
+- [ ] Integration with numerical fallback
+- [ ] Documentation of all special patterns
 
-- Instant eigenvalue extraction
-- Any size
+### Future Ideas
 
-**✅ Block-diagonal matrices**
+- [ ] Machine learning for pattern recognition
+- [ ] User-defined pattern libraries
+- [ ] Symbolic perturbation theory
+- [ ] Parallel processing for large block systems
 
-- Decomposes into independent subproblems
-- 2×2 blocks use quadratic formula → clean results
+## Development
 
-**✅ Sparse symbolic matrices**
-
-- Few parameters (≤5 variables recommended)
-- Many zero entries
-
-**✅ Numeric 4×4 matrices**
-
-- ~10K characters per eigenvalue
-- ~3-4 seconds computation
-
-### Limitations
-
-**⚠️ Fully symbolic matrices**
-
-- 3×3: Usually practical
-- 4×4: Works but produces very large expressions (~13.5 MB per eigenvalue)
-- 5×5+: Only closed-form with special structure (see research docs)
-
-**❌ Degree ≥5 without special structure**
-
-- No closed-form solutions available
-- Use numeric methods instead
-
-### Optimization Tips
-
-1. **Minimize symbolic parameters**: Fewer distinct variables = faster computation
-2. **Use `expand=false`**: Skip polynomial expansion for eigenvalues-only queries
-3. **Exploit structure**: Block-diagonal structure is automatically detected and optimized
-4. **Numeric inputs**: Use `backend=:oscar` for algebraic numbers without radicals
-
-## Testing
-
-Run the test suite:
+### Testing
 
 ```julia
 julia --project -e 'using Pkg; Pkg.test()'
 ```
 
-Tests cover:
+### Exploring Patterns
 
-- Characteristic polynomials (Bareiss determinant)
-- Structure detection (diagonal, triangular, block-diagonal, persymmetric)
-- Closed-form root solvers (degrees 1-4)
-- Special patterns (5×5 tridiagonal)
-- Non-diagonalizable matrices (error handling)
-- Numeric vs symbolic cases
+See [examples/explore_patterns.jl](examples/explore_patterns.jl) for tools to discover new solvable patterns.
 
-## Documentation
+See [docs/notes/](docs/notes/) for documentation of discovered patterns.
 
-Build local documentation:
+### Documentation
 
 ```julia
 julia --project=docs docs/make.jl
 ```
 
-## Research
-
-Pattern discovery methodology and results are documented in:
-
-- [docs/research/RESEARCH_SUMMARY.md](docs/research/RESEARCH_SUMMARY.md) - Executive summary
-- [docs/research/DISCOVERY_METHODOLOGY.md](docs/research/DISCOVERY_METHODOLOGY.md) - Systematic exploration guide
-- [docs/research/PATTERN_DISCOVERIES.md](docs/research/PATTERN_DISCOVERIES.md) - Detailed pattern catalog
-
-Explore new patterns using:
-
-- [examples/explore_patterns.jl](examples/explore_patterns.jl) - Automated pattern search tool
-
 ## Contributing
 
-This is a research project exploring symbolic eigenvalue computation. Contributions welcome, especially:
+This is experimental software. Contributions, ideas, and feedback very welcome:
 
-- New special pattern detection
-- Performance optimizations
-- Extended test coverage
-- Documentation improvements
+- Implementing known special patterns from linear algebra literature
+- Improving structure detection algorithms
+- Finding new solvable patterns
+- Performance optimization
+- Better testing
 
 ## License
 
