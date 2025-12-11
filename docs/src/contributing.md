@@ -492,8 +492,10 @@ end
 # Build documentation
 julia --project=docs docs/make.jl
 
-# View in browser
-# Output in docs/build/index.html
+# View in browser with HTTP server (required for navigation links to work)
+cd docs
+./serve.sh
+# Then open http://localhost:8000
 ```
 
 ### Documentation Style
@@ -502,6 +504,114 @@ julia --project=docs docs/make.jl
 - **Use examples**: Show, don't just tell
 - **Link references**: Cross-reference related functions
 - **Update regularly**: Keep docs in sync with code
+
+## CI/CD Setup for GitHub
+
+### Automatic Documentation Deployment
+
+The package includes GitHub Actions workflow for automatic documentation deployment to GitHub Pages.
+
+#### Initial Setup (One-Time)
+
+**1. Generate SSH Deploy Key**
+
+```bash
+# Install DocumenterTools if needed
+julia -e 'using Pkg; Pkg.add("DocumenterTools")'
+
+# Generate deploy key
+julia -e 'using DocumenterTools; DocumenterTools.genkeys()'
+```
+
+This creates:
+- `docs/src/.documenter` (private key - do NOT commit)
+- Public key displayed in terminal
+
+**2. Add Deploy Key to GitHub**
+
+1. Go to your repository on GitHub
+2. Navigate to: **Settings** → **Deploy keys** → **Add deploy key**
+3. Title: `documenter-key`
+4. Key: Paste the **public key** from step 1
+5. ✅ Check "Allow write access"
+6. Click **Add key**
+
+**3. Add Private Key as GitHub Secret**
+
+1. Copy the contents of `docs/src/.documenter` (the private key file)
+2. Go to: **Settings** → **Secrets and variables** → **Actions**
+3. Click **New repository secret**
+4. Name: `DOCUMENTER_KEY`
+5. Value: Paste the entire private key contents
+6. Click **Add secret**
+
+**4. Update Repository URLs in `docs/make.jl`**
+
+Replace `YOUR_USERNAME` with your GitHub username:
+
+```julia
+repo = "https://github.com/YOUR_USERNAME/SymbolicDiagonalization.jl/blob/{commit}{path}#{line}",
+canonical = "https://YOUR_USERNAME.github.io/SymbolicDiagonalization.jl",
+```
+
+And:
+
+```julia
+deploydocs(;
+    repo = "github.com/YOUR_USERNAME/SymbolicDiagonalization.jl",
+```
+
+**5. Enable GitHub Pages**
+
+1. Go to: **Settings** → **Pages**
+2. Source: **Deploy from a branch**
+3. Branch: `gh-pages` / `root`
+4. Click **Save**
+
+#### How It Works
+
+- **On push to `main`**: Builds and deploys docs to `gh-pages` branch
+- **On pull requests**: Builds docs to verify they work (doesn't deploy)
+- **On tags**: Deploys versioned documentation
+
+Your documentation will be available at:
+```
+https://YOUR_USERNAME.github.io/SymbolicDiagonalization.jl/
+```
+
+#### Testing CI Locally
+
+You can test that the CI build will work:
+
+```bash
+# Simulate CI environment
+CI=true julia --project=docs -e '
+    using Pkg
+    Pkg.develop(PackageSpec(path=pwd()))
+    Pkg.instantiate()
+'
+CI=true julia --project=docs docs/make.jl
+```
+
+#### Troubleshooting
+
+**"SSH key authentication failed"**
+- Ensure `DOCUMENTER_KEY` secret contains the entire private key
+- Verify deploy key has write access enabled
+
+**"gh-pages branch not found"**
+- First deployment creates the branch automatically
+- Wait a few minutes after first push
+
+**"Documentation build failed"**
+- Check the Actions tab for error logs
+- Ensure all dependencies are in `docs/Project.toml`
+- Test locally with `CI=true` as shown above
+
+**"Pages not updating"**
+- Check GitHub Pages is enabled and pointing to `gh-pages`
+- May take 5-10 minutes for changes to appear
+- Check Pages build status in Actions tab
 
 ## Getting Help
 

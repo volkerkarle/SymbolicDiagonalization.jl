@@ -17,6 +17,18 @@ makedocs(;
         "Contributing" => "contributing.md",
     ],
     checkdocs = :none,  # Don't error on missing docstrings for internal functions
+    repo = "https://github.com/YOUR_USERNAME/SymbolicDiagonalization.jl/blob/{commit}{path}#{line}",
+    format = Documenter.HTML(;
+        prettyurls = get(ENV, "CI", "false") == "true",
+        canonical = "https://YOUR_USERNAME.github.io/SymbolicDiagonalization.jl",
+        edit_link = "main",
+        assets = String[],
+    ),
 )
 
-# No deploy step: build locally via `julia --project=docs docs/make.jl`.
+# Deploy documentation to GitHub Pages
+deploydocs(;
+    repo = "github.com/YOUR_USERNAME/SymbolicDiagonalization.jl",
+    devbranch = "main",
+    push_preview = true,
+)
