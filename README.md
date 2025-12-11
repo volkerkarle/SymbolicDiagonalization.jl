@@ -1,6 +1,10 @@
 # SymbolicDiagonalization.jl
 
-**Status: Functional Prototype with 9 Special Patterns**
+[![Documentation](https://img.shields.io/badge/docs-stable-blue.svg)](https://volkerkarle.github.io/SymbolicDiagonalization.jl)
+[![CI](https://github.com/volkerkarle/SymbolicDiagonalization.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/volkerkarle/SymbolicDiagonalization.jl/actions/workflows/ci.yml)
+[![Documentation Build](https://github.com/volkerkarle/SymbolicDiagonalization.jl/actions/workflows/documentation.yml/badge.svg)](https://github.com/volkerkarle/SymbolicDiagonalization.jl/actions/workflows/documentation.yml)
+
+**⚡ Symbolic eigenvalue computation for structured matrices**
 
 A Julia package for symbolic matrix diagonalization using closed-form root solvers and structure detection.
 
@@ -19,11 +23,14 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 
 ## Current State
 
+✨ **Status: Functional Prototype with 9 Special Patterns**
+
 **What works well**:
 - ✅ All matrices up to 4×4 (via quartic formula)
 - ✅ Block-diagonal matrices (recursive decomposition)
 - ✅ 9 special patterns for arbitrary-sized matrices (3×3 to n×n)
 - ✅ 172 passing tests, comprehensive test suite
+- ✅ CI/CD with automated testing and documentation deployment
 
 **Limitations**:
 - ❌ General 5×5+ matrices (requires structure detection)
@@ -42,6 +49,8 @@ mat = [a 1 0; 0 b 1; 0 0 c]
 E = eigen(mat)        # Eigen object with .values and .vectors
 λ = eigvals(mat)      # eigenvalues only (faster)
 ```
+
+📖 **[Read the full documentation](https://volkerkarle.github.io/SymbolicDiagonalization.jl)** for detailed guides, API reference, and mathematical background.
 
 ## What's Implemented
 
@@ -501,11 +510,13 @@ All functions accept these optional keyword arguments:
 
 ## Testing
 
-The package has a comprehensive test suite with **172 tests, all passing** (execution time ~38 seconds):
+The package has a comprehensive test suite with **172 tests, all passing**:
 
 ```bash
 julia --project -e 'using Pkg; Pkg.test()'
 ```
+
+Tests run automatically on every push via [GitHub Actions](https://github.com/volkerkarle/SymbolicDiagonalization.jl/actions) on Julia 1.12 and nightly across Linux, macOS, and Windows.
 
 ### Test Coverage
 
