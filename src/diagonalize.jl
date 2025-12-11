@@ -37,6 +37,74 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         _check_complexity(mat; threshold = complexity_threshold)
     end
     
+    # Check for circulant matrix (any size n)
+    if _is_circulant(mat)
+        vals = _circulant_eigenvalues(mat)
+        poly_raw = prod(λ .- vals)
+        poly = expand ? Symbolics.expand(poly_raw) : poly_raw
+        return vals, poly, λ
+    end
+    
+    # Check for block circulant matrix (any size n×n with k×k blocks)
+    block_circ_info = _is_block_circulant(mat)
+    if !isnothing(block_circ_info)
+        n_blocks, block_size, blocks = block_circ_info
+        try
+            vals = _block_circulant_eigenvalues(mat, n_blocks, block_size, blocks; 
+                                               var=λ, timeout=timeout, max_terms=max_terms)
+            poly_raw = prod(λ .- vals)
+            poly = expand ? Symbolics.expand(poly_raw) : poly_raw
+            return vals, poly, λ
+        catch e
+            # If block eigenvalue computation fails, fall through to other methods
+            @debug "Block circulant structure detected but eigenvalue computation failed" exception=e
+        end
+    end
+    
+    # Check for Toeplitz tridiagonal (any size n)
+    toeplitz_params = _is_toeplitz_tridiagonal(mat)
+    if !isnothing(toeplitz_params)
+        a, b, c = toeplitz_params
+        n = size(mat, 1)
+        vals = _toeplitz_tridiagonal_eigenvalues(n, a, b, c)
+        poly_raw = prod(λ .- vals)
+        poly = expand ? Symbolics.expand(poly_raw) : poly_raw
+        return vals, poly, λ
+    end
+    
+    # Check for anti-diagonal matrix (any size n)
+    if _is_antidiagonal(mat)
+        vals = _antidiagonal_eigenvalues(mat)
+        if !isnothing(vals)
+            poly_raw = prod(λ .- vals)
+            poly = expand ? Symbolics.expand(poly_raw) : poly_raw
+            return vals, poly, λ
+        end
+    end
+    
+    # Check for permutation matrix (any size n)
+    if _is_permutation_matrix(mat)
+        vals = _compute_permutation_eigenvalues(mat)
+        poly_raw = prod(λ .- vals)
+        poly = expand ? Symbolics.expand(poly_raw) : poly_raw
+        return vals, poly, λ
+    end
+    
+    # Check for Kronecker product A ⊗ B (any size m*n)
+    kron_info = _is_kronecker_product(mat)
+    if !isnothing(kron_info)
+        A, B, m, n = kron_info
+        try
+            vals = _kronecker_eigenvalues(A, B, m, n; var=λ, timeout=timeout, max_terms=max_terms)
+            poly_raw = prod(λ .- vals)
+            poly = expand ? Symbolics.expand(poly_raw) : poly_raw
+            return vals, poly, λ
+        catch e
+            # If Kronecker eigenvalue computation fails, fall through to other methods
+            @debug "Kronecker product structure detected but eigenvalue computation failed" exception=e
+        end
+    end
+    
     # Try persymmetric splitting before block-diagonal (for even dimensions)
     if size(mat, 1) % 2 == 0 && struct_hint in (:symmetric, :hermitian)
         persym_split = _persymmetric_split(mat)
@@ -581,10 +649,396 @@ function _is_unitary(mat)
     return true
 end
 
+function _is_antidiagonal(mat)
+    m, n = size(mat)
+    m == n || return false
+    # Check that only anti-diagonal entries (i + j = n + 1) are non-zero
+    for i in 1:m, j in 1:n
+        if i + j == n + 1
+            continue  # Anti-diagonal entry, can be anything
+        else
+            !_issymzero(mat[i, j]) && return false
+        end
+    end
+    return true
+end
+
 # ============================================================================
 # Special Pattern Detection
 # Detection of special matrix patterns with closed-form eigenvalues
 # ============================================================================
+
+"""
+    _is_circulant(mat)
+
+Check if a matrix is circulant: each row is a cyclic shift of the first row.
+A circulant matrix has the form:
+```
+[c₀  c₁  c₂  ...  cₙ₋₁]
+[cₙ₋₁ c₀  c₁  ...  cₙ₋₂]
+[cₙ₋₂ cₙ₋₁ c₀  ...  cₙ₋₃]
+[...              ...]
+[c₁  c₂  c₃  ...  c₀  ]
+```
+"""
+function _is_circulant(mat)
+    n = size(mat, 1)
+    n == size(mat, 2) || return false
+    n <= 1 && return true  # Trivial case
+    
+    # Extract the first row
+    first_row = mat[1, :]
+    
+    # Check that each row is a cyclic shift of the first row
+    for i in 2:n
+        for j in 1:n
+            # Row i should have first_row shifted by (i-1) positions to the right
+            # mat[i, j] should equal first_row[mod1(j - (i-1), n)]
+            expected_idx = mod1(j - (i - 1), n)
+            if !_issymzero(mat[i, j] - first_row[expected_idx])
+                return false
+            end
+        end
+    end
+    
+    return true
+end
+
+"""
+    _circulant_eigenvalues(mat)
+
+Compute eigenvalues of a circulant matrix using the DFT formula.
+
+For a circulant matrix C = circ(c₀, c₁, ..., cₙ₋₁), the eigenvalues are:
+    λⱼ = c₀ + c₁ωʲ + c₂ω²ʲ + ... + cₙ₋₁ω⁽ⁿ⁻¹⁾ʲ
+
+where ω = exp(2πi/n) is the n-th primitive root of unity, for j = 0, 1, ..., n-1.
+
+This is essentially evaluating the polynomial p(z) = c₀ + c₁z + ... + cₙ₋₁zⁿ⁻¹
+at the n-th roots of unity.
+"""
+function _circulant_eigenvalues(mat)
+    n = size(mat, 1)
+    first_row = mat[1, :]
+    
+    # Compute eigenvalues using DFT formula
+    # ω = exp(2πi/n)
+    eigenvalues = Vector{Any}(undef, n)
+    
+    for j in 0:(n-1)
+        # λⱼ = Σₖ cₖ ω^(jk) = Σₖ cₖ exp(2πijk/n)
+        λ = first_row[1]  # c₀ term
+        
+        for k in 1:(n-1)
+            # ω^(jk) = exp(2πijk/n)
+            # We'll use: exp(iθ) = cos(θ) + i*sin(θ)
+            θ = 2 * π * j * k / n
+            ω_power = cos(θ) + im * sin(θ)
+            λ += first_row[k+1] * ω_power
+        end
+        
+        eigenvalues[j+1] = Symbolics.simplify(λ)
+    end
+    
+    return eigenvalues
+end
+
+"""
+    _is_block_circulant(mat)
+
+Check if a matrix is block circulant: a matrix partitioned into blocks where 
+each block row is a cyclic shift of the first block row.
+
+A block circulant matrix has the form:
+```
+[A₀  A₁  A₂  ...  Aₙ₋₁]
+[Aₙ₋₁ A₀  A₁  ...  Aₙ₋₂]
+[Aₙ₋₂ Aₙ₋₁ A₀  ...  Aₙ₋₃]
+[...              ...]
+[A₁  A₂  A₃  ...  A₀  ]
+```
+where each Aᵢ is a k×k block.
+
+Returns (n_blocks, block_size, blocks) if block circulant, nothing otherwise.
+- n_blocks: number of blocks per row/column
+- block_size: size of each square block (k×k)
+- blocks: vector [A₀, A₁, ..., Aₙ₋₁] of the blocks from the first block row
+"""
+function _is_block_circulant(mat)
+    m, n = size(mat)
+    m == n || return nothing
+    m <= 1 && return nothing  # Too small for meaningful block structure
+    
+    # Try different block sizes k where m is divisible by k
+    # Start with smallest non-trivial block size
+    for k in 2:div(m, 2)
+        m % k == 0 || continue
+        
+        n_blocks = div(m, k)
+        n_blocks >= 2 || continue  # Need at least 2 blocks
+        
+        # Extract blocks from the first block row
+        blocks = Vector{Matrix}(undef, n_blocks)
+        for block_idx in 1:n_blocks
+            col_start = (block_idx - 1) * k + 1
+            col_end = block_idx * k
+            blocks[block_idx] = mat[1:k, col_start:col_end]
+        end
+        
+        # Check if each block row is a cyclic shift
+        is_block_circulant = true
+        for block_row in 2:n_blocks
+            row_start = (block_row - 1) * k + 1
+            row_end = block_row * k
+            
+            for block_col in 1:n_blocks
+                col_start = (block_col - 1) * k + 1
+                col_end = block_col * k
+                
+                # This block should equal blocks[shift_idx] where shift_idx is determined by cyclic shift
+                # Block row block_row, column block_col should be blocks[mod1(block_col - (block_row - 1), n_blocks)]
+                shift_idx = mod1(block_col - (block_row - 1), n_blocks)
+                expected_block = blocks[shift_idx]
+                actual_block = mat[row_start:row_end, col_start:col_end]
+                
+                # Check if blocks match
+                if !all(_issymzero(actual_block[i, j] - expected_block[i, j]) 
+                       for i in 1:k, j in 1:k)
+                    is_block_circulant = false
+                    break
+                end
+            end
+            
+            is_block_circulant || break
+        end
+        
+        if is_block_circulant
+            return (n_blocks, k, blocks)
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    _is_numeric_matrix(mat)
+
+Check if all entries in the matrix are numeric (not symbolic).
+"""
+function _is_numeric_matrix(mat)
+    return all(x -> x isa Number, mat)
+end
+
+"""
+    _block_circulant_eigenvalues(mat, n_blocks, block_size, blocks)
+
+Compute eigenvalues of a block circulant matrix using block diagonalization.
+
+For a block circulant matrix with blocks [A₀, A₁, ..., Aₙ₋₁], the eigenvalues
+are the union of eigenvalues of the n matrices:
+
+    Dⱼ = Σₖ₌₀ⁿ⁻¹ ωʲᵏ Aₖ
+
+where ω = exp(2πi/n) is the n-th primitive root of unity, for j = 0, 1, ..., n-1.
+
+This reduces the n·k × n·k eigenvalue problem to n separate k×k eigenvalue problems.
+"""
+function _block_circulant_eigenvalues(mat, n_blocks, block_size, blocks; var=nothing, timeout=300, max_terms=10000)
+    n = n_blocks
+    k = block_size
+    
+    # Check if the matrix is fully numeric
+    is_numeric = _is_numeric_matrix(mat)
+    
+    all_eigenvalues = Vector{Any}()
+    
+    for j in 0:(n-1)
+        # Compute Dⱼ = Σₖ ωʲᵏ Aₖ
+        if is_numeric
+            D_j = zeros(Complex{Float64}, k, k)
+        else
+            D_j = zeros(eltype(mat), k, k)
+        end
+        
+        for block_idx in 0:(n-1)
+            # ω^(j*block_idx) = exp(2πi*j*block_idx/n)
+            θ = 2 * π * j * block_idx / n
+            ω_power = cos(θ) + im * sin(θ)
+            
+            D_j .+= ω_power .* blocks[block_idx + 1]
+        end
+        
+        # For numeric matrices, use direct eigenvalue computation
+        if is_numeric
+            vals_j = eigvals(D_j)
+            append!(all_eigenvalues, vals_j)
+        else
+            # For symbolic matrices, simplify and recursively solve
+            D_j = Symbolics.simplify.(D_j)
+            
+            # Recursively solve the k×k eigenvalue problem
+            try
+                vals_j, _, _ = symbolic_eigenvalues(D_j; var=var, structure=:auto, 
+                                                   expand=false, complexity_threshold=nothing,
+                                                   timeout=timeout, max_terms=max_terms)
+                append!(all_eigenvalues, vals_j)
+            catch e
+                # If we can't solve the block, this approach won't work
+                rethrow(e)
+            end
+        end
+    end
+    
+    return all_eigenvalues
+end
+
+"""
+    _is_kronecker_product(mat)
+
+Detect if a matrix is a Kronecker product A ⊗ B.
+
+A Kronecker product A ⊗ B (where A is m×m and B is n×n) produces an (mn)×(mn) matrix
+with block structure where each block A[i,j]*B appears at position (i,j).
+
+Returns (A, B, m, n) if pattern detected, nothing otherwise.
+
+Note: This is a heuristic detection that tries different factorizations.
+"""
+function _is_kronecker_product(mat)
+    N = size(mat, 1)
+    size(mat, 2) == N || return nothing
+    
+    # Try different factorizations: N = m * n
+    # We need at least 2×2 for both factors
+    for m in 2:div(N, 2)
+        N % m == 0 || continue
+        n = div(N, m)
+        n >= 2 || continue
+        
+        # Extract the reference block B from the (1,1) position
+        # This should be A[1,1] * B
+        B_candidate = mat[1:n, 1:n]
+        
+        # Check if B_candidate is zero - if so, we need a different reference block
+        if all(_issymzero.(B_candidate))
+            # Find first non-zero block
+            found_nonzero = false
+            for i_block in 1:m, j_block in 1:m
+                row_start = (i_block - 1) * n + 1
+                col_start = (j_block - 1) * n + 1
+                block = mat[row_start:row_start+n-1, col_start:col_start+n-1]
+                if !all(_issymzero.(block))
+                    B_candidate = block
+                    found_nonzero = true
+                    break
+                end
+            end
+            found_nonzero || continue
+        end
+        
+        # Try to extract A by looking at the pattern of blocks
+        A = zeros(eltype(mat), m, m)
+        for i_block in 1:m, j_block in 1:m
+            row_start = (i_block - 1) * n + 1
+            col_start = (j_block - 1) * n + 1
+            block = mat[row_start:row_start+n-1, col_start:col_start+n-1]
+            
+            # Check if block is a scalar multiple of B_candidate
+            # Find a non-zero element in B_candidate to determine the scalar
+            scalar = nothing
+            for i in 1:n, j in 1:n
+                if !_issymzero(B_candidate[i, j])
+                    # block should equal A[i_block, j_block] * B_candidate
+                    scalar = block[i, j] / B_candidate[i, j]
+                    break
+                end
+            end
+            
+            if isnothing(scalar)
+                # B_candidate was zero, so block should be zero
+                if !all(_issymzero.(block))
+                    @goto next_factorization
+                end
+                A[i_block, j_block] = 0
+            else
+                # Verify that block = scalar * B_candidate everywhere
+                for i in 1:n, j in 1:n
+                    expected = scalar * B_candidate[i, j]
+                    if !_issymzero(block[i, j] - expected)
+                        @goto next_factorization
+                    end
+                end
+                A[i_block, j_block] = scalar
+            end
+        end
+        
+        # Found a valid Kronecker factorization!
+        return (A, B_candidate, m, n)
+        
+        @label next_factorization
+    end
+    
+    return nothing
+end
+
+"""
+    _kronecker_eigenvalues(A, B, m, n; var=nothing, timeout=nothing, max_terms=nothing)
+
+Compute eigenvalues of Kronecker product A ⊗ B.
+
+The eigenvalues of A ⊗ B are all products λᵢ * μⱼ where λᵢ are eigenvalues of A
+and μⱼ are eigenvalues of B.
+
+For m×m matrix A with eigenvalues λ₁,...,λₘ and n×n matrix B with eigenvalues μ₁,...,μₙ,
+the (mn)×(mn) Kronecker product A ⊗ B has eigenvalues {λᵢμⱼ : i=1..m, j=1..n}.
+"""
+function _kronecker_eigenvalues(A, B, m, n; var=nothing, timeout=nothing, max_terms=nothing)
+    # Check if A and B are numeric - if so, use direct eigvals
+    is_A_numeric = _is_numeric_matrix(A)
+    is_B_numeric = _is_numeric_matrix(B)
+    
+    # Compute eigenvalues of A
+    λ_A = if is_A_numeric
+        # For numeric matrices, use direct computation
+        eigvals(A)
+    elseif m <= 4
+        vals_A, _, _ = symbolic_eigenvalues(A; var=var, structure=:auto, 
+                                          expand=false, complexity_threshold=nothing,
+                                          timeout=timeout, max_terms=max_terms)
+        vals_A
+    else
+        # Try recursive detection for A
+        vals_A, _, _ = symbolic_eigenvalues(A; var=var, structure=:auto, 
+                                          expand=false, complexity_threshold=nothing,
+                                          timeout=timeout, max_terms=max_terms)
+        vals_A
+    end
+    
+    # Compute eigenvalues of B
+    λ_B = if is_B_numeric
+        # For numeric matrices, use direct computation
+        eigvals(B)
+    elseif n <= 4
+        vals_B, _, _ = symbolic_eigenvalues(B; var=var, structure=:auto, 
+                                          expand=false, complexity_threshold=nothing,
+                                          timeout=timeout, max_terms=max_terms)
+        vals_B
+    else
+        # Try recursive detection for B
+        vals_B, _, _ = symbolic_eigenvalues(B; var=var, structure=:auto, 
+                                          expand=false, complexity_threshold=nothing,
+                                          timeout=timeout, max_terms=max_terms)
+        vals_B
+    end
+    
+    # Compute all products λᵢ * μⱼ
+    eigenvalues = []
+    for λ in λ_A, μ in λ_B
+        push!(eigenvalues, λ * μ)
+    end
+    
+    return eigenvalues
+end
 
 """
 Detect specific 5×5 tridiagonal patterns with closed-form eigenvalues.
@@ -651,6 +1105,310 @@ function _detect_special_5x5_tridiagonal(mat)
     end
     
     return nothing
+end
+
+"""
+    _is_toeplitz_tridiagonal(mat)
+
+Check if a matrix is a symmetric Toeplitz tridiagonal matrix with constant diagonals.
+Returns (a, b, c) where:
+- a is the main diagonal constant
+- b is the subdiagonal constant  
+- c is the superdiagonal constant
+
+Returns nothing if the matrix is not of this form or if it's not symmetric.
+
+A symmetric Toeplitz tridiagonal matrix has the form:
+```
+[a  b  0  0  ...]
+[b  a  b  0  ...]
+[0  b  a  b  ...]
+[...          ...]
+[0  0  0  b  a]
+```
+
+Note: We only handle the symmetric case (b = c) because the eigenvalue formula
+is guaranteed to work for symmetric matrices. For asymmetric tridiagonal matrices,
+the formula may not apply if the matrix is defective (non-diagonalizable).
+"""
+function _is_toeplitz_tridiagonal(mat)
+    n = size(mat, 1)
+    n == size(mat, 2) || return nothing
+    n <= 1 && return nothing  # Need at least 2×2
+    
+    # Check that matrix is symmetric first
+    if !_is_symmetric(mat)
+        return nothing
+    end
+    
+    # Check that matrix is tridiagonal (zeros beyond ±1 diagonals)
+    for i in 1:n, j in 1:n
+        if abs(i - j) > 1 && !_issymzero(mat[i, j])
+            return nothing
+        end
+    end
+    
+    # Extract diagonal constants
+    a = mat[1, 1]
+    
+    # Check main diagonal is constant
+    for i in 2:n
+        if !_issymzero(mat[i, i] - a)
+            return nothing
+        end
+    end
+    
+    # Extract and check subdiagonal (if it exists)
+    b = n > 1 ? mat[2, 1] : zero(eltype(mat))
+    for i in 3:n
+        if !_issymzero(mat[i, i-1] - b)
+            return nothing
+        end
+    end
+    
+    # For symmetric case, superdiagonal equals subdiagonal
+    c = b
+    
+    return (a, b, c)
+end
+
+"""
+    _toeplitz_tridiagonal_eigenvalues(n, a, b, c)
+
+Compute eigenvalues of an n×n symmetric Toeplitz tridiagonal matrix with constants (a, b, c).
+
+For a symmetric tridiagonal matrix (b = c), the eigenvalues are:
+    λₖ = a + 2b·cos(kπ/(n+1))  for k = 1, 2, ..., n
+
+This formula comes from the theory of orthogonal polynomials and is exact.
+"""
+function _toeplitz_tridiagonal_eigenvalues(n, a, b, c)
+    eigenvalues = Vector{Any}(undef, n)
+    
+    # For the symmetric case: λₖ = a + 2b·cos(kπ/(n+1))
+    # (We verified b = c in the detection function)
+    
+    for k in 1:n
+        θ = k * π / (n + 1)
+        λₖ = a + 2 * b * cos(θ)
+        eigenvalues[k] = Symbolics.simplify(λₖ)
+    end
+    
+    return eigenvalues
+end
+
+"""
+    _antidiagonal_eigenvalues(mat)
+
+Compute eigenvalues of an anti-diagonal matrix (non-zero only on anti-diagonal).
+
+An anti-diagonal matrix has the form:
+```
+[0  0  ... 0  a₁]
+[0  0  ... a₂ 0 ]
+[     ...       ]
+[0  aₙ₋₁ ... 0 0]
+[aₙ 0  ... 0  0 ]
+```
+
+For a symmetric anti-diagonal matrix, the eigenvalues are ±aₖ (with sign pattern
+depending on whether n is even or odd). For asymmetric cases, we use the fact that
+the matrix is similar to a diagonal matrix via a permutation.
+"""
+function _antidiagonal_eigenvalues(mat)
+    n = size(mat, 1)
+    # Extract anti-diagonal elements
+    antidiag = [mat[i, n + 1 - i] for i in 1:n]
+    
+    # For symmetric anti-diagonal: eigenvalues come in ±pairs
+    # For general case: we need to be more careful
+    # The eigenvalues depend on the parity structure
+    
+    # For now, handle the symmetric case
+    if _is_symmetric(mat)
+        eigenvalues = Vector{Any}(undef, n)
+        if n % 2 == 1
+            # Odd dimension: one zero eigenvalue, rest come in pairs
+            mid = (n + 1) ÷ 2
+            eigenvalues[1] = antidiag[mid]
+            idx = 2
+            for i in 1:mid-1
+                eigenvalues[idx] = antidiag[i]
+                eigenvalues[idx+1] = -antidiag[i]
+                idx += 2
+            end
+        else
+            # Even dimension: all come in ±pairs
+            idx = 1
+            for i in 1:n÷2
+                eigenvalues[idx] = antidiag[i]
+                eigenvalues[idx+1] = -antidiag[i]
+                idx += 2
+            end
+        end
+        return eigenvalues
+    else
+        # For non-symmetric, the analysis is more complex
+        # Return nothing to fall back to general method
+        return nothing
+    end
+end
+
+# ============================================================================
+# Permutation Matrix Pattern Detection and Computation
+# ============================================================================
+
+"""
+    _is_permutation_matrix(A)
+
+Check if matrix A is a permutation matrix (exactly one 1 in each row and column, rest zeros).
+
+Returns `true` if A is a permutation matrix, `false` otherwise.
+
+# Theory
+A permutation matrix P has exactly one 1 in each row and each column, with all other entries being 0.
+The eigenvalues of P are roots of unity, determined by its cycle structure.
+"""
+function _is_permutation_matrix(A)
+    n = size(A, 1)
+    
+    # Helper function to check if a value is 1
+    function _is_one(x)
+        return _issymzero(x - 1)
+    end
+    
+    # Check each row has exactly one 1 and rest zeros
+    for i in 1:n
+        count_ones = 0
+        for j in 1:n
+            val = A[i, j]
+            if _is_one(val)
+                count_ones += 1
+            elseif !_issymzero(val)
+                return false  # Found non-zero, non-one entry
+            end
+        end
+        if count_ones != 1
+            return false  # Row doesn't have exactly one 1
+        end
+    end
+    
+    # Check each column has exactly one 1
+    for j in 1:n
+        count_ones = 0
+        for i in 1:n
+            val = A[i, j]
+            if _is_one(val)
+                count_ones += 1
+            end
+        end
+        if count_ones != 1
+            return false  # Column doesn't have exactly one 1
+        end
+    end
+    
+    return true
+end
+
+"""
+    _permutation_to_cycles(A)
+
+Decompose permutation matrix A into its cycle structure.
+
+Returns a vector of cycle lengths (e.g., [3, 2, 2] for cycles of length 3, 2, and 2).
+
+# Example
+For a permutation that maps 1→2→3→1, 4→5→4, 6→7→6, returns [3, 2, 2].
+"""
+function _permutation_to_cycles(A)
+    n = size(A, 1)
+    visited = falses(n)
+    cycles = Int[]
+    
+    # Helper function to check if a value is 1
+    function _is_one(x)
+        return _issymzero(x - 1)
+    end
+    
+    for start in 1:n
+        if visited[start]
+            continue
+        end
+        
+        # Follow the cycle from start
+        cycle_length = 0
+        current = start
+        
+        while !visited[current]
+            visited[current] = true
+            cycle_length += 1
+            
+            # Find where current maps to
+            next = 0
+            for j in 1:n
+                if _is_one(A[current, j])
+                    next = j
+                    break
+                end
+            end
+            
+            current = next
+        end
+        
+        push!(cycles, cycle_length)
+    end
+    
+    return cycles
+end
+
+"""
+    _compute_permutation_eigenvalues(A)
+
+Compute eigenvalues of permutation matrix A using cycle decomposition.
+
+# Theory
+For a permutation matrix with cycles of lengths [k₁, k₂, ..., kₘ], the eigenvalues are:
+- For each cycle of length k: the k-th roots of unity exp(2πij/k) for j = 0, 1, ..., k-1
+
+This provides a closed-form solution for any size permutation matrix.
+
+# Returns
+Vector of eigenvalues (may include complex values for cycles of length > 2).
+"""
+function _compute_permutation_eigenvalues(A)
+    cycles = _permutation_to_cycles(A)
+    n = size(A, 1)
+    eigenvalues = Vector{Any}(undef, n)
+    
+    idx = 1
+    for cycle_length in cycles
+        if cycle_length == 1
+            # Fixed point: eigenvalue is 1
+            eigenvalues[idx] = 1
+            idx += 1
+        elseif cycle_length == 2
+            # 2-cycle: eigenvalues are 1 and -1
+            eigenvalues[idx] = 1
+            eigenvalues[idx + 1] = -1
+            idx += 2
+        else
+            # k-cycle: eigenvalues are k-th roots of unity
+            # exp(2πij/k) for j = 0, 1, ..., k-1
+            for j in 0:(cycle_length - 1)
+                if j == 0
+                    # j=0: eigenvalue is 1
+                    eigenvalues[idx] = 1
+                else
+                    # Use symbolic representation: exp(2*pi*im*j/k)
+                    angle = 2 * π * j / cycle_length
+                    eigenvalues[idx] = exp(im * angle)
+                end
+                idx += 1
+            end
+        end
+    end
+    
+    return eigenvalues
 end
 
 # ============================================================================

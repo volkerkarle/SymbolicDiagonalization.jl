@@ -8,6 +8,7 @@ Manifest.toml
 # Documentation builds
 docs/build/
 docs/site/
+./research/
 
 # Jupyter notebooks
 .ipynb_checkpoints/
