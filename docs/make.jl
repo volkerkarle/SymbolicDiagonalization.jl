@@ -23,7 +23,9 @@ makedocs(;
         canonical = "https://volkerkarle.github.io/SymbolicDiagonalization.jl",
         edit_link = "main",
         assets = String[],
+        repolink = "https://github.com/volkerkarle/SymbolicDiagonalization.jl",
     ),
+    logo = "assets/logo.png",
 )
 
 # Deploy documentation to GitHub Pages

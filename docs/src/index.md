@@ -1,5 +1,7 @@
 # SymbolicDiagonalization.jl
 
+![Logo](assets/logo.png)
+
 **Status: Functional Prototype**
 
 SymbolicDiagonalization.jl provides symbolic matrix diagonalization for Julia using `Symbolics.jl` with closed-form root solvers and structure detection.
