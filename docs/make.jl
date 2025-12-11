@@ -28,7 +28,7 @@ makedocs(;
 
 # Deploy documentation to GitHub Pages
 deploydocs(;
-    repo = "github.com/YOUR_USERNAME/SymbolicDiagonalization.jl",
+    repo = "github.com/volkerkarle/SymbolicDiagonalization.jl",
     devbranch = "main",
     push_preview = true,
 )
