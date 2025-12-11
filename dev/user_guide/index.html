@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>User Guide · SymbolicDiagonalization</title><meta name="title" content="User Guide · SymbolicDiagonalization"/><meta property="og:title" content="User Guide · SymbolicDiagonalization"/><meta property="twitter:title" content="User Guide · SymbolicDiagonalization"/><meta name="description" content="Documentation for SymbolicDiagonalization."/><meta property="og:description" content="Documentation for SymbolicDiagonalization."/><meta property="twitter:description" content="Documentation for SymbolicDiagonalization."/><meta property="og:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/user_guide/"/><meta property="twitter:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/user_guide/"/><link rel="canonical" href="https://volkerkarle.github.io/SymbolicDiagonalization.jl/user_guide/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">SymbolicDiagonalization</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>User Guide</a><ul class="internal"><li><a class="tocitem" href="#Table-of-Contents"><span>Table of Contents</span></a></li><li><a class="tocitem" href="#Getting-Started"><span>Getting Started</span></a></li><li><a class="tocitem" href="#Basic-Workflows"><span>Basic Workflows</span></a></li><li><a class="tocitem" href="#Working-with-Special-Patterns"><span>Working with Special Patterns</span></a></li><li><a class="tocitem" href="#Performance-Optimization"><span>Performance Optimization</span></a></li><li><a class="tocitem" href="#Troubleshooting"><span>Troubleshooting</span></a></li><li><a class="tocitem" href="#Advanced-Usage"><span>Advanced Usage</span></a></li><li><a class="tocitem" href="#Practical-Examples"><span>Practical Examples</span></a></li><li><a class="tocitem" href="#Next-Steps"><span>Next Steps</span></a></li><li><a class="tocitem" href="#Getting-Help"><span>Getting Help</span></a></li></ul></li><li><a class="tocitem" href="../api_reference/">API Reference</a></li><li><a class="tocitem" href="../pattern_library/">Pattern Library</a></li><li><a class="tocitem" href="../implementation/">Implementation Details</a></li><li><a class="tocitem" href="../mathematical_background/">Mathematical Background</a></li><li><a class="tocitem" href="../contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>User Guide</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>User Guide</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl/blob/main/docs/src/user_guide.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="User-Guide"><a class="docs-heading-anchor" href="#User-Guide">User Guide</a><a id="User-Guide-1"></a><a class="docs-heading-anchor-permalink" href="#User-Guide" title="Permalink"></a></h1><p>Practical guide to using <code>SymbolicDiagonalization.jl</code> effectively.</p><h2 id="Table-of-Contents"><a class="docs-heading-anchor" href="#Table-of-Contents">Table of Contents</a><a id="Table-of-Contents-1"></a><a class="docs-heading-anchor-permalink" href="#Table-of-Contents" title="Permalink"></a></h2><ul><li><a href="#getting-started">Getting Started</a></li><li><a href="#basic-workflows">Basic Workflows</a></li><li><a href="#working-with-special-patterns">Working with Special Patterns</a></li><li><a href="#performance-optimization">Performance Optimization</a></li><li><a href="#troubleshooting">Troubleshooting</a></li><li><a href="#advanced-usage">Advanced Usage</a></li></ul><hr/><h2 id="Getting-Started"><a class="docs-heading-anchor" href="#Getting-Started">Getting Started</a><a id="Getting-Started-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-Started" title="Permalink"></a></h2><h3 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h3><pre><code class="language-bash hljs"># From package directory
+cd SymbolicDiagonalization.jl
+julia --project -e &#39;using Pkg; Pkg.instantiate()&#39;</code></pre><h3 id="Basic-Setup"><a class="docs-heading-anchor" href="#Basic-Setup">Basic Setup</a><a id="Basic-Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Setup" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Symbolics
+using SymbolicDiagonalization
+using LinearAlgebra
+
+# Define symbolic variables
+@variables a b c d
+
+# Create a matrix
+M = [a b; b a]
+
+# Compute eigenvalues
+λ = eigvals(M)  # [a+b, a-b]</code></pre><h3 id="Quick-Reference"><a class="docs-heading-anchor" href="#Quick-Reference">Quick Reference</a><a id="Quick-Reference-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-Reference" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Eigenvalues only (fast)
+λ = eigvals(A)
+
+# Eigenvalues + eigenvectors
+E = eigen(A)
+E.values    # eigenvalues
+E.vectors   # eigenvectors as columns
+
+# With options
+λ = eigvals(A, structure=:hermitian, timeout=60)</code></pre><hr/><h2 id="Basic-Workflows"><a class="docs-heading-anchor" href="#Basic-Workflows">Basic Workflows</a><a id="Basic-Workflows-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Workflows" title="Permalink"></a></h2><h3 id="Workflow-1:-Analyze-Small-Matrices-(-44)"><a class="docs-heading-anchor" href="#Workflow-1:-Analyze-Small-Matrices-(-44)">Workflow 1: Analyze Small Matrices (≤ 4×4)</a><a id="Workflow-1:-Analyze-Small-Matrices-(-44)-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow-1:-Analyze-Small-Matrices-(-44)" title="Permalink"></a></h3><p><strong>When to use</strong>: You have a symbolic matrix up to 4×4 and need exact eigenvalues.</p><p><strong>Steps</strong>:</p><pre><code class="language-julia hljs">@variables a b c d
+
+# Create your matrix
+M = [a  b  0  0;
+     b  a  0  0;
+     0  0  c  d;
+     0  0  d  c]
+
+# Get eigenvalues (structure auto-detected)
+λ = eigvals(M)
+# Output: [a+b, a-b, c+d, c-d]
+
+# Get eigenvectors too
+E = eigen(M)</code></pre><p><strong>Tips</strong>:</p><ul><li>Matrices ≤ 3×3 compute quickly</li><li>4×4 may be slow for fully symbolic (use structure!)</li><li>Add structure when possible (zeros, blocks)</li></ul><hr/><h3 id="Workflow-2:-Block-Diagonal-Matrices"><a class="docs-heading-anchor" href="#Workflow-2:-Block-Diagonal-Matrices">Workflow 2: Block-Diagonal Matrices</a><a id="Workflow-2:-Block-Diagonal-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow-2:-Block-Diagonal-Matrices" title="Permalink"></a></h3><p><strong>When to use</strong>: Your matrix has block structure with zeros off the blocks.</p><p><strong>Steps</strong>:</p><pre><code class="language-julia hljs"># Large matrix with block structure
+@variables a b c d e f
+
+M = [a  b  0  0  0  0;
+     b  a  0  0  0  0;
+     0  0  c  d  0  0;
+     0  0  d  c  0  0;
+     0  0  0  0  e  f;
+     0  0  0  0  f  e]
+
+# Automatic block detection
+λ = eigvals(M)
+# Solves three 2×2 blocks independently</code></pre><p><strong>Why this is fast</strong>: 6×6 would normally require degree-6 polynomial (impossible), but block structure reduces to three quadratics.</p><p><strong>How to recognize</strong>: Look for zero-blocks separating independent subsystems.</p><hr/><h3 id="Workflow-3:-Circulant-Matrices"><a class="docs-heading-anchor" href="#Workflow-3:-Circulant-Matrices">Workflow 3: Circulant Matrices</a><a id="Workflow-3:-Circulant-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow-3:-Circulant-Matrices" title="Permalink"></a></h3><p><strong>When to use</strong>: Each row is a cyclic shift of the previous row.</p><p><strong>Steps</strong>:</p><pre><code class="language-julia hljs">@variables a b c d
+
+# 4×4 circulant
+C = [a b c d;
+     d a b c;
+     c d a b;
+     b c d a]
+
+# DFT-based closed form (works for ANY size!)
+λ = eigvals(C)</code></pre><p><strong>Pattern recognition</strong>:</p><pre><code class="nohighlight hljs">Row 1: [a b c d]
+Row 2: [d a b c]  ← shift right by 1
+Row 3: [c d a b]  ← shift right by 2
+Row 4: [b c d a]  ← shift right by 3</code></pre><p><strong>Works for huge matrices</strong>: Even 100×100 circulant has closed form!</p><hr/><h3 id="Workflow-4:-Tridiagonal-Matrices"><a class="docs-heading-anchor" href="#Workflow-4:-Tridiagonal-Matrices">Workflow 4: Tridiagonal Matrices</a><a id="Workflow-4:-Tridiagonal-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow-4:-Tridiagonal-Matrices" title="Permalink"></a></h3><p><strong>When to use</strong>: Matrix is tridiagonal with constant diagonals.</p><p><strong>Steps</strong>:</p><pre><code class="language-julia hljs">@variables a b
+
+# Symmetric Toeplitz tridiagonal
+n = 5
+T = diagm(0 =&gt; fill(a, n), 
+          1 =&gt; fill(b, n-1),
+         -1 =&gt; fill(b, n-1))
+
+# Closed-form via cosines
+λ = eigvals(T)
+# λₖ = a + 2b·cos(kπ/(n+1)) for k=1,...,n</code></pre><p><strong>Pattern recognition</strong>:</p><ul><li>All diagonal entries the same: a</li><li>All super-diagonal the same: b</li><li>All sub-diagonal the same: b</li><li>Symmetric</li></ul><hr/><h3 id="Workflow-5:-Kronecker-Products"><a class="docs-heading-anchor" href="#Workflow-5:-Kronecker-Products">Workflow 5: Kronecker Products</a><a id="Workflow-5:-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow-5:-Kronecker-Products" title="Permalink"></a></h3><p><strong>When to use</strong>: Matrix is a tensor product A ⊗ B.</p><p><strong>Steps</strong>:</p><pre><code class="language-julia hljs">@variables a b c d
+
+# Two small matrices
+A = [a 0; 0 b]  # 2×2
+B = [c 0; 0 d]  # 2×2
+
+# Kronecker product (4×4)
+K = kron(A, B)
+
+# Eigenvalues are products
+λ = eigvals(K)
+# [ac, ad, bc, bd]</code></pre><p><strong>Why this works</strong>: 4×4 is manageable, but what if A and B were larger?</p><p><strong>Example</strong>: 6×6 = (2×2) ⊗ (3×3)</p><pre><code class="language-julia hljs">A = [a b; b a]          # 2×2, eigenvalues {a+b, a-b}
+B = [c d 0; d c d; 0 d c]  # 3×3, eigenvalues computed via cubic
+
+K = kron(A, B)  # 6×6 matrix
+
+λ = eigvals(K)
+# Computes eigenvalues of A and B separately
+# Then forms all products λᵢ(A) · λⱼ(B)</code></pre><p>Without Kronecker structure, degree-6 polynomial is impossible!</p><hr/><h2 id="Working-with-Special-Patterns"><a class="docs-heading-anchor" href="#Working-with-Special-Patterns">Working with Special Patterns</a><a id="Working-with-Special-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Working-with-Special-Patterns" title="Permalink"></a></h2><h3 id="Hermitian-Matrices"><a class="docs-heading-anchor" href="#Hermitian-Matrices">Hermitian Matrices</a><a id="Hermitian-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Hermitian-Matrices" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables a::Real b::Real
+
+# Hermitian matrix (complex conjugate symmetric)
+H = [a b; conj(b) a]
+
+# Hint that it&#39;s Hermitian for optimizations
+λ = eigvals(H, structure=:hermitian)</code></pre><p><strong>Properties</strong>:</p><ul><li>Always real eigenvalues</li><li>Orthogonal eigenvectors</li><li>Diagonalizable</li></ul><hr/><h3 id="Permutation-Matrices"><a class="docs-heading-anchor" href="#Permutation-Matrices">Permutation Matrices</a><a id="Permutation-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Permutation-Matrices" title="Permalink"></a></h3><pre><code class="language-julia hljs"># 5×5 permutation: (1→2→3→1), (4↔5)
+P = [0 1 0 0 0;   # 1→2
+     0 0 1 0 0;   # 2→3
+     1 0 0 0 0;   # 3→1
+     0 0 0 0 1;   # 4→5
+     0 0 0 1 0]   # 5→4
+
+λ = eigvals(P)
+# 3-cycle: {1, ω, ω²} where ω = exp(2πi/3)
+# 2-cycle: {1, -1}
+# Total: {1, 1, 1, -1, ω, ω²}</code></pre><p><strong>Key insight</strong>: All eigenvalues are roots of unity (magnitude 1).</p><hr/><h3 id="Anti-Diagonal-Matrices"><a class="docs-heading-anchor" href="#Anti-Diagonal-Matrices">Anti-Diagonal Matrices</a><a id="Anti-Diagonal-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Anti-Diagonal-Matrices" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables a b c
+
+# 5×5 anti-diagonal
+A = [0 0 0 0 a;
+     0 0 0 b 0;
+     0 0 c 0 0;
+     0 b 0 0 0;
+     a 0 0 0 0]
+
+λ = eigvals(A)
+# {c, ±a, ±b}</code></pre><p><strong>Pattern</strong>: Eigenvalues come in ±pairs (except center for odd n).</p><hr/><h2 id="Performance-Optimization"><a class="docs-heading-anchor" href="#Performance-Optimization">Performance Optimization</a><a id="Performance-Optimization-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-Optimization" title="Permalink"></a></h2><h3 id="Tip-1:-Use-Structure-Hints"><a class="docs-heading-anchor" href="#Tip-1:-Use-Structure-Hints">Tip 1: Use Structure Hints</a><a id="Tip-1:-Use-Structure-Hints-1"></a><a class="docs-heading-anchor-permalink" href="#Tip-1:-Use-Structure-Hints" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Without hint (may be slower)
+λ₁ = eigvals(M)
+
+# With hint (faster)
+λ₂ = eigvals(M, structure=:hermitian)</code></pre><p><strong>When to use</strong>:</p><ul><li><code>:hermitian</code> - Hermitian matrices</li><li><code>:symmetric</code> - Real symmetric</li><li><code>:unitary</code> - Unitary matrices</li><li><code>:general</code> - No assumptions</li></ul><hr/><h3 id="Tip-2:-Eigenvalues-Only"><a class="docs-heading-anchor" href="#Tip-2:-Eigenvalues-Only">Tip 2: Eigenvalues Only</a><a id="Tip-2:-Eigenvalues-Only-1"></a><a class="docs-heading-anchor-permalink" href="#Tip-2:-Eigenvalues-Only" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Slow: computes eigenvectors
+E = eigen(M)
+λ = E.values
+
+# Fast: eigenvalues only
+λ = eigvals(M)</code></pre><p><strong>Speedup</strong>: 2-5x for medium matrices, more for large ones.</p><hr/><h3 id="Tip-3:-Partial-Substitution"><a class="docs-heading-anchor" href="#Tip-3:-Partial-Substitution">Tip 3: Partial Substitution</a><a id="Tip-3:-Partial-Substitution-1"></a><a class="docs-heading-anchor-permalink" href="#Tip-3:-Partial-Substitution" title="Permalink"></a></h3><p>If your matrix has many symbolic variables but some can be numeric:</p><pre><code class="language-julia hljs">@variables a b c d e f g h
+
+# Fully symbolic 4×4 (slow, huge expressions)
+M = [a b c d; e f g h; ...]
+
+# Substitute some variables
+using Symbolics: substitute
+M_partial = substitute(M, Dict(
+    c =&gt; 0, d =&gt; 0,  # Add structure with zeros
+    e =&gt; 0, g =&gt; 0
+))
+
+# Now much faster
+λ = eigvals(M_partial)</code></pre><hr/><h3 id="Tip-4:-Increase-Timeout-for-Complex-Matrices"><a class="docs-heading-anchor" href="#Tip-4:-Increase-Timeout-for-Complex-Matrices">Tip 4: Increase Timeout for Complex Matrices</a><a id="Tip-4:-Increase-Timeout-for-Complex-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Tip-4:-Increase-Timeout-for-Complex-Matrices" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Default timeout: 300 seconds
+λ = eigvals(M)
+
+# Allow more time
+λ = eigvals(M, timeout=600)</code></pre><hr/><h3 id="Tip-5:-Simplify-Results"><a class="docs-heading-anchor" href="#Tip-5:-Simplify-Results">Tip 5: Simplify Results</a><a id="Tip-5:-Simplify-Results-1"></a><a class="docs-heading-anchor-permalink" href="#Tip-5:-Simplify-Results" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Symbolics: simplify
+
+λ = eigvals(M)
+
+# Simplify expressions
+λ_simple = simplify.(λ)</code></pre><hr/><h2 id="Troubleshooting"><a class="docs-heading-anchor" href="#Troubleshooting">Troubleshooting</a><a id="Troubleshooting-1"></a><a class="docs-heading-anchor-permalink" href="#Troubleshooting" title="Permalink"></a></h2><h3 id="Problem:-&quot;Cannot-solve-degree-n-5-without-structure&quot;"><a class="docs-heading-anchor" href="#Problem:-&quot;Cannot-solve-degree-n-5-without-structure&quot;">Problem: &quot;Cannot solve degree n ≥ 5 without structure&quot;</a><a id="Problem:-&quot;Cannot-solve-degree-n-5-without-structure&quot;-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-&quot;Cannot-solve-degree-n-5-without-structure&quot;" title="Permalink"></a></h3><p><strong>Cause</strong>: Matrix is 5×5+ with no detected structure.</p><p><strong>Solutions</strong>:</p><ol><li><strong>Check for block structure</strong>:</li></ol><pre><code class="language-julia hljs"># Add zeros to create blocks
+M_blocked = [A zeros(2,2); zeros(3,2) B]</code></pre><ol><li><p><strong>Look for special patterns</strong>: Is it circulant? Tridiagonal? Kronecker product?</p></li><li><p><strong>Use numeric substitution</strong>:</p></li></ol><pre><code class="language-julia hljs"># Substitute some variables with numbers
+M_numeric = substitute(M, Dict(a =&gt; 1, b =&gt; 2))</code></pre><ol><li><strong>Use numerical methods</strong>:</li></ol><pre><code class="language-julia hljs"># Convert to Float64 and solve numerically
+M_float = Float64.(substitute(M, Dict(...)))
+λ_numeric = eigvals(M_float)  # Standard LinearAlgebra</code></pre><hr/><h3 id="Problem:-Expression-Complexity-Error"><a class="docs-heading-anchor" href="#Problem:-Expression-Complexity-Error">Problem: Expression Complexity Error</a><a id="Problem:-Expression-Complexity-Error-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-Expression-Complexity-Error" title="Permalink"></a></h3><p><strong>Cause</strong>: Expressions exceed <code>max_terms</code> limit (default 10,000).</p><p><strong>Solutions</strong>:</p><ol><li><strong>Increase limit</strong> (watch memory!):</li></ol><pre><code class="language-julia hljs">λ = eigvals(M, max_terms=50000)</code></pre><ol><li><strong>Add structure</strong>:</li></ol><pre><code class="language-julia hljs"># Replace off-block elements with zeros
+M_sparse = ...</code></pre><ol><li><strong>Use expand=false</strong>:</li></ol><pre><code class="language-julia hljs">λ = eigvals(M, expand=false)</code></pre><hr/><h3 id="Problem:-Computation-Timeout"><a class="docs-heading-anchor" href="#Problem:-Computation-Timeout">Problem: Computation Timeout</a><a id="Problem:-Computation-Timeout-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-Computation-Timeout" title="Permalink"></a></h3><p><strong>Cause</strong>: Exceeded time limit (default 300s).</p><p><strong>Solutions</strong>:</p><ol><li><strong>Increase timeout</strong>:</li></ol><pre><code class="language-julia hljs">λ = eigvals(M, timeout=900)  # 15 minutes</code></pre><ol><li><strong>Simplify matrix</strong>:</li></ol><pre><code class="language-julia hljs"># Use fewer variables
+# Add structure (zeros, blocks)
+# Partial numeric substitution</code></pre><ol><li><strong>Check matrix size</strong>: 4×4 fully symbolic takes ~minutes. 5×5+ may be impossible.</li></ol><hr/><h3 id="Problem:-Wrong-Eigenvalues"><a class="docs-heading-anchor" href="#Problem:-Wrong-Eigenvalues">Problem: Wrong Eigenvalues</a><a id="Problem:-Wrong-Eigenvalues-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-Wrong-Eigenvalues" title="Permalink"></a></h3><p><strong>Cause</strong>: Incorrect structure hint or numerical issues.</p><p><strong>Solutions</strong>:</p><ol><li><strong>Remove structure hint</strong>:</li></ol><pre><code class="language-julia hljs">λ = eigvals(M)  # Auto-detect</code></pre><ol><li><strong>Verify numerically</strong>:</li></ol><pre><code class="language-julia hljs"># Substitute numeric values
+M_test = substitute(M, Dict(a=&gt;1, b=&gt;2, c=&gt;3))
+λ_numeric = eigvals(M_test)
+
+# Check against symbolic
+λ_sym = eigvals(M)
+λ_sym_test = substitute.(λ_sym, Ref(Dict(a=&gt;1, b=&gt;2, c=&gt;3)))
+
+# Compare
+@assert isapprox(sort(λ_numeric), sort(λ_sym_test))</code></pre><hr/><h3 id="Problem:-Expression-Too-Large-(Memory-Issues)"><a class="docs-heading-anchor" href="#Problem:-Expression-Too-Large-(Memory-Issues)">Problem: Expression Too Large (Memory Issues)</a><a id="Problem:-Expression-Too-Large-(Memory-Issues)-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-Expression-Too-Large-(Memory-Issues)" title="Permalink"></a></h3><p><strong>Cause</strong>: Quartic formula on fully symbolic 4×4 produces ~13.5 MB per eigenvalue.</p><p><strong>Solutions</strong>:</p><ol><li><p><strong>Don&#39;t use fully symbolic 4×4</strong>: Add structure!</p></li><li><p><strong>Partial substitution</strong>:</p></li></ol><pre><code class="language-julia hljs">M_partial = substitute(M, Dict(
+    # Set some entries to simple values
+    M[1,3] =&gt; 0,
+    M[1,4] =&gt; 0,
+    M[2,4] =&gt; 0
+))</code></pre><ol><li><strong>Use block structure</strong>:</li></ol><pre><code class="language-julia hljs"># Instead of 4×4, use 2×2 blocks
+M = [A zeros(2,2); zeros(2,2) B]</code></pre><hr/><h2 id="Advanced-Usage"><a class="docs-heading-anchor" href="#Advanced-Usage">Advanced Usage</a><a id="Advanced-Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Advanced-Usage" title="Permalink"></a></h2><h3 id="Custom-Eigenvalue-Variables"><a class="docs-heading-anchor" href="#Custom-Eigenvalue-Variables">Custom Eigenvalue Variables</a><a id="Custom-Eigenvalue-Variables-1"></a><a class="docs-heading-anchor-permalink" href="#Custom-Eigenvalue-Variables" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables λ a b
+
+M = [a b; b a]
+
+# Use specific variable name
+vals, poly, λ_var = symbolic_eigenvalues(M, var=λ)</code></pre><hr/><h3 id="Characteristic-Polynomial-Only"><a class="docs-heading-anchor" href="#Characteristic-Polynomial-Only">Characteristic Polynomial Only</a><a id="Characteristic-Polynomial-Only-1"></a><a class="docs-heading-anchor-permalink" href="#Characteristic-Polynomial-Only" title="Permalink"></a></h3><pre><code class="language-julia hljs">M = [a b; b a]
+
+poly, coeffs, λ = characteristic_polynomial(M)
+# poly: λ² - 2a·λ + (a² - b²)
+# coeffs: [a² - b², -2a, 1]</code></pre><hr/><h3 id="Eigenpairs-with-Multiplicity"><a class="docs-heading-anchor" href="#Eigenpairs-with-Multiplicity">Eigenpairs with Multiplicity</a><a id="Eigenpairs-with-Multiplicity-1"></a><a class="docs-heading-anchor-permalink" href="#Eigenpairs-with-Multiplicity" title="Permalink"></a></h3><pre><code class="language-julia hljs">M = [a 0 0; 0 a 1; 0 0 a]  # Jordan block
+
+pairs = symbolic_eigenpairs(M)
+# [(a, [v₁, v₂, ...])]  # May have multiple eigenvectors</code></pre><hr/><h3 id="Verification"><a class="docs-heading-anchor" href="#Verification">Verification</a><a id="Verification-1"></a><a class="docs-heading-anchor-permalink" href="#Verification" title="Permalink"></a></h3><pre><code class="language-julia hljs">P, D, pairs = symbolic_diagonalize(M)
+
+# Verify: M = P * D * P⁻¹
+using Symbolics: simplify
+err = simplify.(M - P * D * inv(P))
+@assert all(iszero, err)</code></pre><hr/><h3 id="Mixed-Numeric-Symbolic"><a class="docs-heading-anchor" href="#Mixed-Numeric-Symbolic">Mixed Numeric-Symbolic</a><a id="Mixed-Numeric-Symbolic-1"></a><a class="docs-heading-anchor-permalink" href="#Mixed-Numeric-Symbolic" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Some entries numeric, some symbolic
+@variables a b
+
+M = [a   1.5  0   0;
+     1.5 b    0   0;
+     0   0    2.0 1.0;
+     0   0    1.0 3.0]
+
+λ = eigvals(M)  # Works fine!</code></pre><hr/><h2 id="Practical-Examples"><a class="docs-heading-anchor" href="#Practical-Examples">Practical Examples</a><a id="Practical-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Practical-Examples" title="Permalink"></a></h2><h3 id="Example-1:-Vibrating-String"><a class="docs-heading-anchor" href="#Example-1:-Vibrating-String">Example 1: Vibrating String</a><a id="Example-1:-Vibrating-String-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1:-Vibrating-String" title="Permalink"></a></h3><p>Discrete model of vibrating string with n masses:</p><pre><code class="language-julia hljs">@variables k m ω
+
+n = 5
+# Stiffness matrix (tridiagonal)
+K = diagm(0 =&gt; fill(2k, n),
+          1 =&gt; fill(-k, n-1),
+         -1 =&gt; fill(-k, n-1))
+
+# Eigenfrequencies: ω² = λ/m
+λ = eigvals(K)
+ω_squared = λ ./ m
+
+# ωₖ = √(λₖ/m) = √(k/m) · √(4sin²(kπ/(2(n+1))))</code></pre><hr/><h3 id="Example-2:-Quantum-Tight-Binding-Model"><a class="docs-heading-anchor" href="#Example-2:-Quantum-Tight-Binding-Model">Example 2: Quantum Tight-Binding Model</a><a id="Example-2:-Quantum-Tight-Binding-Model-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2:-Quantum-Tight-Binding-Model" title="Permalink"></a></h3><p>1D tight-binding Hamiltonian:</p><pre><code class="language-julia hljs">@variables t ε
+
+n = 4
+H = diagm(0 =&gt; fill(ε, n),
+          1 =&gt; fill(-t, n-1),
+         -1 =&gt; fill(-t, n-1))
+
+# Energy eigenvalues
+E = eigvals(H)
+# Eₖ = ε - 2t·cos(kπ/(n+1))</code></pre><hr/><h3 id="Example-3:-Graph-Laplacian-(Cycle)"><a class="docs-heading-anchor" href="#Example-3:-Graph-Laplacian-(Cycle)">Example 3: Graph Laplacian (Cycle)</a><a id="Example-3:-Graph-Laplacian-(Cycle)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3:-Graph-Laplacian-(Cycle)" title="Permalink"></a></h3><p>Laplacian of cycle graph Cₙ:</p><pre><code class="language-julia hljs">@variables d
+
+n = 6
+# Cycle graph Laplacian (circulant!)
+L = [2d -d  0   0  0  -d;
+     -d 2d -d   0  0   0;
+      0 -d 2d  -d  0   0;
+      0  0 -d  2d -d   0;
+      0  0  0  -d 2d  -d;
+     -d  0  0   0 -d  2d]
+
+# Eigenvalues via circulant formula
+λ = eigvals(L)
+# λₖ = 2d(1 - cos(2πk/n)) for k=0,...,n-1</code></pre><hr/><h3 id="Example-4:-Coupled-Oscillators"><a class="docs-heading-anchor" href="#Example-4:-Coupled-Oscillators">Example 4: Coupled Oscillators</a><a id="Example-4:-Coupled-Oscillators-1"></a><a class="docs-heading-anchor-permalink" href="#Example-4:-Coupled-Oscillators" title="Permalink"></a></h3><p>Two coupled 2D oscillators:</p><pre><code class="language-julia hljs">@variables k₁ k₂ κ m
+
+# Each oscillator: 2×2 block
+A = [k₁ 0; 0 k₁] / m
+B = [k₂ 0; 0 k₂] / m
+
+# Coupling
+C = [κ 0; 0 κ] / m
+
+# Full system (4×4)
+M = [A C; C B]
+
+# If κ=0: decoupled (block-diagonal)
+# If κ≠0: analyze coupled system
+
+λ = eigvals(M)</code></pre><hr/><h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><ul><li><strong><a href="../api_reference/">API Reference</a></strong> - Complete function documentation</li><li><strong><a href="../pattern_library/">Pattern Library</a></strong> - All special patterns</li><li><strong><a href="../mathematical_background/">Mathematical Background</a></strong> - Theory</li><li><strong><a href="../implementation/">Implementation</a></strong> - Algorithm details</li><li><strong><a href="../contributing/">Contributing</a></strong> - How to add new patterns</li></ul><hr/><h2 id="Getting-Help"><a class="docs-heading-anchor" href="#Getting-Help">Getting Help</a><a id="Getting-Help-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-Help" title="Permalink"></a></h2><ol><li><strong>Check documentation</strong>: API reference, pattern library</li><li><strong>Verify numerically</strong>: Test with numeric values first</li><li><strong>Simplify problem</strong>: Remove variables, add structure</li><li><strong>Report issues</strong>: GitHub issues with minimal reproducible example</li></ol></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api_reference/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 11 December 2025 18:26">Thursday 11 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
