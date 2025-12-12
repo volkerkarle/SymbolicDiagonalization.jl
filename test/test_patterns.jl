@@ -579,3 +579,134 @@ end
     M5 = [a 0 0; 0 b 0; 0 0 c]  # Diagonal, not anti-diagonal
     @test !SymbolicDiagonalization._is_antidiagonal(M5)
 end
+# ============================================================================
+# Group Theory Pattern Tests
+# Tests for hypercube graphs, strongly regular graphs, etc.
+# ============================================================================
+
+@testset "Hypercube Graphs" begin
+    # Test Q_1: 2×2 hypercube (single edge)
+    Q1 = [0 1; 1 0]
+    @test SymbolicDiagonalization._is_hypercube_graph(Q1) == 1
+    
+    vals, poly, λ = symbolic_eigenvalues(Q1)
+    @test length(vals) == 2
+    # Q_1 eigenvalues: 1 - 2*0 = 1, 1 - 2*1 = -1
+    @test sort([1, -1]) == sort(vals)
+    
+    # Test Q_2: 4×4 hypercube (square)
+    Q2 = [0 1 1 0;
+          1 0 0 1;
+          1 0 0 1;
+          0 1 1 0]
+    @test SymbolicDiagonalization._is_hypercube_graph(Q2) == 2
+    
+    vals, poly, λ = symbolic_eigenvalues(Q2)
+    @test length(vals) == 4
+    # Q_2 eigenvalues: 2, 0, 0, -2 (with multiplicities from binomial coefficients)
+    expected = [2, 0, 0, -2]  # λ_k = 2 - 2k for k=0,1,1,2
+    @test sort(vals) == sort(expected)
+    
+    # Test Q_3: 8×8 hypercube (cube)
+    # Structure: [Q_2  I_4; I_4  Q_2]
+    I4 = [1 0 0 0; 0 1 0 0; 0 0 1 0; 0 0 0 1]
+    Q3 = [Q2 I4; I4 Q2]
+    @test SymbolicDiagonalization._is_hypercube_graph(Q3) == 3
+    
+    vals, poly, λ = symbolic_eigenvalues(Q3)
+    @test length(vals) == 8
+    # Q_3 eigenvalues: 3, 1, 1, 1, -1, -1, -1, -3
+    # λ_k = 3 - 2k for k=0,1,2,3 with mult binomial(3,k) = 1,3,3,1
+    expected = [3, 1, 1, 1, -1, -1, -1, -3]
+    @test sort(vals) == sort(expected)
+    
+    # Verify eigenvalues numerically
+    numeric_eigs = eigvals(float.(Q3))
+    @test sort(real(numeric_eigs)) ≈ sort(real(vals)) atol=1e-10
+end
+
+@testset "Hypercube Q_4 (16×16)" begin
+    # Build Q_4 recursively
+    I8 = Matrix{Int}(I, 8, 8)
+    Q2 = [0 1 1 0; 1 0 0 1; 1 0 0 1; 0 1 1 0]
+    I4 = Matrix{Int}(I, 4, 4)
+    Q3 = [Q2 I4; I4 Q2]
+    Q4 = [Q3 I8; I8 Q3]
+    
+    @test SymbolicDiagonalization._is_hypercube_graph(Q4) == 4
+    
+    vals, poly, λ = symbolic_eigenvalues(Q4)
+    @test length(vals) == 16
+    
+    # Q_4 eigenvalues: λ_k = 4 - 2k for k=0..4 with mult binomial(4,k)
+    # Multiplicities: 1, 4, 6, 4, 1
+    expected = vcat([4], fill(2, 4), fill(0, 6), fill(-2, 4), [-4])
+    @test sort(vals) == sort(expected)
+    
+    # Verify numerically
+    numeric_eigs = eigvals(float.(Q4))
+    @test sort(real(numeric_eigs)) ≈ sort(real(vals)) atol=1e-10
+end
+
+@testset "Strongly Regular Graphs" begin
+    # Test Petersen graph: srg(10, 3, 0, 1)
+    # The Petersen graph is a well-known strongly regular graph
+    # Adjacency matrix (vertex numbering may vary)
+    Petersen = [
+        0 1 0 0 1 1 0 0 0 0;
+        1 0 1 0 0 0 1 0 0 0;
+        0 1 0 1 0 0 0 1 0 0;
+        0 0 1 0 1 0 0 0 1 0;
+        1 0 0 1 0 0 0 0 0 1;
+        1 0 0 0 0 0 0 1 1 0;
+        0 1 0 0 0 0 0 0 1 1;
+        0 0 1 0 0 1 0 0 0 1;
+        0 0 0 1 0 1 1 0 0 0;
+        0 0 0 0 1 0 1 1 0 0
+    ]
+    
+    # Check if detected as strongly regular
+    srg_params = SymbolicDiagonalization._is_strongly_regular_graph(Petersen)
+    @test !isnothing(srg_params)
+    n, k, λ_param, μ = srg_params
+    @test n == 10
+    @test k == 3
+    @test λ_param == 0
+    @test μ == 1
+    
+    # Compute eigenvalues
+    vals, poly, λ = symbolic_eigenvalues(Petersen)
+    @test length(vals) == 10
+    
+    # Petersen graph has eigenvalues: 3 (mult 1), 1 (mult 5), -2 (mult 4)
+    # Count each eigenvalue
+    vals_int = round.(Int, real.(vals))
+    @test count(==(3), vals_int) == 1
+    @test count(==(1), vals_int) == 5
+    @test count(==(-2), vals_int) == 4
+    
+    # Verify numerically
+    numeric_eigs = eigvals(float.(Petersen))
+    @test sort(real(numeric_eigs)) ≈ sort(real(vals)) atol=1e-10
+end
+
+@testset "Complete Graph K_5 as SRG" begin
+    # K_5 is srg(5, 4, 3, 4) - complete graph on 5 vertices
+    K5 = ones(Int, 5, 5) - I(5)
+    
+    srg_params = SymbolicDiagonalization._is_strongly_regular_graph(K5)
+    @test !isnothing(srg_params)
+    n, k, λ_param, μ = srg_params
+    @test n == 5
+    @test k == 4
+    @test λ_param == 3
+    @test μ == 4
+    
+    vals, poly, λ = symbolic_eigenvalues(K5)
+    @test length(vals) == 5
+    
+    # K_5 eigenvalues: 4 (mult 1), -1 (mult 4)
+    vals_int = round.(Int, real.(vals))
+    @test count(==(4), vals_int) == 1
+    @test count(==(-1), vals_int) == 4
+end
