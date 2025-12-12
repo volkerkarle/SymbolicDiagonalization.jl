@@ -783,6 +783,336 @@ For each $k$-cycle, add $k$ eigenvalues $\{\exp(2\pi ij/k) : j = 0, \ldots, k-1\
 
 ---
 
+## Group-Theoretic Patterns
+
+### Dihedral Symmetry Matrices
+
+**Structure**: Matrix commuting with dihedral group $D_n$ (rotations and reflections)
+
+**Symmetry conditions**:
+- Commutes with $n$-fold cyclic rotation $\mathbf{R}$: $\mathbf{A}\mathbf{R} = \mathbf{R}\mathbf{A}$
+- Commutes with reflection $\mathbf{F}$: $\mathbf{A}\mathbf{F} = \mathbf{F}\mathbf{A}$
+- Group relations: $\mathbf{R}^n = \mathbf{I}$, $\mathbf{F}^2 = \mathbf{I}$, $\mathbf{F}\mathbf{R}\mathbf{F} = \mathbf{R}^{-1}$
+
+**Example (Pentagon adjacency, $n=5$)**:
+```julia
+# Regular pentagon graph - 5-fold rotational and reflection symmetry
+A = [0 1 0 0 1;
+     1 0 1 0 0;
+     0 1 0 1 0;
+     0 0 1 0 1;
+     1 0 0 1 0]
+
+eigvals(A)  # [2, φ, φ, -1/φ, -1/φ] where φ = (1+√5)/2 (golden ratio)
+```
+
+**Eigenvalue structure**:
+- Irreducible representations of $D_n$ determine eigenspace dimensions
+- For $D_n$: Two 1-dimensional irreps + multiple 2-dimensional irreps
+- Reduces degree-$n$ problem to multiple smaller problems (often quadratic)
+
+**For odd $n$**:
+- 1 symmetric eigenvalue (irrep $A_1$)
+- 1 antisymmetric eigenvalue (irrep $A_2$)  
+- $(n-1)/2$ doubly degenerate eigenvalue pairs (2D irreps $E_k$)
+
+**For even $n$**:
+- 2 one-dimensional (symmetric/antisymmetric)
+- 2 one-dimensional (symmetric/antisymmetric w.r.t. perpendicular axis)
+- $(n-4)/2$ doubly degenerate pairs
+
+**Complexity**: $O(n)$ for detection + solving $(n-1)/2$ quadratic equations
+
+**Why this works**: 
+- Representation theory guarantees block-diagonal structure in symmetry-adapted basis
+- Each irrep block often has degree ≤ 2
+- Avoids solving full degree-$n$ characteristic polynomial
+
+**Applications**:
+- Regular polygon graphs (chemistry: cyclic molecules)
+- Crystal lattice symmetries
+- Molecular orbital theory (molecules with rotational + mirror symmetry)
+- Signal processing on circular arrays with reflection symmetry
+
+**Detection algorithm**:
+1. Test if matrix is circulant (rotation symmetry)
+2. Generate reflection operators for different axes
+3. Check if $[\mathbf{A}, \mathbf{F}] = 0$ for any reflection
+4. If both rotation and reflection symmetries → dihedral
+5. Apply character table decomposition
+
+**Mathematical properties**:
+- Real eigenvalues if matrix is real symmetric
+- Eigenvalues come in pairs (except for 1D irreps)
+- More efficient than general degree-$n$ polynomial
+
+---
+
+### Strongly Regular Graphs
+
+**Structure**: Adjacency matrix of strongly regular graph with parameters $(n, k, \lambda, \mu)$
+
+**Parameters**:
+- $n$: number of vertices
+- $k$: degree (each vertex has $k$ neighbors)
+- $\lambda$: adjacent vertices have $\lambda$ common neighbors
+- $\mu$: non-adjacent vertices have $\mu$ common neighbors
+
+**Verification conditions**:
+1. Binary matrix (entries 0 or 1)
+2. Zero diagonal (no self-loops)
+3. Symmetric
+4. All row sums equal $k$ (regular)
+5. For adjacent vertices $i,j$: exactly $\lambda$ common neighbors
+6. For non-adjacent vertices $i,j$: exactly $\mu$ common neighbors
+
+**Eigenvalues** (only 3 distinct values!):
+```math
+\lambda_1 = k \quad \text{(multiplicity 1)}
+```
+```math
+\lambda_2 = \frac{(\lambda - \mu) + \sqrt{\Delta}}{2} \quad \text{(multiplicity } f \text{)}
+```
+```math
+\lambda_3 = \frac{(\lambda - \mu) - \sqrt{\Delta}}{2} \quad \text{(multiplicity } g \text{)}
+```
+where $\Delta = (\lambda - \mu)^2 + 4(k - \mu)$ and $f + g = n - 1$.
+
+**Example 1: Petersen Graph** ($n=10, k=3, \lambda=0, \mu=1$):
+```julia
+# Petersen graph adjacency matrix (10×10)
+# Parameters: (10, 3, 0, 1)
+P = [0 1 0 0 1 1 0 0 0 0;
+     1 0 1 0 0 0 1 0 0 0;
+     0 1 0 1 0 0 0 1 0 0;
+     0 0 1 0 1 0 0 0 1 0;
+     1 0 0 1 0 0 0 0 0 1;
+     1 0 0 0 0 0 0 1 1 0;
+     0 1 0 0 0 0 0 0 1 1;
+     0 0 1 0 0 1 0 0 0 1;
+     0 0 0 1 0 1 1 0 0 0;
+     0 0 0 0 1 0 1 1 0 0]
+
+eigvals(P)  # [3, 1, 1, 1, 1, 1, -2, -2, -2, -2]
+```
+
+Formula: $\lambda_1 = 3$, $\Delta = (0-1)^2 + 4(3-1) = 9$
+- $\lambda_2 = (-1 + 3)/2 = 1$ (multiplicity 5)
+- $\lambda_3 = (-1 - 3)/2 = -2$ (multiplicity 4)
+
+**Example 2: Complete Bipartite Graph** $K_{m,n}$:
+```julia
+# K_{3,3} - complete bipartite graph
+K33 = [0 0 0 1 1 1;
+       0 0 0 1 1 1;
+       0 0 0 1 1 1;
+       1 1 1 0 0 0;
+       1 1 1 0 0 0;
+       1 1 1 0 0 0]
+
+eigvals(K33)  # [3, -3, 0, 0, 0, 0]
+```
+
+General: $K_{m,n}$ has eigenvalues $\{\sqrt{mn}, -\sqrt{mn}, 0, \ldots, 0\}$ with $m+n-2$ zeros.
+
+**Example 3: Cycle Graph** $C_5$ (also circulant):
+```julia
+C5 = [0 1 0 0 1;
+      1 0 1 0 0;
+      0 1 0 1 0;
+      0 0 1 0 1;
+      1 0 0 1 0]
+
+eigvals(C5)  # [2, φ, φ, -1/φ, -1/φ] where φ = (1+√5)/2
+```
+
+**Complexity**: $O(n^2)$ for verification, $O(1)$ for eigenvalue computation
+
+**Why this works**:
+- Strong regularity imposes severe constraints on eigenvalue structure
+- Symmetry forces all but 3 eigenvalues to be determined by the other two
+- Parameters $(n,k,\lambda,\mu)$ completely determine spectrum
+
+**Applications**:
+- Combinatorial designs
+- Error-correcting codes
+- Association schemes
+- Graph isomorphism testing
+- Network analysis (highly symmetric networks)
+
+**Famous examples**:
+- **Petersen graph**: $(10, 3, 0, 1)$
+- **Paley graphs**: Prime $p \equiv 1 \pmod{4}$, parameters $(p, (p-1)/2, (p-5)/4, (p-1)/4)$
+- **Conference graphs**: $n \equiv 2 \pmod{4}$, parameters $(n, (n-1)/2, (n-5)/4, (n-1)/4)$
+- **Latin square graphs**: From orthogonal Latin squares
+- **Triangular graphs** $T(n)$: Vertices = 2-subsets of $\{1,\ldots,n\}$
+
+**Mathematical properties**:
+- Eigenvalues are algebraic integers
+- Integer eigenvalues occur frequently
+- Spectrum often involves quadratic irrationals
+- Strong regularity $\Rightarrow$ walk-regularity (number of walks depends only on distance)
+
+---
+
+### Block-Circulant with Circulant Blocks (BCCB)
+
+**Structure**: Block-circulant matrix where each block is itself circulant
+
+**Matrix form** ($m \times m$ blocks, each $n \times n$):
+```math
+\mathbf{A} = \begin{bmatrix}
+C_0 & C_1 & C_2 & \cdots & C_{m-1} \\
+C_{m-1} & C_0 & C_1 & \cdots & C_{m-2} \\
+C_{m-2} & C_{m-1} & C_0 & \cdots & C_{m-3} \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+C_1 & C_2 & C_3 & \cdots & C_0
+\end{bmatrix}
+```
+where each $C_i$ is an $n \times n$ circulant matrix.
+
+**Example** ($2 \times 2$ blocks, each $3 \times 3$):
+```julia
+# Create 3×3 circulant blocks
+C0 = [1 2 3; 3 1 2; 2 3 1]
+C1 = [4 5 6; 6 4 5; 5 6 4]
+
+# Assemble 6×6 BCCB matrix
+A = [C0 C1;
+     C1 C0]
+
+eigvals(A)  # Computed via 2D DFT
+```
+
+**Eigenvalues**: 
+```math
+\lambda_{jk} = \sum_{p=0}^{m-1} \sum_{q=0}^{n-1} a_{pq} \cdot \omega_m^{jp} \cdot \omega_n^{kq}
+```
+where $\omega_m = e^{2\pi i/m}$, $\omega_n = e^{2\pi i/n}$, and $a_{pq}$ is the $(p,q)$ entry in the first block row.
+
+**Alternative formulation**:
+- View as doubly-circulant $(mn) \times (mn)$ matrix with 2D structure
+- Eigenvalues = 2D DFT of the $m \times n$ "generator matrix"
+
+**Complexity**: $O(mn \log(mn))$ using Fast Fourier Transform
+
+**Why this works**:
+- Combines two levels of circulant structure
+- Diagonalized by 2D Fourier basis (Kronecker product of 1D DFT matrices)
+- Extension of circulant matrix theory to higher dimensions
+
+**Applications**:
+- **Image processing**: Natural images have approximate BCCB structure
+- **2D convolution**: Convolution matrices are BCCB
+- **Partial differential equations**: Discretized 2D Laplacian with periodic BCs
+- **Signal processing**: 2D signals, video processing
+- **Compressed sensing**: Fast matrix-vector multiplication
+
+**Detection algorithm**:
+1. Check if matrix can be partitioned into blocks
+2. Verify block-level circulant structure (each block row is cyclic shift)
+3. Verify each block is circulant
+4. Extract generator matrix (first row of blocks, first row of each block)
+5. Apply 2D FFT
+
+**Mathematical properties**:
+- Always diagonalized by 2D DFT matrix
+- Eigenvalues can be complex even if matrix is real
+- Fast matrix-vector multiplication: $O(mn \log(mn))$ via FFT
+- Generalization: 3D, 4D, ... multi-level circulant (used in tensor computations)
+
+**Extensions**:
+- **Block-Toeplitz with Toeplitz blocks (BTTB)**: Similar but without circulant constraint
+- **Multi-level circulant**: More than 2 levels of nesting
+- **Kronecker sum structure**: Related to tensor product problems
+
+---
+
+### Hypercube Graphs
+
+**Structure**: Adjacency matrix of $n$-dimensional hypercube $Q_n$
+
+**Definition**: 
+- Vertices: Binary strings of length $n$ (total: $2^n$ vertices)
+- Edges: Connect vertices differing in exactly one bit
+
+**Example** ($Q_3$, 3D cube, 8 vertices):
+```julia
+# Vertices: 000, 001, 010, 011, 100, 101, 110, 111
+# Edges connect vertices differing in one bit
+Q3 = [0 1 1 0 1 0 0 0;
+      1 0 0 1 0 1 0 0;
+      1 0 0 1 0 0 1 0;
+      0 1 1 0 0 0 0 1;
+      1 0 0 0 0 1 1 0;
+      0 1 0 0 1 0 0 1;
+      0 0 1 0 1 0 0 1;
+      0 0 0 1 0 1 1 0]
+
+eigvals(Q3)  # [3, 1, 1, 1, -1, -1, -1, -3]
+```
+
+**Eigenvalues** (closed-form for any dimension $n$):
+```math
+\lambda_k = n - 2k, \quad k = 0, 1, 2, \ldots, n
+```
+
+**Multiplicities**:
+```math
+m_k = \binom{n}{k}
+```
+
+**Complete spectrum for $Q_n$**:
+- $\lambda = n$ with multiplicity $\binom{n}{0} = 1$
+- $\lambda = n-2$ with multiplicity $\binom{n}{1} = n$
+- $\lambda = n-4$ with multiplicity $\binom{n}{2}$
+- $\vdots$
+- $\lambda = -n+2$ with multiplicity $\binom{n}{n-1} = n$
+- $\lambda = -n$ with multiplicity $\binom{n}{n} = 1$
+
+**Examples**:
+- $Q_1$ (line): eigenvalues $\{1, -1\}$
+- $Q_2$ (square): eigenvalues $\{2, 0, 0, -2\}$
+- $Q_3$ (cube): eigenvalues $\{3, 1, 1, 1, -1, -1, -1, -3\}$
+- $Q_4$ (tesseract): eigenvalues $\{4, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, -2, -2, -2, -2, -2, -2, -4\}$
+
+**Complexity**: $O(1)$ for eigenvalue generation (just binomial coefficients!)
+
+**Why this works**:
+- Hypercube has extremely high symmetry (automorphism group is large)
+- Graph is Cayley graph of $\mathbb{Z}_2^n$ (Boolean group)
+- Eigenvectors are Walsh-Hadamard functions
+- Connection to Gray code and Boolean function analysis
+
+**Applications**:
+- **Parallel computing**: Hypercube network topology
+- **Boolean function analysis**: Walsh-Hadamard transform
+- **Coding theory**: Hamming distance, error correction
+- **Quantum computing**: Qubit state spaces
+- **Combinatorial optimization**: Traveling salesman, graph coloring
+
+**Detection algorithm**:
+1. Check if matrix is $2^n \times 2^n$ for some integer $n$
+2. Verify binary (0-1) adjacency matrix
+3. Check regularity: all vertices have degree $n$
+4. Verify diameter is $n$ (furthest vertices are $n$ edges apart)
+5. Check if matrix equals $I \otimes A_{n-1} + J \otimes I$ where $A_{n-1}$ is $(n-1)$-hypercube and $J$ is anti-diagonal
+
+**Mathematical properties**:
+- Bipartite graph (vertices partition by parity of bit sum)
+- Distance-regular graph
+- Symmetric (undirected edges)
+- Eigenvalues are integers
+- Maximum eigenvalue = degree = $n$
+- Characteristic polynomial: $\prod_{k=0}^n (\lambda - (n-2k))^{\binom{n}{k}}$
+
+**Relation to other structures**:
+- **Hamming graphs** $H(n,2)$: Equivalent to hypercube
+- **Johnson graphs** $J(2n, n)$: Related but different spectrum
+- **Cayley graphs**: Hypercube is Cayley graph of $(\mathbb{Z}_2)^n$
+
+---
+
 ## Summary Table
 
 | Pattern | Size Limit | Complexity | Key Property |
@@ -800,6 +1130,10 @@ For each $k$-cycle, add $k$ eigenvalues $\{\exp(2\pi ij/k) : j = 0, \ldots, k-1\
 | Permutation | Any $n$ | $O(n)$ | Roots of unity |
 | Special $5 \times 5$ [b,d,b,b] | $5 \times 5$ only | $O(1)$ | Empirical |
 | Special $5 \times 5$ [b,b,d,b] | $5 \times 5$ only | $O(1)$ | Empirical |
+| **Dihedral Symmetry** | Any $n$ | $O(n)$ + quadratics | Rep theory |
+| **Strongly Regular Graph** | Any $n$ | $O(n^2)$ verify, $O(1)$ compute | 3 eigenvalues |
+| **BCCB** | Any $m \times n$ | $O(mn \log(mn))$ | 2D DFT |
+| **Hypercube** $Q_n$ | $2^n$ | $O(n)$ | Binomial coefficients |
 
 ---
 

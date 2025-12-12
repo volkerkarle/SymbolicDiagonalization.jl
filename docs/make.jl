@@ -12,6 +12,7 @@ makedocs(;
         "User Guide" => "user_guide.md",
         "API Reference" => "api_reference.md",
         "Pattern Library" => "pattern_library.md",
+        "Group Theory Examples" => "group_theory_examples.md",
         "Implementation Details" => "implementation.md",
         "Mathematical Background" => "mathematical_background.md",
         "Contributing" => "contributing.md",

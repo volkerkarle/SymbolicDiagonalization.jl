@@ -195,6 +195,7 @@ vals = eigvals(mat)
 - **[User Guide](user_guide.md)** - Installation, basic usage, workflow examples
 - **[API Reference](api_reference.md)** - Complete function signatures and keyword arguments
 - **[Pattern Library](pattern_library.md)** - All 13 implemented patterns with examples and complexity analysis
+- **[Group Theory Examples](group_theory_examples.md)** - Worked examples using group theory and symmetry to diagonalize n≥5 matrices
 
 ### Developer Resources
 - **[Implementation Details](implementation.md)** - Algorithm descriptions, complexity analysis, performance considerations
