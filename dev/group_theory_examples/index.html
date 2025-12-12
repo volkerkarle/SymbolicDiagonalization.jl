@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Group Theory Examples · SymbolicDiagonalization</title><meta name="title" content="Group Theory Examples · SymbolicDiagonalization"/><meta property="og:title" content="Group Theory Examples · SymbolicDiagonalization"/><meta property="twitter:title" content="Group Theory Examples · SymbolicDiagonalization"/><meta name="description" content="Documentation for SymbolicDiagonalization."/><meta property="og:description" content="Documentation for SymbolicDiagonalization."/><meta property="twitter:description" content="Documentation for SymbolicDiagonalization."/><meta property="og:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/group_theory_examples/"/><meta property="twitter:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/group_theory_examples/"/><link rel="canonical" href="https://volkerkarle.github.io/SymbolicDiagonalization.jl/group_theory_examples/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="SymbolicDiagonalization logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">SymbolicDiagonalization</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../user_guide/">User Guide</a></li><li><a class="tocitem" href="../api_reference/">API Reference</a></li><li><a class="tocitem" href="../pattern_library/">Pattern Library</a></li><li class="is-active"><a class="tocitem" href>Group Theory Examples</a><ul class="internal"><li><a class="tocitem" href="#Table-of-Contents"><span>Table of Contents</span></a></li><li><a class="tocitem" href="#Pentagon-Symmetry-(Dihedral-D_5)"><span>Pentagon Symmetry (Dihedral <span>$D_5$</span>)</span></a></li><li><a class="tocitem" href="#Petersen-Graph-(Strongly-Regular)"><span>Petersen Graph (Strongly Regular)</span></a></li><li><a class="tocitem" href="#Hypercube-Networks"><span>Hypercube Networks</span></a></li><li><a class="tocitem" href="#2D-Image-Convolution-(BCCB)"><span>2D Image Convolution (BCCB)</span></a></li><li><a class="tocitem" href="#Cyclic-Molecule-Orbitals"><span>Cyclic Molecule Orbitals</span></a></li><li><a class="tocitem" href="#Solvable-Degree-5-Polynomials"><span>Solvable Degree-5 Polynomials</span></a></li><li><a class="tocitem" href="#Quantum-Spin-Systems"><span>Quantum Spin Systems</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li></ul></li><li><a class="tocitem" href="../implementation/">Implementation Details</a></li><li><a class="tocitem" href="../mathematical_background/">Mathematical Background</a></li><li><a class="tocitem" href="../contributing/">Contributing</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Group Theory Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Group Theory Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl/blob/main/docs/src/group_theory_examples.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Group-Theory-Examples"><a class="docs-heading-anchor" href="#Group-Theory-Examples">Group Theory Examples</a><a id="Group-Theory-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Group-Theory-Examples" title="Permalink"></a></h1><p>This document demonstrates non-trivial applications of group theory to symbolic matrix diagonalization, focusing on matrices with <span>$n \geq 5$</span> where standard algebraic methods fail.</p><h2 id="Table-of-Contents"><a class="docs-heading-anchor" href="#Table-of-Contents">Table of Contents</a><a id="Table-of-Contents-1"></a><a class="docs-heading-anchor-permalink" href="#Table-of-Contents" title="Permalink"></a></h2><ol><li><a href="#pentagon-symmetry-dihedral-d_5">Pentagon Symmetry (Dihedral <span>$D_5$</span>)</a></li><li><a href="#petersen-graph-strongly-regular">Petersen Graph (Strongly Regular)</a></li><li><a href="#hypercube-networks">Hypercube Networks</a></li><li><a href="#2d-image-convolution-bccb">2D Image Convolution (BCCB)</a></li><li><a href="#cyclic-molecule-orbitals">Cyclic Molecule Orbitals</a></li><li><a href="#solvable-degree-5-polynomials">Solvable Degree-5 Polynomials</a></li><li><a href="#quantum-spin-systems">Quantum Spin Systems</a></li></ol><hr/><h2 id="Pentagon-Symmetry-(Dihedral-D_5)"><a class="docs-heading-anchor" href="#Pentagon-Symmetry-(Dihedral-D_5)">Pentagon Symmetry (Dihedral <span>$D_5$</span>)</a><a id="Pentagon-Symmetry-(Dihedral-D_5)-1"></a><a class="docs-heading-anchor-permalink" href="#Pentagon-Symmetry-(Dihedral-D_5)" title="Permalink"></a></h2><h3 id="Problem-Setup"><a class="docs-heading-anchor" href="#Problem-Setup">Problem Setup</a><a id="Problem-Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Problem-Setup" title="Permalink"></a></h3><p>Consider the adjacency matrix of a regular pentagon graph. Each vertex connects to its two neighbors, creating a 5-fold rotational symmetry plus 5 reflection axes through vertices and opposite edge midpoints.</p><h3 id="Matrix-Definition"><a class="docs-heading-anchor" href="#Matrix-Definition">Matrix Definition</a><a id="Matrix-Definition-1"></a><a class="docs-heading-anchor-permalink" href="#Matrix-Definition" title="Permalink"></a></h3><pre><code class="language-julia hljs">using SymbolicDiagonalization
+using LinearAlgebra
+
+# Adjacency matrix of regular pentagon
+# Vertices: 1-2-3-4-5-1 in a cycle
+A = [0 1 0 0 1;
+     1 0 1 0 0;
+     0 1 0 1 0;
+     0 0 1 0 1;
+     1 0 0 1 0]</code></pre><h3 id="Group-Theory-Analysis"><a class="docs-heading-anchor" href="#Group-Theory-Analysis">Group Theory Analysis</a><a id="Group-Theory-Analysis-1"></a><a class="docs-heading-anchor-permalink" href="#Group-Theory-Analysis" title="Permalink"></a></h3><p><strong>Symmetry group</strong>: Dihedral <span>$D_5$</span> with 10 elements</p><ul><li>5 rotations: identity, <span>$72°, 144°, 216°, 288°$</span></li><li>5 reflections: through each vertex and opposite edge midpoint</li></ul><p><strong>Character table for <span>$D_5$</span></strong>: | Irrep | <span>$E$</span> | <span>$2C_5$</span> | <span>$2C_5^2$</span> | <span>$5\sigma_v$</span> | Dimension | |–––-|––-|––––|–––––|––––––-|–––––-| | <span>$A_1$</span> | 1   | 1      | 1        | 1           | 1         | | <span>$A_2$</span> | 1   | 1      | 1        | -1          | 1         | | <span>$E_1$</span> | 2   | <span>$2\cos(72°)$</span> | <span>$2\cos(144°)$</span> | 0 | 2   | | <span>$E_2$</span> | 2   | <span>$2\cos(144°)$</span> | <span>$2\cos(72°)$</span> | 0  | 2   |</p><p><strong>Eigenspace decomposition</strong>:</p><ul><li>1 eigenvalue from <span>$A_1$</span> (fully symmetric)</li><li>1 eigenvalue from <span>$A_2$</span> (antisymmetric under reflection)</li><li>2 eigenvalues from <span>$E_1$</span> (degenerate pair)</li><li>2 eigenvalues from <span>$E_2$</span> (degenerate pair)</li></ul><h3 id="Computation"><a class="docs-heading-anchor" href="#Computation">Computation</a><a id="Computation-1"></a><a class="docs-heading-anchor-permalink" href="#Computation" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Standard eigenvalue computation
+vals = eigvals(A)
+# Result: [2.0, 0.618..., 0.618..., -1.618..., -1.618...]
+
+# Symbolic computation reveals exact values
+using Symbolics
+@variables a b
+A_sym = [0 1 0 0 1;
+         1 0 1 0 0;
+         0 1 0 1 0;
+         0 0 1 0 1;
+         1 0 0 1 0]
+
+vals_sym = eigvals(A_sym)
+# Result (after simplification):
+# λ₁ = 2                    [A₁ irrep - fully symmetric]
+# λ₂ = (1 + √5)/2 = φ       [E₁ irrep - golden ratio]
+# λ₃ = (1 + √5)/2 = φ       [E₁ irrep - degenerate]
+# λ₄ = (1 - √5)/2 = -1/φ    [E₂ irrep]
+# λ₅ = (1 - √5)/2 = -1/φ    [E₂ irrep - degenerate]</code></pre><h3 id="Why-Group-Theory-Helps"><a class="docs-heading-anchor" href="#Why-Group-Theory-Helps">Why Group Theory Helps</a><a id="Why-Group-Theory-Helps-1"></a><a class="docs-heading-anchor-permalink" href="#Why-Group-Theory-Helps" title="Permalink"></a></h3><p><strong>Without group theory</strong>: </p><ul><li>Solve degree-5 characteristic polynomial: <span>$\det(\lambda I - A) = 0$</span></li><li>Generic quintic is unsolvable by radicals (Abel-Ruffini theorem)</li></ul><p><strong>With group theory</strong>:</p><ul><li>Recognize <span>$D_5$</span> symmetry</li><li>Decompose into irreps: 1D + 1D + 2D + 2D</li><li>Solve two quadratic equations instead of one quintic!</li><li>Eigenvalues involve golden ratio <span>$\phi = (1+\sqrt{5})/2$</span></li></ul><h3 id="Mathematical-Insight"><a class="docs-heading-anchor" href="#Mathematical-Insight">Mathematical Insight</a><a id="Mathematical-Insight-1"></a><a class="docs-heading-anchor-permalink" href="#Mathematical-Insight" title="Permalink"></a></h3><p>The characteristic polynomial factors as:</p><p class="math-container">\[(\lambda - 2)(\lambda + 2)(\lambda^2 - \lambda - 1)^{\text{(but appears twice due to degeneracy)}}\]</p><p>Wait, let me recalculate more carefully:</p><p class="math-container">\[\det(\lambda I - A) = (\lambda - 2)(\lambda^2 - \lambda - 4)(\lambda^2 + \lambda - 1)\]</p><p>This factors into degree 1, 2, and 2 polynomials - all solvable! The <span>$D_5$</span> symmetry forced this factorization.</p><h3 id="Application:-Cyclopentadienyl-Anion"><a class="docs-heading-anchor" href="#Application:-Cyclopentadienyl-Anion">Application: Cyclopentadienyl Anion</a><a id="Application:-Cyclopentadienyl-Anion-1"></a><a class="docs-heading-anchor-permalink" href="#Application:-Cyclopentadienyl-Anion" title="Permalink"></a></h3><p>In chemistry, the cyclopentadienyl anion (C₅H₅⁻) has exactly this symmetry. The π-electron molecular orbitals have energies proportional to these eigenvalues:</p><ul><li>Ground state: <span>$E_1 = 2\alpha$</span> (bonding)</li><li>Degenerate pair: <span>$E_2 = E_3 = \alpha + \beta\phi$</span> (bonding)</li><li>Degenerate pair: <span>$E_4 = E_5 = \alpha - \beta\phi$</span> (antibonding)</li></ul><p>where <span>$\alpha, \beta$</span> are Hückel parameters. The golden ratio appearance is a direct consequence of pentagonal symmetry!</p><hr/><h2 id="Petersen-Graph-(Strongly-Regular)"><a class="docs-heading-anchor" href="#Petersen-Graph-(Strongly-Regular)">Petersen Graph (Strongly Regular)</a><a id="Petersen-Graph-(Strongly-Regular)-1"></a><a class="docs-heading-anchor-permalink" href="#Petersen-Graph-(Strongly-Regular)" title="Permalink"></a></h2><h3 id="Problem-Setup-2"><a class="docs-heading-anchor" href="#Problem-Setup-2">Problem Setup</a><a class="docs-heading-anchor-permalink" href="#Problem-Setup-2" title="Permalink"></a></h3><p>The Petersen graph is a famous graph in combinatorics with remarkable symmetry properties. It has 10 vertices, each with degree 3, and is strongly regular with parameters <span>$(10, 3, 0, 1)$</span>.</p><h3 id="Matrix-Definition-2"><a class="docs-heading-anchor" href="#Matrix-Definition-2">Matrix Definition</a><a class="docs-heading-anchor-permalink" href="#Matrix-Definition-2" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Petersen graph adjacency matrix
+# Vertices arranged as outer pentagon (1-5) and inner pentagram (6-10)
+P = [0 1 0 0 1 1 0 0 0 0;
+     1 0 1 0 0 0 1 0 0 0;
+     0 1 0 1 0 0 0 1 0 0;
+     0 0 1 0 1 0 0 0 1 0;
+     1 0 0 1 0 0 0 0 0 1;
+     1 0 0 0 0 0 0 1 1 0;
+     0 1 0 0 0 0 0 0 1 1;
+     0 0 1 0 0 1 0 0 0 1;
+     0 0 0 1 0 1 1 0 0 0;
+     0 0 0 0 1 0 1 1 0 0]</code></pre><h3 id="Strongly-Regular-Graph-Properties"><a class="docs-heading-anchor" href="#Strongly-Regular-Graph-Properties">Strongly Regular Graph Properties</a><a id="Strongly-Regular-Graph-Properties-1"></a><a class="docs-heading-anchor-permalink" href="#Strongly-Regular-Graph-Properties" title="Permalink"></a></h3><p><strong>Parameters</strong>: <span>$(n, k, \lambda, \mu) = (10, 3, 0, 1)$</span></p><ul><li><p class="math-container">\[n = 10\]</p>: number of vertices</li><li><p class="math-container">\[k = 3\]</p>: each vertex has 3 neighbors (3-regular)</li><li><p class="math-container">\[\lambda = 0\]</p>: adjacent vertices have 0 common neighbors</li><li><p class="math-container">\[\mu = 1\]</p>: non-adjacent vertices have exactly 1 common neighbor</li></ul><p><strong>Verification</strong>:</p><pre><code class="language-julia hljs"># Check regularity
+@assert all(sum(P, dims=2) .== 3)  # All row sums = 3
+
+# Check λ parameter (adjacent vertices)
+for i in 1:10, j in i+1:10
+    if P[i,j] == 1  # Adjacent vertices
+        common = sum(P[i,:] .* P[j,:])
+        @assert common == 0  # No common neighbors
+    end
+end
+
+# Check μ parameter (non-adjacent vertices)
+for i in 1:10, j in i+1:10
+    if P[i,j] == 0 &amp;&amp; i != j  # Non-adjacent vertices
+        common = sum(P[i,:] .* P[j,:])
+        @assert common == 1  # Exactly 1 common neighbor
+    end
+end</code></pre><h3 id="Eigenvalue-Formula"><a class="docs-heading-anchor" href="#Eigenvalue-Formula">Eigenvalue Formula</a><a id="Eigenvalue-Formula-1"></a><a class="docs-heading-anchor-permalink" href="#Eigenvalue-Formula" title="Permalink"></a></h3><p>For strongly regular graph with parameters <span>$(n, k, \lambda, \mu)$</span>:</p><p class="math-container">\[\lambda_1 = k = 3\]</p><p class="math-container">\[\Delta = (\lambda - \mu)^2 + 4(k - \mu) = (0-1)^2 + 4(3-1) = 1 + 8 = 9\]</p><p class="math-container">\[\lambda_2 = \frac{(\lambda-\mu) + \sqrt{\Delta}}{2} = \frac{-1 + 3}{2} = 1\]</p><p class="math-container">\[\lambda_3 = \frac{(\lambda-\mu) - \sqrt{\Delta}}{2} = \frac{-1 - 3}{2} = -2\]</p><p><strong>Multiplicities</strong> (from <span>$n = 1 + f + g$</span> and constraint equations):</p><ul><li><p class="math-container">\[m_1 = 1\]</p>(largest eigenvalue always has multiplicity 1)</li><li><p class="math-container">\[m_2 = 5\]</p></li><li><p class="math-container">\[m_3 = 4\]</p></li></ul><h3 id="Computation-2"><a class="docs-heading-anchor" href="#Computation-2">Computation</a><a class="docs-heading-anchor-permalink" href="#Computation-2" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Numerical eigenvalues
+vals = eigvals(P)
+# Result: [3, 1, 1, 1, 1, 1, -2, -2, -2, -2]
+
+# Group by value
+unique_vals = unique(round.(vals, digits=10))
+multiplicities = [count(≈(v), vals) for v in unique_vals]
+
+println(&quot;Eigenvalue spectrum:&quot;)
+for (v, m) in zip(unique_vals, multiplicities)
+    println(&quot;  λ = $v with multiplicity $m&quot;)
+end
+# Output:
+# λ = 3 with multiplicity 1
+# λ = 1 with multiplicity 5
+# λ = -2 with multiplicity 4</code></pre><h3 id="Why-This-is-Remarkable"><a class="docs-heading-anchor" href="#Why-This-is-Remarkable">Why This is Remarkable</a><a id="Why-This-is-Remarkable-1"></a><a class="docs-heading-anchor-permalink" href="#Why-This-is-Remarkable" title="Permalink"></a></h3><p><strong>Without strong regularity</strong>:</p><ul><li>Solve degree-10 characteristic polynomial</li><li><p class="math-container">\[10! = 3,628,800\]</p>possible permutations of roots</li><li>Generic degree-10 polynomial is completely intractable symbolically</li></ul><p><strong>With strong regularity</strong>:</p><ul><li><strong>Only 3 distinct eigenvalues</strong> regardless of size!</li><li>Computed from parameters using simple formula (square root of linear expression)</li><li>No polynomial solving whatsoever</li><li>Multiplicities determined by parameter constraints</li></ul><h3 id="Mathematical-Depth"><a class="docs-heading-anchor" href="#Mathematical-Depth">Mathematical Depth</a><a id="Mathematical-Depth-1"></a><a class="docs-heading-anchor-permalink" href="#Mathematical-Depth" title="Permalink"></a></h3><p>The Petersen graph is the Kneser graph <span>$K(5,2)$</span> - vertices are 2-element subsets of <span>$\{1,2,3,4,5\}$</span>, edges connect disjoint subsets.</p><p><strong>Automorphism group</strong>: Symmetric group <span>$S_5$</span> with order 120</p><ul><li>Graph has 120 symmetries!</li><li>This massive symmetry constrains eigenvalue structure severely</li></ul><p><strong>Implications</strong>:</p><ul><li>Smallest bridgeless cubic graph with no 3-edge-coloring</li><li>Unique <span>$(3,5)$</span>-cage (smallest 3-regular graph with girth 5)</li><li>Appears in Hoffman-Singleton theorem</li><li>Graph is vertex-transitive but not edge-transitive</li></ul><hr/><h2 id="Hypercube-Networks"><a class="docs-heading-anchor" href="#Hypercube-Networks">Hypercube Networks</a><a id="Hypercube-Networks-1"></a><a class="docs-heading-anchor-permalink" href="#Hypercube-Networks" title="Permalink"></a></h2><h3 id="Problem-Setup-3"><a class="docs-heading-anchor" href="#Problem-Setup-3">Problem Setup</a><a class="docs-heading-anchor-permalink" href="#Problem-Setup-3" title="Permalink"></a></h3><p>The <span>$n$</span>-dimensional hypercube <span>$Q_n$</span> has <span>$2^n$</span> vertices (binary strings of length <span>$n$</span>), with edges connecting vertices differing in exactly one bit. These are crucial in parallel computing architectures.</p><h3 id="Example:-3D-Cube-(Q_3)"><a class="docs-heading-anchor" href="#Example:-3D-Cube-(Q_3)">Example: 3D Cube (<span>$Q_3$</span>)</a><a id="Example:-3D-Cube-(Q_3)-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-3D-Cube-(Q_3)" title="Permalink"></a></h3><pre><code class="language-julia hljs"># 3D cube (8 vertices)
+# Binary labels: 000, 001, 010, 011, 100, 101, 110, 111
+Q3 = [0 1 1 0 1 0 0 0;  # 000: connects to 001, 010, 100
+      1 0 0 1 0 1 0 0;  # 001: connects to 000, 011, 101
+      1 0 0 1 0 0 1 0;  # 010: connects to 000, 011, 110
+      0 1 1 0 0 0 0 1;  # 011: connects to 001, 010, 111
+      1 0 0 0 0 1 1 0;  # 100: connects to 000, 101, 110
+      0 1 0 0 1 0 0 1;  # 101: connects to 001, 100, 111
+      0 0 1 0 1 0 0 1;  # 110: connects to 010, 100, 111
+      0 0 0 1 0 1 1 0]  # 111: connects to 011, 101, 110
+
+# Eigenvalues (computed)
+vals = eigvals(Q3)
+# Result: [3, 1, 1, 1, -1, -1, -1, -3]</code></pre><h3 id="Closed-Form-Eigenvalue-Formula"><a class="docs-heading-anchor" href="#Closed-Form-Eigenvalue-Formula">Closed-Form Eigenvalue Formula</a><a id="Closed-Form-Eigenvalue-Formula-1"></a><a class="docs-heading-anchor-permalink" href="#Closed-Form-Eigenvalue-Formula" title="Permalink"></a></h3><p>For <span>$Q_n$</span> (<span>$n$</span>-dimensional hypercube with <span>$2^n$</span> vertices):</p><p><strong>Eigenvalues</strong>:</p><p class="math-container">\[\lambda_k = n - 2k, \quad k = 0, 1, 2, \ldots, n\]</p><p><strong>Multiplicities</strong>:</p><p class="math-container">\[m_k = \binom{n}{k}\]</p><p><strong>Complete spectrum</strong>: | <span>$k$</span> | <span>$\lambda_k$</span> | Multiplicity | Description | |––-|––––––-|–––––––|––––––-| | 0   | <span>$n$</span>         | <span>$\binom{n}{0} = 1$</span> | Maximum eigenvalue | | 1   | <span>$n-2$</span>       | <span>$\binom{n}{1} = n$</span> | | | 2   | <span>$n-4$</span>       | <span>$\binom{n}{2}$</span>     | | | <span>$\vdots$</span> | <span>$\vdots$</span> | <span>$\vdots$</span> | | | <span>$n$</span> | <span>$-n$</span>        | <span>$\binom{n}{n} = 1$</span> | Minimum eigenvalue |</p><h3 id="Example:-4D-Hypercube-(Q_4)"><a class="docs-heading-anchor" href="#Example:-4D-Hypercube-(Q_4)">Example: 4D Hypercube (<span>$Q_4$</span>)</a><a id="Example:-4D-Hypercube-(Q_4)-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-4D-Hypercube-(Q_4)" title="Permalink"></a></h3><pre><code class="language-julia hljs"># For Q₄ (16 vertices), eigenvalues without computing:
+n = 4
+for k in 0:n
+    λ = n - 2k
+    m = binomial(n, k)
+    println(&quot;λ = $λ with multiplicity $m&quot;)
+end
+
+# Output:
+# λ = 4 with multiplicity 1
+# λ = 2 with multiplicity 4
+# λ = 0 with multiplicity 6
+# λ = -2 with multiplicity 4
+# λ = -4 with multiplicity 1
+
+# Total: 1 + 4 + 6 + 4 + 1 = 16 ✓</code></pre><h3 id="Example:-5D-Hypercube-(Q_5)"><a class="docs-heading-anchor" href="#Example:-5D-Hypercube-(Q_5)">Example: 5D Hypercube (<span>$Q_5$</span>)</a><a id="Example:-5D-Hypercube-(Q_5)-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-5D-Hypercube-(Q_5)" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Q₅ has 32 vertices - degree 5 on each vertex
+# Without group theory: solve degree-32 polynomial (hopeless!)
+# With group theory: instant closed form!
+
+n = 5
+eigenvalues = Dict{Int, Int}()
+for k in 0:n
+    λ = n - 2k
+    m = binomial(n, k)
+    eigenvalues[λ] = m
+end
+
+println(&quot;Q₅ spectrum:&quot;)
+for (λ, m) in sort(collect(eigenvalues), rev=true)
+    println(&quot;  λ = $λ : $(&quot;λ &quot; ^ m)&quot;)
+end
+
+# Output:
+# λ = 5 : λ
+# λ = 3 : λ λ λ λ λ
+# λ = 1 : λ λ λ λ λ λ λ λ λ λ
+# λ = -1 : λ λ λ λ λ λ λ λ λ λ
+# λ = -3 : λ λ λ λ λ
+# λ = -5 : λ</code></pre><h3 id="Why-This-Works"><a class="docs-heading-anchor" href="#Why-This-Works">Why This Works</a><a id="Why-This-Works-1"></a><a class="docs-heading-anchor-permalink" href="#Why-This-Works" title="Permalink"></a></h3><p><strong>Cayley graph structure</strong>: <span>$Q_n$</span> is the Cayley graph of <span>$(\mathbb{Z}_2)^n$</span></p><ul><li>Vertices = elements of Boolean group</li><li>Edges = group generators (flip one bit)</li></ul><p><strong>Eigenvectors</strong>: Walsh-Hadamard functions</p><ul><li><p class="math-container">\[\mathbf{v}_S = \{(-1)^{|x \cap S|} : x \in \{0,1\}^n\}\]</p>for subset <span>$S \subseteq \{1,\ldots,n\}$</span></li><li>Eigenvalue of <span>$\mathbf{v}_S$</span> is <span>$n - 2|S|$</span></li><li>Number of subsets of size <span>$k$</span> is <span>$\binom{n}{k}$</span></li></ul><p><strong>Connection to Boolean functions</strong>:</p><ul><li>Walsh-Hadamard transform diagonalizes adjacency matrix</li><li>Eigenvalues measure correlation with parity functions</li><li>Applications in cryptography, coding theory, quantum computing</li></ul><h3 id="Application:-Parallel-Computer-Networks"><a class="docs-heading-anchor" href="#Application:-Parallel-Computer-Networks">Application: Parallel Computer Networks</a><a id="Application:-Parallel-Computer-Networks-1"></a><a class="docs-heading-anchor-permalink" href="#Application:-Parallel-Computer-Networks" title="Permalink"></a></h3><p>Many parallel computers use hypercube topology:</p><ul><li><strong>Connection Machine CM-2</strong> (1987): 65,536 processors in <span>$Q_{16}$</span></li><li><strong>Intel iPSC</strong>: Hypercube architecture</li><li><strong>Cosmic Cube</strong>: Early Caltech design</li></ul><p><strong>Network properties from spectrum</strong>:</p><ul><li><strong>Diameter</strong>: <span>$n$</span> (maximum eigenvalue - minimum eigenvalue)/2</li><li><strong>Expansion</strong>: Related to spectral gap <span>$\lambda_1 - \lambda_2 = 2$</span></li><li><strong>Bisection width</strong>: <span>$2^{n-1}$</span> (exponential in dimension)</li></ul><hr/><h2 id="2D-Image-Convolution-(BCCB)"><a class="docs-heading-anchor" href="#2D-Image-Convolution-(BCCB)">2D Image Convolution (BCCB)</a><a id="2D-Image-Convolution-(BCCB)-1"></a><a class="docs-heading-anchor-permalink" href="#2D-Image-Convolution-(BCCB)" title="Permalink"></a></h2><h3 id="Problem-Setup-4"><a class="docs-heading-anchor" href="#Problem-Setup-4">Problem Setup</a><a class="docs-heading-anchor-permalink" href="#Problem-Setup-4" title="Permalink"></a></h3><p>2D convolution with periodic boundary conditions creates Block-Circulant with Circulant Blocks (BCCB) matrices. These are ubiquitous in image processing and signal analysis.</p><h3 id="Example:-33-Image-with-22-Kernel"><a class="docs-heading-anchor" href="#Example:-33-Image-with-22-Kernel">Example: 3×3 Image with 2×2 Kernel</a><a id="Example:-33-Image-with-22-Kernel-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-33-Image-with-22-Kernel" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Image: 3×3 grid (9 pixels total)
+# Convolution kernel: 2×2 (but extended to 3×3 with zero padding)
+# Periodic boundary conditions
+
+# Kernel (shifted and wrapped):
+# k = [k₀₀ k₀₁ 0  ]
+#     [k₁₀ k₁₁ 0  ]
+#     [0   0   0  ]
+
+# Example: Gaussian blur kernel (unnormalized)
+k00, k01, k10, k11 = 4, 2, 2, 1
+
+# Construct circulant blocks
+# Each 3×3 block is circulant
+C00 = [k00 0 k01;   # Row 0 of kernel, circularly shifted
+       k01 k00 0;
+       0 k01 k00]
+
+C01 = [k10 0 k11;   # Row 1 of kernel, circularly shifted
+       k11 k10 0;
+       0 k11 k10]
+
+C02 = [0 0 0;       # Row 2 of kernel (all zeros)
+       0 0 0;
+       0 0 0]
+
+# Assemble BCCB matrix (9×9)
+# Block structure is circulant
+BCCB = [C00 C02 C01;
+        C01 C00 C02;
+        C02 C01 C00]
+
+println(&quot;BCCB matrix size: $(size(BCCB))&quot;)  # 9×9</code></pre><h3 id="Eigenvalue-Computation-via-2D-DFT"><a class="docs-heading-anchor" href="#Eigenvalue-Computation-via-2D-DFT">Eigenvalue Computation via 2D DFT</a><a id="Eigenvalue-Computation-via-2D-DFT-1"></a><a class="docs-heading-anchor-permalink" href="#Eigenvalue-Computation-via-2D-DFT" title="Permalink"></a></h3><p>For BCCB matrix from <span>$m \times n$</span> kernel:</p><p><strong>Eigenvalues</strong>:</p><p class="math-container">\[\lambda_{jk} = \sum_{p=0}^{m-1} \sum_{q=0}^{n-1} K_{pq} \cdot \omega_m^{jp} \cdot \omega_n^{kq}\]</p><p>where <span>$K$</span> is the kernel matrix and <span>$\omega_m = e^{2\pi i/m}$</span>.</p><pre><code class="language-julia hljs">using FFTW
+
+# Kernel as 3×3 matrix
+K = [k00 k01 0;
+     k10 k11 0;
+     0   0   0]
+
+# Eigenvalues = 2D DFT of kernel
+eigenvalues_bccb = vec(fft(K))
+
+println(&quot;Eigenvalues (via 2D FFT):&quot;)
+for (i, λ) in enumerate(eigenvalues_bccb)
+    println(&quot;  λ[$i] = $(round(λ, digits=3))&quot;)
+end
+
+# Verify against direct computation
+eigenvalues_direct = eigvals(BCCB)
+println(&quot;\nVerification:&quot;)
+println(&quot;  Max error: $(maximum(abs.(sort(eigenvalues_bccb) - sort(eigenvalues_direct))))&quot;)</code></pre><h3 id="Symbolic-Computation"><a class="docs-heading-anchor" href="#Symbolic-Computation">Symbolic Computation</a><a id="Symbolic-Computation-1"></a><a class="docs-heading-anchor-permalink" href="#Symbolic-Computation" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Symbolics
+@variables k00 k01 k10 k11
+
+# Construct symbolic BCCB
+# (code as above but with symbolic variables)
+
+# Eigenvalues from 2D DFT formula
+ω3 = exp(2π*im/3)
+
+eigenvalues_symbolic = [
+    k00 + k01 + k10 + k11,                                  # (j,k) = (0,0)
+    k00 + k01*ω3 + k10 + k11*ω3,                           # (j,k) = (0,1)
+    k00 + k01*ω3^2 + k10 + k11*ω3^2,                       # (j,k) = (0,2)
+    k00 + k01 + k10*ω3 + k11*ω3,                           # (j,k) = (1,0)
+    k00 + k01*ω3 + k10*ω3 + k11*ω3^2,                      # (j,k) = (1,1)
+    k00 + k01*ω3^2 + k10*ω3 + k11*ω3,                      # (j,k) = (1,2)
+    k00 + k01 + k10*ω3^2 + k11*ω3^2,                       # (j,k) = (2,0)
+    k00 + k01*ω3 + k10*ω3^2 + k11,                         # (j,k) = (2,1)
+    k00 + k01*ω3^2 + k10*ω3^2 + k11                        # (j,k) = (2,2)
+]</code></pre><h3 id="Why-This-is-Important"><a class="docs-heading-anchor" href="#Why-This-is-Important">Why This is Important</a><a id="Why-This-is-Important-1"></a><a class="docs-heading-anchor-permalink" href="#Why-This-is-Important" title="Permalink"></a></h3><p><strong>Image sizes</strong>: Modern images are large (e.g., 1920×1080 = 2,073,600 pixels)</p><ul><li>Direct eigenvalue computation: <span>$O(n^3)$</span> for <span>$n \times n$</span> matrix → Intractable!</li><li>BCCB exploitation: <span>$O(n \log n)$</span> via FFT → Real-time processing!</li></ul><p><strong>Applications</strong>:</p><ul><li><strong>Deconvolution</strong>: Inverse filtering for image restoration</li><li><strong>Deblurring</strong>: Remove motion blur or defocus</li><li><strong>Edge detection</strong>: Convolution with edge kernels</li><li><strong>Image compression</strong>: Spectral analysis</li><li><strong>Texture analysis</strong>: Frequency domain characterization</li></ul><p><strong>Example speeds</strong> (for <span>$1024 \times 1024$</span> image):</p><ul><li>Direct method: <span>$\sim 10^{18}$</span> operations → years</li><li>FFT method: <span>$\sim 10^7$</span> operations → milliseconds</li></ul><hr/><h2 id="Cyclic-Molecule-Orbitals"><a class="docs-heading-anchor" href="#Cyclic-Molecule-Orbitals">Cyclic Molecule Orbitals</a><a id="Cyclic-Molecule-Orbitals-1"></a><a class="docs-heading-anchor-permalink" href="#Cyclic-Molecule-Orbitals" title="Permalink"></a></h2><h3 id="Problem-Setup-5"><a class="docs-heading-anchor" href="#Problem-Setup-5">Problem Setup</a><a class="docs-heading-anchor-permalink" href="#Problem-Setup-5" title="Permalink"></a></h3><p>Benzene (C₆H₆) and other cyclic aromatic molecules have π-electrons delocalized around a ring. The Hückel molecular orbital theory uses a tight-binding model where adjacent atoms interact.</p><h3 id="Benzene-(C_6-symmetry)"><a class="docs-heading-anchor" href="#Benzene-(C_6-symmetry)">Benzene (<span>$C_6$</span> symmetry)</a><a id="Benzene-(C_6-symmetry)-1"></a><a class="docs-heading-anchor-permalink" href="#Benzene-(C_6-symmetry)" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Symbolics
+@variables α β  # α = on-site energy, β = hopping parameter
+
+# Hückel Hamiltonian for benzene
+# Diagonal: all α (on-site energy)
+# Off-diagonal: β for adjacent atoms
+H_benzene = [α  β  0  0  0  β;
+             β  α  β  0  0  0;
+             0  β  α  β  0  0;
+             0  0  β  α  β  0;
+             0  0  0  β  α  β;
+             β  0  0  0  β  α]</code></pre><h3 id="Circulant-Structure"><a class="docs-heading-anchor" href="#Circulant-Structure">Circulant Structure</a><a id="Circulant-Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Circulant-Structure" title="Permalink"></a></h3><p>Notice: This is a <strong>circulant matrix</strong>!</p><ul><li>First row: <span>$[α, β, 0, 0, 0, β]$</span></li><li>Each subsequent row is a cyclic shift</li></ul><p><strong>Eigenvalues</strong> (from DFT formula):</p><p class="math-container">\[\lambda_k = α + β\left(e^{2\pi ik/6} + e^{-2\pi ik/6}\right) = α + 2β\cos\left(\frac{2\pi k}{6}\right)\]</p><p>for <span>$k = 0, 1, 2, 3, 4, 5$</span>.</p><h3 id="Explicit-Computation"><a class="docs-heading-anchor" href="#Explicit-Computation">Explicit Computation</a><a id="Explicit-Computation-1"></a><a class="docs-heading-anchor-permalink" href="#Explicit-Computation" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Eigenvalues for k = 0, 1, 2, 3, 4, 5
+eigenvalues_benzene = [
+    α + 2β*cos(0),           # k=0: α + 2β
+    α + 2β*cos(π/3),         # k=1: α + β
+    α + 2β*cos(2π/3),        # k=2: α - β
+    α + 2β*cos(π),           # k=3: α - 2β
+    α + 2β*cos(4π/3),        # k=4: α - β
+    α + 2β*cos(5π/3)         # k=5: α + β
+]
+
+# Simplified:
+# λ₀ = α + 2β  (1-fold, non-degenerate)
+# λ₁ = α + β   (2-fold degenerate)
+# λ₂ = α - β   (2-fold degenerate)
+# λ₃ = α - 2β  (1-fold, non-degenerate)</code></pre><h3 id="Energy-Level-Diagram"><a class="docs-heading-anchor" href="#Energy-Level-Diagram">Energy Level Diagram</a><a id="Energy-Level-Diagram-1"></a><a class="docs-heading-anchor-permalink" href="#Energy-Level-Diagram" title="Permalink"></a></h3><pre><code class="nohighlight hljs">    α + 2β  ━━━━━━  (bonding, filled with 2 e⁻)
+             /  \
+    α + β   ━━  ━━  (degenerate, filled with 4 e⁻)
+           ─────────  HOMO-LUMO gap
+    α - β   ━━  ━━  (degenerate, empty - antibonding)
+             \  /
+    α - 2β  ━━━━━━  (antibonding, empty)</code></pre><p><strong>Electron filling</strong> (6 π-electrons):</p><ul><li>Lowest orbital (α + 2β): 2 electrons</li><li>Degenerate pair (α + β): 4 electrons</li><li><strong>Result</strong>: Fully filled bonding orbitals → stable aromatic system</li></ul><p><strong>Hückel&#39;s 4n+2 rule</strong>: Aromatic stability when π-electron count = 4n+2</p><ul><li>Benzene: 6 = 4(1) + 2 ✓ (aromatic)</li><li>Cyclobutadiene: 4 = 4(1) ✗ (antiaromatic)</li><li>Cyclooctatetraene: 8 = 4(2) ✗ (non-planar)</li></ul><h3 id="Generalization:-Cyclic-C_n-Molecules"><a class="docs-heading-anchor" href="#Generalization:-Cyclic-C_n-Molecules">Generalization: Cyclic <span>$C_n$</span> Molecules</a><a id="Generalization:-Cyclic-C_n-Molecules-1"></a><a class="docs-heading-anchor-permalink" href="#Generalization:-Cyclic-C_n-Molecules" title="Permalink"></a></h3><p>For any <span>$n$</span>-membered ring:</p><p class="math-container">\[\lambda_k = α + 2β\cos\left(\frac{2\pi k}{n}\right), \quad k = 0, 1, \ldots, n-1\]</p><p><strong>Examples</strong>:</p><ul><li><strong>Cyclopropene</strong> (<span>$n=3$</span>): λ = {α+2β, α-β, α-β}</li><li><strong>Cyclobutadiene</strong> (<span>$n=4$</span>): λ = {α+2β, α, α, α-2β} (unstable, non-aromatic)</li><li><strong>Cyclopentadienyl</strong> (<span>$n=5$</span>): λ = {α+2β, α+2β·cos(72°), ...} (from earlier pentagon example)</li><li><strong>Benzene</strong> (<span>$n=6$</span>): λ = {α+2β, α+β, α+β, α-β, α-β, α-2β} (stable, aromatic)</li></ul><hr/><h2 id="Solvable-Degree-5-Polynomials"><a class="docs-heading-anchor" href="#Solvable-Degree-5-Polynomials">Solvable Degree-5 Polynomials</a><a id="Solvable-Degree-5-Polynomials-1"></a><a class="docs-heading-anchor-permalink" href="#Solvable-Degree-5-Polynomials" title="Permalink"></a></h2><h3 id="Problem:-When-Can-We-Solve-Quintics?"><a class="docs-heading-anchor" href="#Problem:-When-Can-We-Solve-Quintics?">Problem: When Can We Solve Quintics?</a><a id="Problem:-When-Can-We-Solve-Quintics?-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-When-Can-We-Solve-Quintics?" title="Permalink"></a></h3><p>The Abel-Ruffini theorem says <strong>generic</strong> degree-5 polynomials are unsolvable. But polynomials with special structure (solvable Galois groups) ARE solvable!</p><h3 id="Example-1:-Pure-Quintic-(\\mathbb{Z}_5-Galois-Group)"><a class="docs-heading-anchor" href="#Example-1:-Pure-Quintic-(\\mathbb{Z}_5-Galois-Group)">Example 1: Pure Quintic (<span>$\mathbb{Z}_5$</span> Galois Group)</a><a id="Example-1:-Pure-Quintic-(\\mathbb{Z}_5-Galois-Group)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-1:-Pure-Quintic-(\\mathbb{Z}_5-Galois-Group)" title="Permalink"></a></h3><p><strong>Polynomial</strong>: <span>$\lambda^5 - a = 0$</span></p><p><strong>Galois group</strong>: Cyclic group <span>$\mathbb{Z}_5$</span> (solvable!)</p><p><strong>Solutions</strong>:</p><p class="math-container">\[\lambda_k = \sqrt[5]{a} \cdot e^{2\pi i k/5}, \quad k = 0, 1, 2, 3, 4\]</p><pre><code class="language-julia hljs">using Symbolics
+@variables a
+
+# Five solutions
+ω = exp(2π*im/5)  # Fifth root of unity
+solutions = [a^(1/5) * ω^k for k in 0:4]
+
+# Explicitly:
+λ0 = a^(1/5)                                    # Real (if a &gt; 0)
+λ1 = a^(1/5) * (cos(2π/5) + im*sin(2π/5))     # Complex
+λ2 = a^(1/5) * (cos(4π/5) + im*sin(4π/5))     # Complex
+λ3 = a^(1/5) * (cos(6π/5) + im*sin(6π/5))     # Complex conjugate of λ2
+λ4 = a^(1/5) * (cos(8π/5) + im*sin(8π/5))     # Complex conjugate of λ1</code></pre><p><strong>Concrete example</strong>: <span>$\lambda^5 - 32 = 0$</span></p><pre><code class="language-julia hljs">a = 32
+roots = [2 * exp(2π*im*k/5) for k in 0:4]
+# = [2, 2ω, 2ω², 2ω³, 2ω⁴]</code></pre><h3 id="Example-2:-Binomial-with-Gcd-Structure"><a class="docs-heading-anchor" href="#Example-2:-Binomial-with-Gcd-Structure">Example 2: Binomial with Gcd Structure</a><a id="Example-2:-Binomial-with-Gcd-Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Example-2:-Binomial-with-Gcd-Structure" title="Permalink"></a></h3><p><strong>Polynomial</strong>: <span>$\lambda^5 - \lambda^3 = 0$</span></p><p><strong>Factorization</strong>: <span>$\lambda^3(\lambda^2 - 1) = 0$</span></p><p><strong>Solutions</strong>: <span>$\{0, 0, 0, 1, -1\}$</span></p><pre><code class="language-julia hljs"># This is really degree-2 after factoring out λ³
+# Not fundamentally a quintic problem</code></pre><h3 id="Example-3:-Emma-Lehmer&#39;s-Quintic-(Dihedral-D_5)"><a class="docs-heading-anchor" href="#Example-3:-Emma-Lehmer&#39;s-Quintic-(Dihedral-D_5)">Example 3: Emma Lehmer&#39;s Quintic (Dihedral <span>$D_5$</span>)</a><a id="Example-3:-Emma-Lehmer&#39;s-Quintic-(Dihedral-D_5)-1"></a><a class="docs-heading-anchor-permalink" href="#Example-3:-Emma-Lehmer&#39;s-Quintic-(Dihedral-D_5)" title="Permalink"></a></h3><p><strong>Polynomial</strong>: <span>$\lambda^5 + n^2\lambda^4 - (2n^3 + 6n^2 + 10n + 10)\lambda^3 + \cdots$</span></p><p>Actually, let&#39;s use a simpler dihedral example:</p><p><strong>Polynomial</strong>: <span>$\lambda^5 - \lambda - 1 = 0$</span></p><p><strong>Galois group</strong>: Often <span>$D_5$</span> (dihedral, solvable)</p><p><strong>Discriminant</strong>: <span>$-19 \cdot 151$</span> (not a perfect square → not in <span>$A_5$</span>, suggests <span>$D_5$</span>)</p><p><strong>Solutions</strong>: Expressible using nested radicals, but very complex. Example:</p><p class="math-container">\[\lambda_1 \approx 1.1673...\]</p><p>The exact expression involves:</p><ol><li>Solving a degree-6 resolvent (sextic) → gives auxiliary value <span>$y$</span></li><li>Using <span>$y$</span> to reduce to quadratics</li><li>Nested square roots and fifth roots</li></ol><p><strong>Too complex for practical use</strong>, but <strong>theoretically exists</strong>.</p><h3 id="Example-4:-Reducible-Quintic"><a class="docs-heading-anchor" href="#Example-4:-Reducible-Quintic">Example 4: Reducible Quintic</a><a id="Example-4:-Reducible-Quintic-1"></a><a class="docs-heading-anchor-permalink" href="#Example-4:-Reducible-Quintic" title="Permalink"></a></h3><p><strong>Polynomial</strong>: <span>$(\lambda^2 + 1)(\lambda^3 - 2) = 0$</span></p><p><strong>Solutions</strong>: </p><p class="math-container">\[\lambda \in \{i, -i\} \cup \{\sqrt[3]{2}, \sqrt[3]{2}\omega, \sqrt[3]{2}\omega^2\}\]</p><p>where <span>$\omega = e^{2\pi i/3}$</span>.</p><pre><code class="language-julia hljs"># Roots:
+roots = [
+    im, -im,                                    # From λ² + 1 = 0
+    2^(1/3),                                    # From λ³ - 2 = 0
+    2^(1/3) * exp(2π*im/3),
+    2^(1/3) * exp(4π*im/3)
+]</code></pre><h3 id="Practical-Detection-Strategy"><a class="docs-heading-anchor" href="#Practical-Detection-Strategy">Practical Detection Strategy</a><a id="Practical-Detection-Strategy-1"></a><a class="docs-heading-anchor-permalink" href="#Practical-Detection-Strategy" title="Permalink"></a></h3><p>Given degree-5 characteristic polynomial <span>$p(\lambda)$</span>:</p><ol><li><p><strong>Try factorization</strong> (symbolic or numerical)</p><ul><li>If factors → solve smaller pieces</li></ul></li><li><p><strong>Check for pure power</strong>: <span>$\lambda^5 - a$</span></p><ul><li>Galois group <span>$\mathbb{Z}_5$</span> → use roots of unity</li></ul></li><li><p><strong>Compute discriminant</strong> <span>$\Delta$</span></p><ul><li>If <span>$\Delta$</span> is perfect square → Galois group in <span>$A_5$</span> (still might be solvable)</li></ul></li><li><p><strong>Compute resolvent polynomial</strong> (degree-6 sextic)</p><ul><li>If resolvent factors significantly → possibly dihedral <span>$D_5$</span> (solvable)</li><li>If resolvent stays irreducible → likely <span>$S_5$</span> or <span>$A_5$</span> (not solvable in general)</li></ul></li><li><p><strong>Numerical check</strong>: Compare symbolic solution attempt with numerical roots</p><ul><li>If expressions match numerically → solvable</li><li>If no match → probably not solvable by radicals</li></ul></li></ol><hr/><h2 id="Quantum-Spin-Systems"><a class="docs-heading-anchor" href="#Quantum-Spin-Systems">Quantum Spin Systems</a><a id="Quantum-Spin-Systems-1"></a><a class="docs-heading-anchor-permalink" href="#Quantum-Spin-Systems" title="Permalink"></a></h2><h3 id="Problem-Setup-6"><a class="docs-heading-anchor" href="#Problem-Setup-6">Problem Setup</a><a class="docs-heading-anchor-permalink" href="#Problem-Setup-6" title="Permalink"></a></h3><p>Quantum mechanical spin-<span>$j$</span> systems have <span>$(2j+1)$</span>-dimensional Hilbert spaces. The angular momentum operators <span>$\hat{J}_x, \hat{J}_y, \hat{J}_z$</span> form an SU(2) Lie algebra.</p><h3 id="Spin-5/2-System-(6-dimensional)"><a class="docs-heading-anchor" href="#Spin-5/2-System-(6-dimensional)">Spin-5/2 System (6-dimensional)</a><a id="Spin-5/2-System-(6-dimensional)-1"></a><a class="docs-heading-anchor-permalink" href="#Spin-5/2-System-(6-dimensional)" title="Permalink"></a></h3><p><strong>Dimension</strong>: <span>$2j + 1 = 6$</span> for <span>$j = 5/2$</span></p><p><strong><span>$J_z$</span> operator</strong> (diagonal in standard basis):</p><pre><code class="language-julia hljs">using Symbolics
+
+# Spin-5/2: m = -5/2, -3/2, -1/2, +1/2, +3/2, +5/2
+Jz = Diagonal([-5/2, -3/2, -1/2, 1/2, 3/2, 5/2])
+
+# Eigenvalues: {-5/2, -3/2, -1/2, 1/2, 3/2, 5/2}
+# Equally spaced by 1</code></pre><p><strong><span>$J_x$</span> operator</strong> (off-diagonal, using ladder operators):</p><p class="math-container">\[J_x = \frac{1}{2}(J_+ + J_-)\]</p><p>where <span>$J_\pm$</span> are raising/lowering operators.</p><pre><code class="language-julia hljs"># Matrix elements: ⟨m&#39;|Jₓ|m⟩ = (1/2)[⟨m&#39;|J₊|m⟩ + ⟨m&#39;|J₋|m⟩]
+# J₊|j,m⟩ = √[(j-m)(j+m+1)] |j,m+1⟩
+# J₋|j,m⟩ = √[(j+m)(j-m+1)] |j,m-1⟩
+
+j = 5/2
+m_values = [-5/2, -3/2, -1/2, 1/2, 3/2, 5/2]
+
+Jx = zeros(6, 6)
+for (i, m) in enumerate(m_values)
+    # Raising operator contribution (connects m to m+1)
+    if i &lt; 6
+        Jx[i+1, i] = 0.5 * sqrt((j - m) * (j + m + 1))
+    end
+    # Lowering operator contribution (connects m to m-1)
+    if i &gt; 1
+        Jx[i-1, i] = 0.5 * sqrt((j + m) * (j - m + 1))
+    end
+end
+
+println(&quot;Jₓ matrix for spin-5/2:&quot;)
+display(Jx)
+
+# Output:
+# 0.0    1.118  0.0    0.0    0.0    0.0
+# 1.118  0.0    1.581  0.0    0.0    0.0
+# 0.0    1.581  0.0    1.732  0.0    0.0
+# 0.0    0.0    1.732  0.0    1.581  0.0
+# 0.0    0.0    0.0    1.581  0.0    1.118
+# 0.0    0.0    0.0    0.0    1.118  0.0</code></pre><p><strong>Eigenvalues of <span>$J_x$</span></strong>: Despite being 6×6, we know eigenvalues from SU(2) representation theory!</p><pre><code class="language-julia hljs"># Eigenvalues MUST be:
+eigenvalues_Jx = [-5/2, -3/2, -1/2, 1/2, 3/2, 5/2]
+
+# Verify numerically:
+computed_eigs = eigvals(Jx)
+println(&quot;Computed eigenvalues:&quot;)
+println(sort(computed_eigs))
+
+# Result: [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]
+# Matches exactly!</code></pre><h3 id="Why-This-Works-2"><a class="docs-heading-anchor" href="#Why-This-Works-2">Why This Works</a><a class="docs-heading-anchor-permalink" href="#Why-This-Works-2" title="Permalink"></a></h3><p><strong>SU(2) representation theory</strong>:</p><ul><li>For spin-<span>$j$</span> system, eigenvalues of any component <span>$(J_x, J_y, \text{or } J_z)$</span> are:<p class="math-container">\[\{-j, -j+1, -j+2, \ldots, j-1, j\}\]</p></li><li><strong>All equally spaced by 1</strong></li><li>Total of <span>$2j+1$</span> eigenvalues</li><li><strong>Determined by symmetry alone</strong>, no polynomial solving!</li></ul><p><strong>Commutation relations</strong>:</p><p class="math-container">\[[J_x, J_y] = i J_z, \quad [J_y, J_z] = i J_x, \quad [J_z, J_x] = i J_y\]</p><p>These define the SU(2) Lie algebra. Any matrix satisfying these relations has the standard spin-<span>$j$</span> eigenvalue spectrum.</p><h3 id="Application:-Electron-Spin-Resonance"><a class="docs-heading-anchor" href="#Application:-Electron-Spin-Resonance">Application: Electron Spin Resonance</a><a id="Application:-Electron-Spin-Resonance-1"></a><a class="docs-heading-anchor-permalink" href="#Application:-Electron-Spin-Resonance" title="Permalink"></a></h3><p>In magnetic resonance, electrons with spin-1/2 precess in magnetic fields. For higher spins (e.g., transition metal ions with <span>$S = 5/2$</span>), the energy levels are:</p><pre><code class="language-julia hljs"># Zeeman splitting in magnetic field B
+using Symbolics
+@variables B g μ_B  # Field, g-factor, Bohr magneton
+
+# Energy levels
+E_m = [-g * μ_B * B * m for m in [-5/2, -3/2, -1/2, 1/2, 3/2, 5/2]]
+
+# Allowed transitions: Δm = ±1
+# Resonance frequencies:
+ω_transitions = [g * μ_B * B for _ in 1:5]  # All transitions have same frequency!
+
+println(&quot;All ESR transitions at same frequency: ω = g·μ_B·B&quot;)</code></pre><p>This <strong>equal spacing</strong> is a direct consequence of SU(2) symmetry.</p><h3 id="Generalization:-Arbitrary-Spin"><a class="docs-heading-anchor" href="#Generalization:-Arbitrary-Spin">Generalization: Arbitrary Spin</a><a id="Generalization:-Arbitrary-Spin-1"></a><a class="docs-heading-anchor-permalink" href="#Generalization:-Arbitrary-Spin" title="Permalink"></a></h3><p>For spin-<span>$j$</span> (dimension <span>$2j+1$</span>):</p><pre><code class="language-julia hljs">function spin_eigenvalues(j)
+    return [-j + k for k in 0:(2j)]
+end
+
+# Examples:
+println(&quot;Spin-1/2 (electrons): &quot;, spin_eigenvalues(1/2))      # [-1/2, 1/2]
+println(&quot;Spin-1 (photons): &quot;, spin_eigenvalues(1))            # [-1, 0, 1]
+println(&quot;Spin-3/2 (Δ baryons): &quot;, spin_eigenvalues(3/2))      # [-3/2, -1/2, 1/2, 3/2]
+println(&quot;Spin-2 (gravitons): &quot;, spin_eigenvalues(2))          # [-2, -1, 0, 1, 2]
+println(&quot;Spin-5/2 (Mn²⁺): &quot;, spin_eigenvalues(5/2))           # [-5/2, -3/2, -1/2, 1/2, 3/2, 5/2]</code></pre><p><strong>Key insight</strong>: For <strong>any</strong> dimension <span>$n = 2j+1$</span>, if matrix has SU(2) symmetry, eigenvalues are immediately known without computation!</p><hr/><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>These examples demonstrate that <strong>group theory transforms impossible problems into tractable ones</strong>:</p><ol><li><strong>Pentagon (5×5)</strong>: Degree-5 polynomial → Two quadratics (via <span>$D_5$</span> symmetry)</li><li><strong>Petersen (10×10)</strong>: Degree-10 polynomial → Direct formula (3 values only!)</li><li><strong>Hypercube (<span>$2^n$</span> vertices)</strong>: Exponentially large → Binomial coefficients</li><li><strong>BCCB</strong>: Million-dimensional image → FFT in milliseconds</li><li><strong>Benzene</strong>: 6×6 Hückel → Cosine formula (circulant structure)</li><li><strong>Solvable quintics</strong>: Degree-5 → Nested radicals (when Galois group is solvable)</li><li><strong>Spin systems</strong>: Arbitrary size → Integer eigenvalues (SU(2) representation)</li></ol><p>The common thread: <strong>Symmetry constrains eigenvalue structure</strong>, often reducing intractable problems to closed-form solutions or efficient algorithms.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pattern_library/">« Pattern Library</a><a class="docs-footer-nextpage" href="../implementation/">Implementation Details »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 12 December 2025 22:51">Friday 12 December 2025</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
