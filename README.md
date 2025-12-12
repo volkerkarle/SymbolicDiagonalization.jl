@@ -36,7 +36,8 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 - ✅ All matrices up to 4×4 (via quartic formula)
 - ✅ Block-diagonal matrices (recursive decomposition)
 - ✅ 9 special patterns for arbitrary-sized matrices (3×3 to n×n)
-- ✅ 172 passing tests, comprehensive test suite
+- ✅ Group theory pattern support (hypercube graphs, strongly regular graphs, cycle graphs)
+- ✅ 242 passing tests, comprehensive test suite
 - ✅ CI/CD with automated testing and documentation deployment
 
 **Limitations**:
@@ -517,7 +518,7 @@ All functions accept these optional keyword arguments:
 
 ## Testing
 
-The package has a comprehensive test suite with **172 tests, all passing**:
+The package has a comprehensive test suite with **242 tests, all passing**:
 
 ```bash
 julia --project -e 'using Pkg; Pkg.test()'
@@ -529,7 +530,7 @@ Tests run automatically on every push via [GitHub Actions](https://github.com/vo
 
 - **test/test_basic.jl** (97 lines): Diagonal, triangular, Jordan blocks, quartic, simple 2×2
 - **test/test_structure.jl** (119 lines): Hermitian, persymmetric, block-diagonal detection
-- **test/test_patterns.jl** (624 lines): All 9 special patterns (108 tests)
+- **test/test_patterns.jl** (877 lines): All special patterns including group theory examples (174 tests)
   - Circulant (3×3, 4×4, 5×5)
   - Block circulant (4×4, 6×6, 8×8)
   - Kronecker products (4×4, 6×6)
@@ -537,9 +538,21 @@ Tests run automatically on every push via [GitHub Actions](https://github.com/vo
   - Anti-diagonal (3×3, 4×4, 5×5)
   - Permutation (various cycle structures)
   - Special 5×5 patterns [b,d,b,b] and [b,b,d,b]
+  - **Group theory patterns** (hypercubes, cycle graphs, strongly regular graphs)
+  - **Hypercube graphs** Q_n (including Q_5: 32×32 matrix)
+  - **Strongly regular graphs** (Petersen, pentagon, complete bipartite)
+  - **Cycle graphs** with irrational eigenvalues (C_5 pentagon with golden ratio)
 - **test/test_interface.jl** (93 lines): LinearAlgebra interface (eigen, eigvals)
 
 All test matrices verified numerically for correctness.
+
+### Recent Fixes
+
+**Strongly Regular Graph Eigenvalues (Dec 2025)**:
+- Fixed critical bug in `_strongly_regular_eigenvalues()` where eigenvalue array was initialized as `Vector{Int}` instead of `Vector{Float64}`
+- This caused `InexactError` for SRGs with irrational eigenvalues (e.g., C_5 pentagon with golden ratio φ ≈ 0.618)
+- Solution: Changed initialization from `[k]` to `[Float64(k)]` to allow mixed integer/irrational eigenvalues
+- Added comprehensive test coverage for cycle graphs, hypercubes, and various SRG examples
 
 ## Pattern Discovery & Documentation
 
