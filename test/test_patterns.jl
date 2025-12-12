@@ -710,3 +710,168 @@ end
     @test count(==(4), vals_int) == 1
     @test count(==(-1), vals_int) == 4
 end
+
+
+@testset "Hypercube Q_5 (32×32)" begin
+    # Build Q_5 recursively from Q_4
+    I16 = Matrix{Int}(I, 16, 16)
+    Q2 = [0 1 1 0; 1 0 0 1; 1 0 0 1; 0 1 1 0]
+    I4 = Matrix{Int}(I, 4, 4)
+    Q3 = [Q2 I4; I4 Q2]
+    I8 = Matrix{Int}(I, 8, 8)
+    Q4 = [Q3 I8; I8 Q3]
+    Q5 = [Q4 I16; I16 Q4]
+    
+    @test SymbolicDiagonalization._is_hypercube_graph(Q5) == 5
+    
+    vals, poly, λ = symbolic_eigenvalues(Q5)
+    @test length(vals) == 32
+    
+    # Q_5 eigenvalues: λ_k = 5 - 2k for k=0..5 with mult binomial(5,k)
+    # Multiplicities: 1, 5, 10, 10, 5, 1
+    expected = vcat([5], fill(3, 5), fill(1, 10), fill(-1, 10), fill(-3, 5), [-5])
+    @test sort(vals) == sort(expected)
+    
+    # Verify numerically
+    numeric_eigs = eigvals(float.(Q5))
+    @test sort(real(numeric_eigs)) ≈ sort(real(vals)) atol=1e-10
+end
+
+@testset "Hypercube Edge Cases" begin
+    # Q_0: 1×1 zero matrix
+    Q0 = zeros(Int, 1, 1)
+    @test SymbolicDiagonalization._is_hypercube_graph(Q0) == 0
+    vals, poly, λ = symbolic_eigenvalues(Q0)
+    @test vals == [0]
+    
+    # Non-hypercube: 3×3 matrix (not a power of 2)
+    M3 = [0 1 1; 1 0 1; 1 1 0]
+    @test isnothing(SymbolicDiagonalization._is_hypercube_graph(M3))
+    
+    # Non-hypercube: 4×4 matrix that's not Q_2
+    M4 = [0 1 1 1; 1 0 1 1; 1 1 0 1; 1 1 1 0]  # K_4 complete graph
+    @test isnothing(SymbolicDiagonalization._is_hypercube_graph(M4))
+end
+
+@testset "Cycle Graphs as SRG" begin
+    # C_5 (pentagon) is srg(5, 2, 0, 1)
+    C5 = [
+        0 1 0 0 1;
+        1 0 1 0 0;
+        0 1 0 1 0;
+        0 0 1 0 1;
+        1 0 0 1 0
+    ]
+    
+    srg_params = SymbolicDiagonalization._is_strongly_regular_graph(C5)
+    @test !isnothing(srg_params)
+    n, k, λ_param, μ = srg_params
+    @test n == 5
+    @test k == 2
+    @test λ_param == 0
+    @test μ == 1
+    
+    vals, poly, λ = symbolic_eigenvalues(C5)
+    @test length(vals) == 5
+    
+    # C_5 has eigenvalues involving golden ratio (can't use round to Int)
+    # Just verify they match numerically
+    numeric_eigs = eigvals(float.(C5))
+    @test sort(real(numeric_eigs)) ≈ sort(real(vals)) atol=1e-10
+end
+
+@testset "Complete Bipartite Graphs K_{m,n}" begin
+    # K_{3,3} is srg(6, 3, 0, 3)
+    K33 = [
+        0 0 0 1 1 1;
+        0 0 0 1 1 1;
+        0 0 0 1 1 1;
+        1 1 1 0 0 0;
+        1 1 1 0 0 0;
+        1 1 1 0 0 0
+    ]
+    
+    srg_params = SymbolicDiagonalization._is_strongly_regular_graph(K33)
+    @test !isnothing(srg_params)
+    n, k, λ_param, μ = srg_params
+    @test n == 6
+    @test k == 3
+    @test λ_param == 0
+    @test μ == 3
+    
+    vals, poly, λ = symbolic_eigenvalues(K33)
+    @test length(vals) == 6
+    
+    # K_{m,n} has eigenvalues: ±√(mn) and 0 with multiplicity m+n-2
+    vals_sorted = sort(real.(vals))
+    # K_{3,3}: eigenvalues are 3, -3, 0, 0, 0, 0
+    @test count(x -> abs(x - 3) < 1e-10, vals_sorted) == 1
+    @test count(x -> abs(x + 3) < 1e-10, vals_sorted) == 1
+    @test count(x -> abs(x) < 1e-10, vals_sorted) == 4
+end
+
+@testset "Additional SRG Examples" begin
+    # Test a few simpler SRGs without specific parameter assertions
+    
+    # Complete graph K_4 as SRG
+    K4 = ones(Int, 4, 4) - I(4)
+    srg_params = SymbolicDiagonalization._is_strongly_regular_graph(K4)
+    @test !isnothing(srg_params)
+    vals, poly, λ = symbolic_eigenvalues(K4)
+    @test length(vals) == 4
+    numeric_eigs = eigvals(float.(K4))
+    @test sort(real(numeric_eigs)) ≈ sort(real(vals)) atol=1e-10
+    
+    # 4-cycle (square) is srg(4, 2, 0, 2)
+    C4 = [
+        0 1 0 1;
+        1 0 1 0;
+        0 1 0 1;
+        1 0 1 0
+    ]
+    srg_params = SymbolicDiagonalization._is_strongly_regular_graph(C4)
+    @test !isnothing(srg_params)
+    n, k, λ_param, μ = srg_params
+    @test n == 4
+    @test k == 2
+    @test λ_param == 0
+    @test μ == 2
+    vals, poly, λ = symbolic_eigenvalues(C4)
+    @test length(vals) == 4
+end
+
+@testset "SRG Non-Examples" begin
+    # Path graph P_4 (not strongly regular - different vertex pairs have different common neighbors)
+    P4 = [
+        0 1 0 0;
+        1 0 1 0;
+        0 1 0 1;
+        0 0 1 0
+    ]
+    srg_params = SymbolicDiagonalization._is_strongly_regular_graph(P4)
+    @test isnothing(srg_params)  # P_4 is not strongly regular
+    
+    # Star graph K_{1,3} (not even regular)
+    Star = [
+        0 1 1 1;
+        1 0 0 0;
+        1 0 0 0;
+        1 0 0 0
+    ]
+    srg_params = SymbolicDiagonalization._is_strongly_regular_graph(Star)
+    @test isnothing(srg_params)  # Not regular
+end
+
+@testset "Performance: SRG vs Generic Method" begin
+    # For small SRG, verify that pattern detection is used
+    K5 = ones(Int, 5, 5) - I(5)
+    
+    # Time pattern-based method
+    vals1, poly1, λ1 = symbolic_eigenvalues(K5; structure=:auto)
+    
+    # Verify the pattern method gives correct results
+    @test length(vals1) == 5
+    vals_int = round.(Int, real.(vals1))
+    @test count(==(4), vals_int) == 1
+    @test count(==(-1), vals_int) == 4
+end

@@ -1830,7 +1830,7 @@ function _strongly_regular_eigenvalues(n, k, λ, μ)
     end
     
     # Build eigenvalue vector
-    eigenvalues = [k]  # Multiplicity 1
+    eigenvalues = [Float64(k)]  # Multiplicity 1
     for _ in 1:f
         push!(eigenvalues, r)
     end
