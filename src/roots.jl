@@ -339,8 +339,10 @@ function _roots_cubic(c; max_terms = 10000)
     sqrtΔ = sqrt(Δ)
     C = cbrt(-q / 2 + sqrtΔ)
     D = cbrt(-q / 2 - sqrtΔ)
-    omega = -0.5 + 0.5im
-    omega2 = -0.5 - 0.5im
+    # Primitive cube roots of unity: ω = e^(2πi/3), ω² = e^(4πi/3)
+    # ω = -1/2 + √3/2·i, ω² = -1/2 - √3/2·i
+    omega = -0.5 + 0.5 * sqrt(3) * im
+    omega2 = -0.5 - 0.5 * sqrt(3) * im
     shift = -b1 / 3
     return [shift + C + D,
             shift + omega * C + omega2 * D,

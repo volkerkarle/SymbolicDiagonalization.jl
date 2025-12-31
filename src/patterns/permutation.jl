@@ -2,6 +2,9 @@
 # Permutation Matrix Pattern Detection and Eigenvalue Computation
 # ============================================================================
 
+# Helper function to check if a value is symbolically equal to 1
+_is_symbolic_one(x) = _issymzero(x - 1)
+
 """
     _is_permutation_matrix(A)
 
@@ -16,17 +19,12 @@ The eigenvalues of P are roots of unity, determined by its cycle structure.
 function _is_permutation_matrix(A)
     n = size(A, 1)
     
-    # Helper function to check if a value is 1
-    function _is_one(x)
-        return _issymzero(x - 1)
-    end
-    
     # Check each row has exactly one 1 and rest zeros
     for i in 1:n
         count_ones = 0
         for j in 1:n
             val = A[i, j]
-            if _is_one(val)
+            if _is_symbolic_one(val)
                 count_ones += 1
             elseif !_issymzero(val)
                 return false  # Found non-zero, non-one entry
@@ -42,7 +40,7 @@ function _is_permutation_matrix(A)
         count_ones = 0
         for i in 1:n
             val = A[i, j]
-            if _is_one(val)
+            if _is_symbolic_one(val)
                 count_ones += 1
             end
         end
@@ -69,11 +67,6 @@ function _permutation_to_cycles(A)
     visited = falses(n)
     cycles = Int[]
     
-    # Helper function to check if a value is 1
-    function _is_one(x)
-        return _issymzero(x - 1)
-    end
-    
     for start in 1:n
         if visited[start]
             continue
@@ -90,7 +83,7 @@ function _permutation_to_cycles(A)
             # Find where current maps to
             next = 0
             for j in 1:n
-                if _is_one(A[current, j])
+                if _is_symbolic_one(A[current, j])
                     next = j
                     break
                 end

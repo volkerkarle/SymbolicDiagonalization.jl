@@ -2,6 +2,31 @@
 # Public API - Main Entry Points for Symbolic Diagonalization
 # ============================================================================
 
+# VALID_STRUCTURES is defined in SymbolicDiagonalization.jl
+
+"""
+    _validate_matrix_input(A, structure) -> Matrix
+
+Validate input matrix for eigenvalue computation.
+Checks that A is convertible to a Matrix, is square, and has a valid structure hint.
+Returns the converted matrix.
+"""
+function _validate_matrix_input(A, structure)
+    mat = try
+        Matrix(A)
+    catch e
+        msg = e isa Exception && hasproperty(e, :msg) ? e.msg : string(e)
+        throw(ArgumentError("Input must be convertible to a Matrix: $msg"))
+    end
+    
+    m, n = size(mat)
+    m == n || throw(ArgumentError("Matrix must be square, got $(m)×$(n)"))
+    structure in VALID_STRUCTURES || throw(ArgumentError(
+        "structure must be one of $(VALID_STRUCTURES), got $(structure)"))
+    
+    return mat
+end
+
 """
     symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true, complexity_threshold = DEFAULT_COMPLEXITY_THRESHOLD, timeout = DEFAULT_TIMEOUT_SECONDS, max_terms = DEFAULT_MAX_TERMS)
 
@@ -30,17 +55,7 @@ exceeds this threshold; set to `nothing` to disable.
 `max_terms` limits expression complexity during simplification (default: 10000).
 """
 function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true, complexity_threshold = DEFAULT_COMPLEXITY_THRESHOLD, timeout = DEFAULT_TIMEOUT_SECONDS, max_terms = DEFAULT_MAX_TERMS)
-    # Input validation
-    mat = try
-        Matrix(A)
-    catch e
-        throw(ArgumentError("Input must be convertible to a Matrix: $(e.msg)"))
-    end
-    
-    m, n = size(mat)
-    m == n || throw(ArgumentError("Matrix must be square, got $(m)×$(n)"))
-    structure in VALID_STRUCTURES || throw(ArgumentError(
-        "structure must be one of $(VALID_STRUCTURES), got $(structure)"))
+    mat = _validate_matrix_input(A, structure)
     
     λ = isnothing(var) ? _fresh_lambda() : var
     struct_hint = structure === :auto ? _detect_structure(mat) : structure
@@ -160,8 +175,8 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         
         if all_solvable
             # Solve each block recursively
-            all_vals = []
-            all_polys = []
+            all_vals = Any[]
+            all_polys = Any[]
             for (start, stop) in multiple_blocks
                 block = mat[start:stop, start:stop]
                 vals_block, poly_block, λ = symbolic_eigenvalues(block; var = λ, structure = struct_hint, expand = expand, complexity_threshold = nothing, timeout = timeout, max_terms = max_terms)
@@ -229,17 +244,8 @@ exceeds this threshold; set to `nothing` to disable.
 `max_terms` limits expression complexity during simplification (default: 10000).
 """
 function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure = :auto, expand = true, complexity_threshold = DEFAULT_COMPLEXITY_THRESHOLD, timeout = DEFAULT_TIMEOUT_SECONDS, max_terms = DEFAULT_MAX_TERMS)
-    # Input validation
-    mat = try
-        Matrix(A)
-    catch e
-        throw(ArgumentError("Input must be convertible to a Matrix: $(e.msg)"))
-    end
-    
-    m, n = size(mat)
-    m == n || throw(ArgumentError("Matrix must be square, got $(m)×$(n)"))
-    structure in VALID_STRUCTURES || throw(ArgumentError(
-        "structure must be one of $(VALID_STRUCTURES), got $(structure)"))
+    mat = _validate_matrix_input(A, structure)
+    n = size(mat, 1)
     
     λ = isnothing(var) ? _fresh_lambda() : var
 

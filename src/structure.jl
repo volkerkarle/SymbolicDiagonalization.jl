@@ -414,17 +414,6 @@ function _diag_error_msg(struct_hint, found, n)
 end
 
 """
-    _std_basis(T, n, idx)
-
-Create a standard basis vector of type T with 1 at index idx.
-"""
-function _std_basis(T, n, idx)
-    v = zeros(T, n)
-    v[idx] = one(T)
-    return v
-end
-
-"""
     _build_eigenvalue_result(vals, λ, expand)
 
 Build the standard return tuple for eigenvalue computations.

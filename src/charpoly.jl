@@ -9,7 +9,7 @@ and `λ` is the symbolic variable used.
 function characteristic_polynomial(A; var = nothing)
     λ = isnothing(var) ? _fresh_lambda() : var
     m, n = size(A)
-    m == n || error("matrix must be square")
+    m == n || throw(ArgumentError("Matrix must be square, got $(m)×$(n))"))
     # Form λI - A so det(λI - A) yields the characteristic polynomial.
     shifted = _lambda_shift(Matrix(A), λ)
     # Bareiss keeps entries smaller and avoids division by symbolic pivots.
@@ -35,7 +35,9 @@ function _bareiss_det(M)
     prev = one(eltype(M))
     for k in 1:n-1
         pivot = A[k, k]
-        _issymzero(pivot) && error("zero pivot encountered in Bareiss determinant")
+        if _issymzero(pivot)
+            throw(ArgumentError("Zero pivot encountered in Bareiss determinant at position ($k, $k). Matrix may be singular or require pivoting."))
+        end
         for i in k+1:n, j in k+1:n
             A[i, j] = (A[i, j] * pivot - A[i, k] * A[k, j]) / prev
         end
@@ -47,10 +49,10 @@ function _bareiss_det(M)
 end
 
 function _collect_coefficients(poly, λ, degree)
-    coeffs = Vector{Any}(undef, degree + 1)
+    coeffs = Vector{Any}(undef, degree + 1)  # Must be Any since coefficients can be Num or numeric
     coeffs[1] = Symbolics.expand(Symbolics.substitute(poly, λ => 0))
     deriv = poly
-    fact = one(Symbolics.Num)
+    fact = 1  # Use Int for factorial accumulation
     for k in 1:degree
         deriv = Symbolics.derivative(deriv, λ)
         fact *= k
