@@ -32,23 +32,29 @@ julia> Pkg.test()
 ```
 SymbolicDiagonalization.jl/
 ├── src/
-│   ├── SymbolicDiagonalization.jl  # Main module
-│   ├── characteristic_poly.jl       # Bareiss determinant
-│   ├── root_solvers.jl              # Closed-form root formulas (1-4)
-│   ├── structure_detection.jl       # Pattern detection algorithms
-│   ├── special_patterns.jl          # Pattern-specific eigensolvers
-│   ├── eigenvectors.jl              # Nullspace computation
-│   └── utils.jl                     # Helper functions
+│   ├── SymbolicDiagonalization.jl  # Module definition, constants, exports
+│   ├── charpoly.jl                 # Characteristic polynomial (Bareiss)
+│   ├── roots.jl                    # Closed-form root solvers (degrees 1-4)
+│   ├── rref.jl                     # RREF, nullspace, symbolic zero detection
+│   ├── structure.jl                # Structure detection, matrix properties
+│   ├── diagonalize.jl              # Public API (eigen, eigvals, symbolic_*)
+│   └── patterns/                   # Specialized eigensolvers by pattern
+│       ├── graphs.jl               # Hypercube, strongly regular graphs
+│       ├── circulant.jl            # Circulant, block circulant matrices
+│       ├── kronecker.jl            # Kronecker product detection
+│       ├── tridiagonal.jl          # Toeplitz tridiagonal, anti-diagonal
+│       └── permutation.jl          # Permutation matrices
 ├── test/
-│   ├── runtests.jl                  # Test suite entry point
-│   ├── test_basic.jl                # Small matrix tests
-│   ├── test_structures.jl           # Pattern-specific tests
-│   └── test_edge_cases.jl           # Edge case coverage
+│   ├── runtests.jl                 # Test suite entry point
+│   ├── test_basic.jl               # Small matrix tests
+│   ├── test_patterns.jl            # Pattern-specific tests
+│   ├── test_structure.jl           # Structure detection tests
+│   └── test_interface.jl           # API interface tests
 ├── docs/
-│   ├── src/                         # Documentation source
-│   └── make.jl                      # Documentation builder
-└── examples/
-    └── explore_patterns.jl          # Interactive pattern exploration
+│   ├── src/                        # Documentation source
+│   └── make.jl                     # Documentation builder
+└── research/
+    └── research1.md                # Research notes
 ```
 
 ## Code Style Guidelines

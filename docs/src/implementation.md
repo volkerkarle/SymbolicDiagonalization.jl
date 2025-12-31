@@ -1202,25 +1202,35 @@ The test suite includes 172 tests covering:
 
 ```
 src/
-├── SymbolicDiagonalization.jl  # Module definition and exports
-├── charpoly.jl                 # Characteristic polynomial (Bareiss)
-├── roots.jl                    # Root solvers (degrees 1-4)
-├── rref.jl                     # RREF and nullspace computation
-└── diagonalize.jl              # Main API and pattern detection
-    ├── Public API (eigen, eigvals, symbolic_*)
-    ├── Structure Detection (_is_*, _detect_*)
-    ├── Special Pattern Solvers (_*_eigenvalues)
-    ├── Eigenvector Computation (_adjugate, _nullspace)
-    └── Utility Functions
+├── SymbolicDiagonalization.jl  # Module definition, constants, exports
+├── charpoly.jl                 # Characteristic polynomial (Bareiss algorithm)
+├── roots.jl                    # Closed-form root solvers (degrees 1-4)
+├── rref.jl                     # RREF, nullspace, symbolic zero detection
+├── structure.jl                # Structure detection, matrix properties, adjugate
+├── diagonalize.jl              # Public API (eigen, eigvals, symbolic_*)
+└── patterns/                   # Specialized eigensolvers by matrix pattern
+    ├── graphs.jl               # Hypercube, strongly regular graphs
+    ├── circulant.jl            # Circulant and block circulant matrices
+    ├── kronecker.jl            # Kronecker product detection
+    ├── tridiagonal.jl          # Toeplitz tridiagonal, special 5×5, anti-diagonal
+    └── permutation.jl          # Permutation matrices
 ```
 
 **Lines of code**:
+- `SymbolicDiagonalization.jl`: ~64 lines (module setup)
 - `charpoly.jl`: ~60 lines
-- `roots.jl`: ~390 lines
-- `rref.jl`: ~75 lines
-- `diagonalize.jl`: ~1495 lines
-- **Total**: ~2020 lines of implementation code
+- `roots.jl`: ~392 lines
+- `rref.jl`: ~102 lines
+- `structure.jl`: ~437 lines
+- `diagonalize.jl`: ~418 lines (public API only)
+- `patterns/*.jl`: ~1095 lines total
+  - `graphs.jl`: ~323 lines
+  - `circulant.jl`: ~228 lines
+  - `tridiagonal.jl`: ~237 lines
+  - `permutation.jl`: ~156 lines
+  - `kronecker.jl`: ~151 lines
+- **Total**: ~2568 lines of implementation code
 
 ---
 
-*This implementation documentation was last updated: December 11, 2025*
+*This implementation documentation was last updated: December 31, 2025*

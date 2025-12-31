@@ -179,21 +179,21 @@ end
 Base.showerror(io::IO, e::ComputationTimeoutError) = print(io, "ComputationTimeoutError: ", e.message)
 
 """
-    symbolic_roots(coeffs; timeout = 300, max_terms = 10000)
+    symbolic_roots(coeffs; timeout = DEFAULT_TIMEOUT_SECONDS, max_terms = DEFAULT_MAX_TERMS)
 
 Solve a univariate polynomial with coefficients given in ascending order
 (`coeffs[1]` is the constant term). Supports degrees 1–4 using closed-form
 formulas (linear, quadratic, Cardano, and Ferrari).
 
 # Keyword Arguments
-- `timeout`: Maximum computation time in seconds (default: 300). Set to `nothing` to disable.
-- `max_terms`: Maximum expression size during simplification (default: 10000).
+- `timeout`: Maximum computation time in seconds (default: $(DEFAULT_TIMEOUT_SECONDS)). Set to `nothing` to disable.
+- `max_terms`: Maximum expression size during simplification (default: $(DEFAULT_MAX_TERMS)).
 
 # Throws
 - `ComputationTimeoutError`: If computation exceeds timeout
 - `ExpressionComplexityError`: If expressions grow too large
 """
-function symbolic_roots(coeffs; timeout = 300, max_terms = 10000)
+function symbolic_roots(coeffs; timeout = DEFAULT_TIMEOUT_SECONDS, max_terms = DEFAULT_MAX_TERMS)
     deg = length(coeffs) - 1
     deg >= 1 || error("expected polynomial coefficients")
     # Note: Symbolic quartic computation can produce extremely large expressions
@@ -236,59 +236,59 @@ end
 
 Execute function `f` with a timeout. If the computation takes longer than
 `timeout_seconds`, throws a `ComputationTimeoutError`.
+
+Uses a Channel-based approach to avoid race conditions between the computation
+task and the timeout check.
 """
 function _with_timeout(f, timeout_seconds, degree)
-    result = nothing
-    timed_out = Ref(false)
+    # Use a Channel to signal completion - this avoids race conditions
+    # between checking task status and timeout flag
+    result_channel = Channel{Any}(1)
     
     task = @async begin
         try
-            f()
+            result = f()
+            put!(result_channel, (:ok, result))
         catch e
-            e
+            put!(result_channel, (:error, e))
         end
     end
     
-    timeout_task = @async begin
-        sleep(timeout_seconds)
-        timed_out[] = true
-    end
-    
-    # Wait for either computation or timeout
-    while !istaskdone(task) && !timed_out[]
-        sleep(0.1)
-    end
-    
-    if timed_out[]
-        # Try to interrupt the task (may not always work for symbolic computation)
-        try
-            schedule(task, InterruptException(), error=true)
-        catch
+    # Use timedwait pattern: try to get result within timeout
+    start_time = time()
+    while (time() - start_time) < timeout_seconds
+        if isready(result_channel)
+            status, value = take!(result_channel)
+            close(result_channel)
+            if status === :error
+                throw(value)
+            end
+            return value
         end
+        sleep(0.05)  # Small sleep to avoid busy-waiting
+    end
+    
+    # Timeout occurred - try to interrupt the task
+    close(result_channel)
+    try
+        schedule(task, InterruptException(), error=true)
+    catch
+        # Task may have already completed or be uninterruptible
+    end
+    
+    throw(ComputationTimeoutError(
+        """Computation exceeded timeout of $timeout_seconds seconds (degree $degree polynomial).
         
-        throw(ComputationTimeoutError(
-            """Computation exceeded timeout of $timeout_seconds seconds (degree $degree polynomial).
-            
-            Suggestions to resolve this:
-            1. Reduce matrix size (symbolic 4×4 can be very slow)
-            2. Use fewer symbolic variables (substitute known values)
-            3. Check for block-diagonal structure to reduce effective size
-            4. Use numeric eigenvalues: eigvals(Float64.(substitute(A, values)))
-            5. Increase timeout if needed: symbolic_roots(coeffs; timeout = 600)
-            6. Set timeout = nothing to disable (use with caution - may hang indefinitely)
-            
-            Note: Quartic formulas can take 10+ minutes for matrices with many variables."""
-        ))
-    end
-    
-    result = fetch(task)
-    
-    # If the task threw an exception, re-throw it
-    if result isa Exception
-        throw(result)
-    end
-    
-    return result
+        Suggestions to resolve this:
+        1. Reduce matrix size (symbolic 4×4 can be very slow)
+        2. Use fewer symbolic variables (substitute known values)
+        3. Check for block-diagonal structure to reduce effective size
+        4. Use numeric eigenvalues: eigvals(Float64.(substitute(A, values)))
+        5. Increase timeout if needed: symbolic_roots(coeffs; timeout = 600)
+        6. Set timeout = nothing to disable (use with caution - may hang indefinitely)
+        
+        Note: Quartic formulas can take 10+ minutes for matrices with many variables."""
+    ))
 end
 
 function _is_symbolic_coeff(x)

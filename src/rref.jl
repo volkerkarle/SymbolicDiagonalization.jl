@@ -1,4 +1,27 @@
+"""
+    _issymzero(x)
+
+Check if a value is symbolically zero. Optimized with fast paths for common cases.
+
+Returns `true` if `x` is provably zero, `false` otherwise.
+Falls back to `false` if zero-ness cannot be determined (conservative for elimination).
+"""
 function _issymzero(x)
+    # Fast path 1: Plain numbers
+    x isa Number && return iszero(x)
+    
+    # Fast path 2: Check if Num wraps a number directly
+    if x isa Num
+        try
+            unwrapped = Symbolics.unwrap(x)
+            if unwrapped isa Number
+                return iszero(unwrapped)
+            end
+        catch
+        end
+    end
+    
+    # Standard path: try Base.iszero first (works for many types)
     try
         v = Base.iszero(x)
         if v isa Bool
@@ -6,17 +29,22 @@ function _issymzero(x)
         end
     catch
     end
+    
+    # Expensive path: simplify then check (only if needed)
     try
         sx = Symbolics.simplify(x)
         v = Symbolics.iszero(sx)
         return v === true
     catch
     end
+    
+    # Last resort: check without simplification
     try
         v = Symbolics.iszero(x)
         return v === true
     catch
     end
+    
     # Fall back to "not proven zero" to keep elimination moving.
     return false
 end
