@@ -116,26 +116,20 @@ Looks for patterns like x² - 2xy + y² + rest and converts them to (x-y)² + re
 This is particularly useful for quadratic discriminants which often have the
 form (x-y)² + 4z².
 
-Note: Due to Symbolics.jl's automatic expansion behavior, true factoring is
-challenging. This function currently returns the expression as-is, but could
-be extended with polynomial pattern matching in the future.
+# Implementation Status
+This function is intentionally a no-op placeholder. Full implementation would require:
+1. Identifying all variables in the expression
+2. Treating it as a multivariate polynomial  
+3. Detecting perfect square trinomials (x² + y² ± 2xy → (x±y)²)
+4. Reconstructing in factored form
+
+Due to Symbolics.jl's automatic expansion behavior and the complexity of 
+multivariate polynomial pattern matching, this is deferred. The expanded form
+(e.g., a² - 2ac + 4b² + c²) is mathematically equivalent to (a-c)² + 4b² and
+produces correct eigenvalues.
 """
 function _try_factor_perfect_square(expr)
-    # TODO: Implement pattern matching for perfect squares
-    # The challenge: need to extract polynomial coefficients from the symbolic
-    # expression and detect patterns like:
-    #   x² + y² - 2xy + rest → (x-y)² + rest
-    #   x² + y² + 2xy + rest → (x+y)² + rest
-    #
-    # This would require:
-    # 1. Identifying all variables in the expression
-    # 2. Treating it as a multivariate polynomial
-    # 3. Detecting perfect square trinomials
-    # 4. Reconstructing in factored form
-    #
-    # For now, the expanded form (e.g., a² - 2ac + 4b² + c²) is acceptable,
-    # as it's mathematically equivalent to (a-c)² + 4b².
-    
+    # Returns expression as-is; see docstring for rationale
     return expr
 end
 

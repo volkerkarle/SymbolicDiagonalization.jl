@@ -19,6 +19,10 @@ using Aqua
         include("test_basic.jl")
     end
     
+    @testset "Edge Cases and Error Handling" begin
+        include("test_edge_cases.jl")
+    end
+    
     @testset "Structure Detection" begin
         include("test_structure.jl")
     end
