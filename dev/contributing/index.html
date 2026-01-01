@@ -1,306 +1,39 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Contributing · SymbolicDiagonalization</title><meta name="title" content="Contributing · SymbolicDiagonalization"/><meta property="og:title" content="Contributing · SymbolicDiagonalization"/><meta property="twitter:title" content="Contributing · SymbolicDiagonalization"/><meta name="description" content="Documentation for SymbolicDiagonalization."/><meta property="og:description" content="Documentation for SymbolicDiagonalization."/><meta property="twitter:description" content="Documentation for SymbolicDiagonalization."/><meta property="og:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/"/><meta property="twitter:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/"/><link rel="canonical" href="https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="SymbolicDiagonalization logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">SymbolicDiagonalization</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../user_guide/">User Guide</a></li><li><a class="tocitem" href="../api_reference/">API Reference</a></li><li><a class="tocitem" href="../pattern_library/">Pattern Library</a></li><li><a class="tocitem" href="../group_theory_examples/">Group Theory Examples</a></li><li><a class="tocitem" href="../implementation/">Implementation Details</a></li><li><a class="tocitem" href="../mathematical_background/">Mathematical Background</a></li><li class="is-active"><a class="tocitem" href>Contributing</a><ul class="internal"><li><a class="tocitem" href="#Development-Setup"><span>Development Setup</span></a></li><li><a class="tocitem" href="#Code-Style-Guidelines"><span>Code Style Guidelines</span></a></li><li><a class="tocitem" href="#Testing-Requirements"><span>Testing Requirements</span></a></li><li><a class="tocitem" href="#Adding-New-Patterns"><span>Adding New Patterns</span></a></li><li><a class="tocitem" href="#Pattern-Submission-Template"><span>Pattern Submission Template</span></a></li><li><a class="tocitem" href="#Git-Workflow-(When-Applicable)"><span>Git Workflow (When Applicable)</span></a></li><li><a class="tocitem" href="#Code-Review-Guidelines"><span>Code Review Guidelines</span></a></li><li><a class="tocitem" href="#Performance-Optimization-Guidelines"><span>Performance Optimization Guidelines</span></a></li><li><a class="tocitem" href="#Documentation-Building"><span>Documentation Building</span></a></li><li><a class="tocitem" href="#CI/CD-Setup-for-GitHub"><span>CI/CD Setup for GitHub</span></a></li><li><a class="tocitem" href="#Getting-Help"><span>Getting Help</span></a></li><li><a class="tocitem" href="#License"><span>License</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Contributing</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Contributing</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl/blob/main/docs/src/contributing.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Contributing-to-SymbolicDiagonalization.jl"><a class="docs-heading-anchor" href="#Contributing-to-SymbolicDiagonalization.jl">Contributing to SymbolicDiagonalization.jl</a><a id="Contributing-to-SymbolicDiagonalization.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Contributing-to-SymbolicDiagonalization.jl" title="Permalink"></a></h1><p>Thank you for your interest in contributing! This guide covers development setup, coding standards, testing requirements, and how to add new patterns.</p><h2 id="Development-Setup"><a class="docs-heading-anchor" href="#Development-Setup">Development Setup</a><a id="Development-Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Development-Setup" title="Permalink"></a></h2><h3 id="Prerequisites"><a class="docs-heading-anchor" href="#Prerequisites">Prerequisites</a><a id="Prerequisites-1"></a><a class="docs-heading-anchor-permalink" href="#Prerequisites" title="Permalink"></a></h3><ul><li>Julia ≥1.6</li><li>Git (if the project becomes a repository)</li><li>Recommended: VSCode with Julia extension</li></ul><h3 id="Installation-for-Development"><a class="docs-heading-anchor" href="#Installation-for-Development">Installation for Development</a><a id="Installation-for-Development-1"></a><a class="docs-heading-anchor-permalink" href="#Installation-for-Development" title="Permalink"></a></h3><pre><code class="language-bash hljs"># Clone or navigate to the package directory
-cd SymbolicDiagonalization.jl
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Contributing · SymbolicDiagonalization</title><meta name="title" content="Contributing · SymbolicDiagonalization"/><meta property="og:title" content="Contributing · SymbolicDiagonalization"/><meta property="twitter:title" content="Contributing · SymbolicDiagonalization"/><meta name="description" content="Documentation for SymbolicDiagonalization."/><meta property="og:description" content="Documentation for SymbolicDiagonalization."/><meta property="twitter:description" content="Documentation for SymbolicDiagonalization."/><meta property="og:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/"/><meta property="twitter:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/"/><link rel="canonical" href="https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="SymbolicDiagonalization logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">SymbolicDiagonalization</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../user_guide/">User Guide</a></li><li><a class="tocitem" href="../api_reference/">API Reference</a></li><li><a class="tocitem" href="../pattern_library/">Pattern Library</a></li><li><a class="tocitem" href="../group_theory_examples/">Group Theory Examples</a></li><li><a class="tocitem" href="../implementation/">Implementation Details</a></li><li><a class="tocitem" href="../mathematical_background/">Mathematical Background</a></li><li class="is-active"><a class="tocitem" href>Contributing</a><ul class="internal"><li><a class="tocitem" href="#Setup"><span>Setup</span></a></li><li><a class="tocitem" href="#Code-Style"><span>Code Style</span></a></li><li><a class="tocitem" href="#Testing"><span>Testing</span></a></li><li><a class="tocitem" href="#Adding-a-Pattern"><span>Adding a Pattern</span></a></li><li><a class="tocitem" href="#Building-Docs"><span>Building Docs</span></a></li><li><a class="tocitem" href="#Git-Workflow"><span>Git Workflow</span></a></li><li><a class="tocitem" href="#Questions"><span>Questions</span></a></li><li><a class="tocitem" href="#License"><span>License</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Contributing</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Contributing</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl/blob/main/docs/src/contributing.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Contributing"><a class="docs-heading-anchor" href="#Contributing">Contributing</a><a id="Contributing-1"></a><a class="docs-heading-anchor-permalink" href="#Contributing" title="Permalink"></a></h1><p>Guide for contributing to SymbolicDiagonalization.jl.</p><h2 id="Setup"><a class="docs-heading-anchor" href="#Setup">Setup</a><a id="Setup-1"></a><a class="docs-heading-anchor-permalink" href="#Setup" title="Permalink"></a></h2><pre><code class="language-bash hljs">cd SymbolicDiagonalization.jl
+julia --project=.</code></pre><pre><code class="language-julia hljs">using Pkg
+Pkg.instantiate()
+Pkg.test()</code></pre><h2 id="Code-Style"><a class="docs-heading-anchor" href="#Code-Style">Code Style</a><a id="Code-Style-1"></a><a class="docs-heading-anchor-permalink" href="#Code-Style" title="Permalink"></a></h2><ul><li><strong>Functions</strong>: <code>snake_case</code>, prefix private with <code>_</code></li><li><strong>Types</strong>: <code>PascalCase</code></li><li><strong>Clarity over cleverness</strong>: Readable code is maintainable</li><li><strong>Document intent</strong>: Comments explain <em>why</em>, not <em>what</em></li></ul><h3 id="Docstrings"><a class="docs-heading-anchor" href="#Docstrings">Docstrings</a><a id="Docstrings-1"></a><a class="docs-heading-anchor-permalink" href="#Docstrings" title="Permalink"></a></h3><pre><code class="language-julia hljs">&quot;&quot;&quot;
+    function_name(arg1; kwarg1=default)
 
-# Activate the project environment
-julia --project=.
-
-# Install dependencies
-julia&gt; using Pkg
-julia&gt; Pkg.instantiate()
-
-# Run tests to verify setup
-julia&gt; Pkg.test()</code></pre><h3 id="Project-Structure"><a class="docs-heading-anchor" href="#Project-Structure">Project Structure</a><a id="Project-Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Project-Structure" title="Permalink"></a></h3><pre><code class="nohighlight hljs">SymbolicDiagonalization.jl/
-├── src/
-│   ├── SymbolicDiagonalization.jl  # Module definition, constants, exports
-│   ├── charpoly.jl                 # Characteristic polynomial (Bareiss)
-│   ├── roots.jl                    # Closed-form root solvers (degrees 1-4)
-│   ├── rref.jl                     # RREF, nullspace, symbolic zero detection
-│   ├── structure.jl                # Structure detection, matrix properties
-│   ├── diagonalize.jl              # Public API (eigen, eigvals, symbolic_*)
-│   └── patterns/                   # Specialized eigensolvers by pattern
-│       ├── graphs.jl               # Hypercube, strongly regular graphs
-│       ├── circulant.jl            # Circulant, block circulant matrices
-│       ├── kronecker.jl            # Kronecker product detection
-│       ├── tridiagonal.jl          # Toeplitz tridiagonal, anti-diagonal
-│       └── permutation.jl          # Permutation matrices
-├── test/
-│   ├── runtests.jl                 # Test suite entry point
-│   ├── test_basic.jl               # Small matrix tests
-│   ├── test_patterns.jl            # Pattern-specific tests
-│   ├── test_structure.jl           # Structure detection tests
-│   └── test_interface.jl           # API interface tests
-├── docs/
-│   ├── src/                        # Documentation source
-│   └── make.jl                     # Documentation builder
-└── research/
-    └── research1.md                # Research notes</code></pre><h2 id="Code-Style-Guidelines"><a class="docs-heading-anchor" href="#Code-Style-Guidelines">Code Style Guidelines</a><a id="Code-Style-Guidelines-1"></a><a class="docs-heading-anchor-permalink" href="#Code-Style-Guidelines" title="Permalink"></a></h2><h3 id="General-Principles"><a class="docs-heading-anchor" href="#General-Principles">General Principles</a><a id="General-Principles-1"></a><a class="docs-heading-anchor-permalink" href="#General-Principles" title="Permalink"></a></h3><ul><li><strong>Clarity over cleverness</strong>: Readable code is maintainable code</li><li><strong>Type stability</strong>: Avoid type instabilities for performance</li><li><strong>Document intent</strong>: Comments should explain <em>why</em>, not <em>what</em></li><li><strong>Fail fast</strong>: Use early error checks with clear messages</li></ul><h3 id="Naming-Conventions"><a class="docs-heading-anchor" href="#Naming-Conventions">Naming Conventions</a><a id="Naming-Conventions-1"></a><a class="docs-heading-anchor-permalink" href="#Naming-Conventions" title="Permalink"></a></h3><ul><li><strong>Functions</strong>: <code>snake_case</code> (e.g., <code>detect_block_diagonal</code>)</li><li><strong>Types</strong>: <code>PascalCase</code> (e.g., <code>EigenPair</code>)</li><li><strong>Constants</strong>: <code>SCREAMING_SNAKE_CASE</code> (e.g., <code>MAX_ITERATIONS</code>)</li><li><strong>Private functions</strong>: Prefix with <code>_</code> (e.g., <code>_compute_helper</code>)</li></ul><h3 id="Code-Formatting"><a class="docs-heading-anchor" href="#Code-Formatting">Code Formatting</a><a id="Code-Formatting-1"></a><a class="docs-heading-anchor-permalink" href="#Code-Formatting" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Good: Clear structure, well-documented
-function detect_circulant(A::AbstractMatrix{T}) where T
-    n = size(A, 1)
-    n == size(A, 2) || return false
-    
-    # Check if all rows are cyclic shifts of first row
-    for i in 2:n
-        for j in 1:n
-            if A[i, j] != A[1, mod1(j - i + 1, n)]
-                return false
-            end
-        end
-    end
-    return true
-end
-
-# Bad: Dense, unclear, no documentation
-function detect_circulant(A::AbstractMatrix{T}) where T;n=size(A,1);n==size(A,2)||return false;for i in 2:n;for j in 1:n;A[i,j]!=A[1,mod1(j-i+1,n)]&amp;&amp;return false;end;end;true;end</code></pre><h3 id="Documentation-Strings"><a class="docs-heading-anchor" href="#Documentation-Strings">Documentation Strings</a><a id="Documentation-Strings-1"></a><a class="docs-heading-anchor-permalink" href="#Documentation-Strings" title="Permalink"></a></h3><p>Every exported function must have a docstring following this template:</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
-    function_name(arg1, arg2; kwarg1=default)
-
-Brief one-line description.
-
-Extended description with usage details, algorithm notes, and complexity.
+Brief description.
 
 # Arguments
-- `arg1`: Description of arg1
-- `arg2`: Description of arg2
-
-# Keywords
-- `kwarg1`: Description and default value
+- `arg1`: Description
 
 # Returns
-Description of return value(s)
+Description of return value
 
-# Examples</code></pre><p>julia julia&gt; using SymbolicDiagonalization, Symbolics julia&gt; @variables a b julia&gt; result = function_name([a b; b a]) [a + b, a - b]</p><pre><code class="nohighlight hljs">
-# Complexity
-Time and space complexity analysis
+# Examples</code></pre><p>julia result = function_name(input)</p><pre><code class="nohighlight hljs">&quot;&quot;&quot;</code></pre><h2 id="Testing"><a class="docs-heading-anchor" href="#Testing">Testing</a><a id="Testing-1"></a><a class="docs-heading-anchor-permalink" href="#Testing" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Run all tests
+Pkg.test()
 
-# References
-- [Author Year] Paper title, Journal/Conference
-&quot;&quot;&quot;
-function function_name(arg1, arg2; kwarg1=default)
-    # Implementation
-end</code></pre><h2 id="Testing-Requirements"><a class="docs-heading-anchor" href="#Testing-Requirements">Testing Requirements</a><a id="Testing-Requirements-1"></a><a class="docs-heading-anchor-permalink" href="#Testing-Requirements" title="Permalink"></a></h2><h3 id="Test-Coverage-Standards"><a class="docs-heading-anchor" href="#Test-Coverage-Standards">Test Coverage Standards</a><a id="Test-Coverage-Standards-1"></a><a class="docs-heading-anchor-permalink" href="#Test-Coverage-Standards" title="Permalink"></a></h3><ul><li><strong>All new functions</strong>: Must have at least one test</li><li><strong>Pattern detectors</strong>: Test true positives AND false negatives</li><li><strong>Eigensolvers</strong>: Test correctness (A<em>v = λ</em>v) and completeness (all eigenvalues found)</li><li><strong>Edge cases</strong>: Empty matrices, 1×1 matrices, repeated eigenvalues</li></ul><h3 id="Writing-Tests"><a class="docs-heading-anchor" href="#Writing-Tests">Writing Tests</a><a id="Writing-Tests-1"></a><a class="docs-heading-anchor-permalink" href="#Writing-Tests" title="Permalink"></a></h3><p>Use the <code>@testset</code> macro to organize tests:</p><pre><code class="language-julia hljs">@testset &quot;Circulant Matrices&quot; begin
-    @testset &quot;Detection&quot; begin
-        # Test positive detection
-        @variables a b c
-        circ = [a b c; c a b; b c a]
-        @test detect_circulant(circ) == true
-        
-        # Test negative detection
-        non_circ = [a b c; c a b; a c b]
-        @test detect_circulant(non_circ) == false
-    end
+# Run specific file
+include(&quot;test/test_patterns.jl&quot;)</code></pre><h3 id="Test-Requirements"><a class="docs-heading-anchor" href="#Test-Requirements">Test Requirements</a><a id="Test-Requirements-1"></a><a class="docs-heading-anchor-permalink" href="#Test-Requirements" title="Permalink"></a></h3><ul><li>All new functions must have tests</li><li>Test both detection (true/false positives) and correctness (A<em>v = λ</em>v)</li><li>Test edge cases: 1×1, repeated eigenvalues, etc.</li></ul><h2 id="Adding-a-Pattern"><a class="docs-heading-anchor" href="#Adding-a-Pattern">Adding a Pattern</a><a id="Adding-a-Pattern-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-a-Pattern" title="Permalink"></a></h2><h3 id="1.-Detection"><a class="docs-heading-anchor" href="#1.-Detection">1. Detection</a><a id="1.-Detection-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Detection" title="Permalink"></a></h3><p>Add <code>_is_pattern(mat)</code> in appropriate <code>src/patterns/*.jl</code>:</p><pre><code class="language-julia hljs">function _is_my_pattern(mat)
+    # Return nothing if not detected
+    # Return detection info if detected
+end</code></pre><h3 id="2.-Solver"><a class="docs-heading-anchor" href="#2.-Solver">2. Solver</a><a id="2.-Solver-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Solver" title="Permalink"></a></h3><p>Add <code>_my_pattern_eigenvalues(mat, info)</code>:</p><pre><code class="language-julia hljs">function _my_pattern_eigenvalues(mat, info)
+    # Return vector of eigenvalues
+end</code></pre><h3 id="3.-Integration"><a class="docs-heading-anchor" href="#3.-Integration">3. Integration</a><a id="3.-Integration-1"></a><a class="docs-heading-anchor-permalink" href="#3.-Integration" title="Permalink"></a></h3><p>Add to detection cascade in <code>src/diagonalize.jl</code>:</p><pre><code class="language-julia hljs"># In symbolic_eigenvalues_core:
+info = _is_my_pattern(mat)
+if !isnothing(info)
+    return _my_pattern_eigenvalues(mat, info), nothing, nothing
+end</code></pre><h3 id="4.-Tests"><a class="docs-heading-anchor" href="#4.-Tests">4. Tests</a><a id="4.-Tests-1"></a><a class="docs-heading-anchor-permalink" href="#4.-Tests" title="Permalink"></a></h3><p>Add to <code>test/test_patterns.jl</code>:</p><pre><code class="language-julia hljs">@testset &quot;MyPattern&quot; begin
+    @test _is_my_pattern(valid_matrix) !== nothing
+    @test _is_my_pattern(invalid_matrix) === nothing
     
-    @testset &quot;Eigenvalues&quot; begin
-        # Test known eigenvalue formula
-        circ = [1 2 3; 3 1 2; 2 3 1]
-        λ = eigvals(circ)
-        
-        # Verify A*v = λ*v for each eigenvalue
-        for (i, val) in enumerate(λ)
-            v = eigvecs(circ)[:, i]
-            @test circ * v ≈ val * v atol=1e-10
-        end
-    end
-    
-    @testset &quot;Size Scaling&quot; begin
-        # Test pattern works for various sizes
-        for n in [3, 5, 7, 10]
-            A = circulant_matrix(n)
-            λ = eigvals(A)
-            @test length(λ) == n
-        end
-    end
-end</code></pre><h3 id="Running-Tests"><a class="docs-heading-anchor" href="#Running-Tests">Running Tests</a><a id="Running-Tests-1"></a><a class="docs-heading-anchor-permalink" href="#Running-Tests" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Run full test suite
-julia&gt; using Pkg; Pkg.test()
+    vals = eigvals(valid_matrix)
+    @test length(vals) == n
+    # Verify eigenvalue equation
+end</code></pre><h3 id="5.-Documentation"><a class="docs-heading-anchor" href="#5.-Documentation">5. Documentation</a><a id="5.-Documentation-1"></a><a class="docs-heading-anchor-permalink" href="#5.-Documentation" title="Permalink"></a></h3><p>Add section to <code>docs/src/pattern_library.md</code>.</p><h2 id="Building-Docs"><a class="docs-heading-anchor" href="#Building-Docs">Building Docs</a><a id="Building-Docs-1"></a><a class="docs-heading-anchor-permalink" href="#Building-Docs" title="Permalink"></a></h2><pre><code class="language-bash hljs">julia --project=docs docs/make.jl
 
-# Run specific test file
-julia&gt; include(&quot;test/test_structures.jl&quot;)
-
-# Run with coverage
-julia --code-coverage=user -e &#39;using Pkg; Pkg.test()&#39;</code></pre><h2 id="Adding-New-Patterns"><a class="docs-heading-anchor" href="#Adding-New-Patterns">Adding New Patterns</a><a id="Adding-New-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-New-Patterns" title="Permalink"></a></h2><p>Follow this 5-step process to add a new matrix pattern:</p><h3 id="Step-1:-Detection-Function"><a class="docs-heading-anchor" href="#Step-1:-Detection-Function">Step 1: Detection Function</a><a id="Step-1:-Detection-Function-1"></a><a class="docs-heading-anchor-permalink" href="#Step-1:-Detection-Function" title="Permalink"></a></h3><p>Create a detector in <code>src/structure_detection.jl</code>:</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
-    detect_my_pattern(A::AbstractMatrix) -&gt; Bool
-
-Detect if matrix A has MyPattern structure.
-
-MyPattern is defined as [mathematical definition].
-
-# Complexity
-O(n²) - Checks all matrix entries
-&quot;&quot;&quot;
-function detect_my_pattern(A::AbstractMatrix{T}) where T
-    n = size(A, 1)
-    n == size(A, 2) || return false
-    
-    # Check pattern-specific properties
-    for i in 1:n, j in 1:n
-        # Pattern condition
-        if !condition(A[i,j])
-            return false
-        end
-    end
-    return true
-end</code></pre><h3 id="Step-2:-Eigensolver-Function"><a class="docs-heading-anchor" href="#Step-2:-Eigensolver-Function">Step 2: Eigensolver Function</a><a id="Step-2:-Eigensolver-Function-1"></a><a class="docs-heading-anchor-permalink" href="#Step-2:-Eigensolver-Function" title="Permalink"></a></h3><p>Create a solver in <code>src/special_patterns.jl</code>:</p><pre><code class="language-julia hljs">&quot;&quot;&quot;
-    solve_my_pattern(A::AbstractMatrix; kwargs...) -&gt; Vector
-
-Compute eigenvalues of MyPattern matrices using [algorithm name].
-
-# Algorithm
-Brief description of the algorithm and its basis (e.g., DFT, closed-form formula).
-
-# Complexity
-- Time: O(f(n))
-- Space: O(g(n))
-
-# References
-- [Author Year] Paper title
-&quot;&quot;&quot;
-function solve_my_pattern(A::AbstractMatrix{T}; kwargs...) where T
-    n = size(A, 1)
-    
-    # Extract pattern parameters
-    params = extract_parameters(A)
-    
-    # Compute eigenvalues using pattern-specific algorithm
-    eigenvalues = compute_eigenvalues(params)
-    
-    return eigenvalues
-end</code></pre><h3 id="Step-3:-Integration"><a class="docs-heading-anchor" href="#Step-3:-Integration">Step 3: Integration</a><a id="Step-3:-Integration-1"></a><a class="docs-heading-anchor-permalink" href="#Step-3:-Integration" title="Permalink"></a></h3><p>Add pattern to detection chain in <code>src/structure_detection.jl</code>:</p><pre><code class="language-julia hljs">function detect_and_solve(A::AbstractMatrix; kwargs...)
-    # ... existing patterns ...
-    
-    # Add new pattern
-    if detect_my_pattern(A)
-        return solve_my_pattern(A; kwargs...)
-    end
-    
-    # ... fallback ...
-end</code></pre><h3 id="Step-4:-Testing"><a class="docs-heading-anchor" href="#Step-4:-Testing">Step 4: Testing</a><a id="Step-4:-Testing-1"></a><a class="docs-heading-anchor-permalink" href="#Step-4:-Testing" title="Permalink"></a></h3><p>Create comprehensive tests in <code>test/test_structures.jl</code>:</p><pre><code class="language-julia hljs">@testset &quot;MyPattern Matrices&quot; begin
-    @testset &quot;Detection&quot; begin
-        # True positive
-        @variables a b
-        mat = construct_my_pattern(a, b)
-        @test detect_my_pattern(mat) == true
-        
-        # False negative
-        non_mat = [a b; b a]
-        @test detect_my_pattern(non_mat) == false
-    end
-    
-    @testset &quot;Known Eigenvalues&quot; begin
-        # Test with known theoretical eigenvalues
-        A = [concrete example]
-        λ = eigvals(A)
-        expected = [known eigenvalues]
-        @test sort(λ) ≈ sort(expected)
-    end
-    
-    @testset &quot;Eigenvector Verification&quot; begin
-        # Verify A*v = λ*v
-        A = construct_my_pattern(...)
-        E = eigen(A)
-        for i in 1:length(E.values)
-            @test A * E.vectors[:, i] ≈ E.values[i] * E.vectors[:, i]
-        end
-    end
-    
-    @testset &quot;Size Scaling&quot; begin
-        # Test multiple sizes
-        for n in [3, 5, 10, 20]
-            A = construct_my_pattern(n)
-            λ = eigvals(A)
-            @test length(λ) == n
-        end
-    end
-end</code></pre><h3 id="Step-5:-Documentation"><a class="docs-heading-anchor" href="#Step-5:-Documentation">Step 5: Documentation</a><a id="Step-5:-Documentation-1"></a><a class="docs-heading-anchor-permalink" href="#Step-5:-Documentation" title="Permalink"></a></h3><p>Add pattern to <code>docs/src/pattern_library.md</code>:</p><pre><code class="language-markdown hljs">## MyPattern
-
-### Definition
-Mathematical definition with notation.
-
-### Properties
-- Property 1
-- Property 2
-
-### Eigenvalue Formula
-Closed-form expression or algorithm description.
-
-### Example
-\```julia
-@variables a b
-A = [matrix construction]
-λ = eigvals(A)
-# Result: [eigenvalues]
-\```
-
-### Complexity
-- Detection: O(n²)
-- Eigenvalues: O(f(n))
-- Eigenvectors: O(g(n))
-
-### Implementation Details
-Algorithm notes, numerical considerations, limitations.
-
-### References
-- [Author Year] Paper title</code></pre><h2 id="Pattern-Submission-Template"><a class="docs-heading-anchor" href="#Pattern-Submission-Template">Pattern Submission Template</a><a id="Pattern-Submission-Template-1"></a><a class="docs-heading-anchor-permalink" href="#Pattern-Submission-Template" title="Permalink"></a></h2><p>When proposing a new pattern, open an issue with:</p><pre><code class="language-markdown hljs">## Pattern Name: [Name]
-
-### Mathematical Definition
-LaTeX or clear description of the pattern
-
-### Eigenvalue Formula
-Known closed-form formula or algorithm
-
-### Complexity
-Expected time/space complexity
-
-### References
-Papers or textbooks describing the pattern
-
-### Example
-Concrete example matrix and its eigenvalues
-
-### Implementation Notes
-Any special considerations (numerical stability, edge cases, etc.)</code></pre><h2 id="Git-Workflow-(When-Applicable)"><a class="docs-heading-anchor" href="#Git-Workflow-(When-Applicable)">Git Workflow (When Applicable)</a><a id="Git-Workflow-(When-Applicable)-1"></a><a class="docs-heading-anchor-permalink" href="#Git-Workflow-(When-Applicable)" title="Permalink"></a></h2><p>If this project becomes a Git repository:</p><h3 id="Branch-Naming"><a class="docs-heading-anchor" href="#Branch-Naming">Branch Naming</a><a id="Branch-Naming-1"></a><a class="docs-heading-anchor-permalink" href="#Branch-Naming" title="Permalink"></a></h3><ul><li><code>feature/pattern-name</code> - New pattern implementations</li><li><code>fix/issue-description</code> - Bug fixes</li><li><code>docs/topic</code> - Documentation updates</li><li><code>perf/optimization-area</code> - Performance improvements</li></ul><h3 id="Commit-Messages"><a class="docs-heading-anchor" href="#Commit-Messages">Commit Messages</a><a id="Commit-Messages-1"></a><a class="docs-heading-anchor-permalink" href="#Commit-Messages" title="Permalink"></a></h3><p>Follow conventional commits:</p><pre><code class="nohighlight hljs">type(scope): Brief description
-
-Detailed explanation of changes and motivation.
-
-Fixes #issue-number</code></pre><p>Types: <code>feat</code>, <code>fix</code>, <code>docs</code>, <code>test</code>, <code>perf</code>, <code>refactor</code>, <code>style</code></p><h3 id="Pull-Request-Process"><a class="docs-heading-anchor" href="#Pull-Request-Process">Pull Request Process</a><a id="Pull-Request-Process-1"></a><a class="docs-heading-anchor-permalink" href="#Pull-Request-Process" title="Permalink"></a></h3><ol><li><strong>Fork and branch</strong> from <code>main</code></li><li><strong>Implement</strong> with tests and documentation</li><li><strong>Run tests</strong> - All must pass</li><li><strong>Update docs</strong> - Add examples and API references</li><li><strong>Open PR</strong> with clear description</li><li><strong>Address review</strong> comments</li><li><strong>Squash and merge</strong> when approved</li></ol><h2 id="Code-Review-Guidelines"><a class="docs-heading-anchor" href="#Code-Review-Guidelines">Code Review Guidelines</a><a id="Code-Review-Guidelines-1"></a><a class="docs-heading-anchor-permalink" href="#Code-Review-Guidelines" title="Permalink"></a></h2><h3 id="For-Reviewers"><a class="docs-heading-anchor" href="#For-Reviewers">For Reviewers</a><a id="For-Reviewers-1"></a><a class="docs-heading-anchor-permalink" href="#For-Reviewers" title="Permalink"></a></h3><ul><li><strong>Check correctness</strong>: Verify algorithm implementation against references</li><li><strong>Test coverage</strong>: Ensure all code paths are tested</li><li><strong>Documentation</strong>: Confirm docstrings and examples are clear</li><li><strong>Performance</strong>: Look for obvious inefficiencies</li><li><strong>Style</strong>: Check adherence to guidelines</li></ul><h3 id="For-Authors"><a class="docs-heading-anchor" href="#For-Authors">For Authors</a><a id="For-Authors-1"></a><a class="docs-heading-anchor-permalink" href="#For-Authors" title="Permalink"></a></h3><ul><li><strong>Self-review first</strong>: Read your own changes critically</li><li><strong>Respond promptly</strong>: Address feedback quickly</li><li><strong>Be open</strong>: Accept constructive criticism gracefully</li><li><strong>Test thoroughly</strong>: Don&#39;t rely on reviewers to find bugs</li></ul><h2 id="Performance-Optimization-Guidelines"><a class="docs-heading-anchor" href="#Performance-Optimization-Guidelines">Performance Optimization Guidelines</a><a id="Performance-Optimization-Guidelines-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-Optimization-Guidelines" title="Permalink"></a></h2><h3 id="Profiling"><a class="docs-heading-anchor" href="#Profiling">Profiling</a><a id="Profiling-1"></a><a class="docs-heading-anchor-permalink" href="#Profiling" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Profile, ProfileView
-
-# Profile a function
-@profile eigvals(large_matrix)
-ProfileView.view()
-
-# Benchmark with BenchmarkTools
-using BenchmarkTools
-@benchmark eigvals($matrix)</code></pre><h3 id="Common-Optimizations"><a class="docs-heading-anchor" href="#Common-Optimizations">Common Optimizations</a><a id="Common-Optimizations-1"></a><a class="docs-heading-anchor-permalink" href="#Common-Optimizations" title="Permalink"></a></h3><ol><li><strong>Avoid allocations</strong>: Use in-place operations where possible</li><li><strong>Type stability</strong>: Ensure functions return consistent types</li><li><strong>Loop order</strong>: Access arrays in column-major order</li><li><strong>SIMD</strong>: Use <code>@simd</code> for vectorizable loops</li><li><strong>Preallocation</strong>: Allocate output arrays before loops</li></ol><h3 id="Example-Optimization"><a class="docs-heading-anchor" href="#Example-Optimization">Example Optimization</a><a id="Example-Optimization-1"></a><a class="docs-heading-anchor-permalink" href="#Example-Optimization" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Slow: Allocates in loop
-function slow_transform(A)
-    result = []
-    for i in 1:size(A, 1)
-        push!(result, transform(A[i, :]))
-    end
-    return result
-end
-
-# Fast: Preallocated, type-stable
-function fast_transform(A::Matrix{T}) where T
-    n = size(A, 1)
-    result = Vector{T}(undef, n)
-    for i in 1:n
-        result[i] = transform(view(A, i, :))
-    end
-    return result
-end</code></pre><h2 id="Documentation-Building"><a class="docs-heading-anchor" href="#Documentation-Building">Documentation Building</a><a id="Documentation-Building-1"></a><a class="docs-heading-anchor-permalink" href="#Documentation-Building" title="Permalink"></a></h2><h3 id="Local-Documentation"><a class="docs-heading-anchor" href="#Local-Documentation">Local Documentation</a><a id="Local-Documentation-1"></a><a class="docs-heading-anchor-permalink" href="#Local-Documentation" title="Permalink"></a></h3><pre><code class="language-bash hljs"># Build documentation
-julia --project=docs docs/make.jl
-
-# View in browser with HTTP server (required for navigation links to work)
-cd docs
-./serve.sh
-# Then open http://localhost:8000</code></pre><h3 id="Documentation-Style"><a class="docs-heading-anchor" href="#Documentation-Style">Documentation Style</a><a id="Documentation-Style-1"></a><a class="docs-heading-anchor-permalink" href="#Documentation-Style" title="Permalink"></a></h3><ul><li><strong>Be concise</strong>: Short sentences, clear structure</li><li><strong>Use examples</strong>: Show, don&#39;t just tell</li><li><strong>Link references</strong>: Cross-reference related functions</li><li><strong>Update regularly</strong>: Keep docs in sync with code</li></ul><h2 id="CI/CD-Setup-for-GitHub"><a class="docs-heading-anchor" href="#CI/CD-Setup-for-GitHub">CI/CD Setup for GitHub</a><a id="CI/CD-Setup-for-GitHub-1"></a><a class="docs-heading-anchor-permalink" href="#CI/CD-Setup-for-GitHub" title="Permalink"></a></h2><h3 id="Automatic-Documentation-Deployment"><a class="docs-heading-anchor" href="#Automatic-Documentation-Deployment">Automatic Documentation Deployment</a><a id="Automatic-Documentation-Deployment-1"></a><a class="docs-heading-anchor-permalink" href="#Automatic-Documentation-Deployment" title="Permalink"></a></h3><p>The package includes GitHub Actions workflow for automatic documentation deployment to GitHub Pages.</p><h4 id="Initial-Setup-(One-Time)"><a class="docs-heading-anchor" href="#Initial-Setup-(One-Time)">Initial Setup (One-Time)</a><a id="Initial-Setup-(One-Time)-1"></a><a class="docs-heading-anchor-permalink" href="#Initial-Setup-(One-Time)" title="Permalink"></a></h4><p><strong>1. Generate SSH Deploy Key</strong></p><pre><code class="language-bash hljs"># Install DocumenterTools if needed
-julia -e &#39;using Pkg; Pkg.add(&quot;DocumenterTools&quot;)&#39;
-
-# Generate deploy key
-julia -e &#39;using DocumenterTools; DocumenterTools.genkeys()&#39;</code></pre><p>This creates:</p><ul><li><code>docs/src/.documenter</code> (private key - do NOT commit)</li><li>Public key displayed in terminal</li></ul><p><strong>2. Add Deploy Key to GitHub</strong></p><ol><li>Go to your repository on GitHub</li><li>Navigate to: <strong>Settings</strong> → <strong>Deploy keys</strong> → <strong>Add deploy key</strong></li><li>Title: <code>documenter-key</code></li><li>Key: Paste the <strong>public key</strong> from step 1</li><li>✅ Check &quot;Allow write access&quot;</li><li>Click <strong>Add key</strong></li></ol><p><strong>3. Add Private Key as GitHub Secret</strong></p><ol><li>Copy the contents of <code>docs/src/.documenter</code> (the private key file)</li><li>Go to: <strong>Settings</strong> → <strong>Secrets and variables</strong> → <strong>Actions</strong></li><li>Click <strong>New repository secret</strong></li><li>Name: <code>DOCUMENTER_KEY</code></li><li>Value: Paste the entire private key contents</li><li>Click <strong>Add secret</strong></li></ol><p><strong>4. Update Repository URLs in <code>docs/make.jl</code></strong></p><p>Replace <code>YOUR_USERNAME</code> with your GitHub username:</p><pre><code class="language-julia hljs">repo = &quot;https://github.com/YOUR_USERNAME/SymbolicDiagonalization.jl/blob/{commit}{path}#{line}&quot;,
-canonical = &quot;https://YOUR_USERNAME.github.io/SymbolicDiagonalization.jl&quot;,</code></pre><p>And:</p><pre><code class="language-julia hljs">deploydocs(;
-    repo = &quot;github.com/YOUR_USERNAME/SymbolicDiagonalization.jl&quot;,</code></pre><p><strong>5. Enable GitHub Pages</strong></p><ol><li>Go to: <strong>Settings</strong> → <strong>Pages</strong></li><li>Source: <strong>Deploy from a branch</strong></li><li>Branch: <code>gh-pages</code> / <code>root</code></li><li>Click <strong>Save</strong></li></ol><h4 id="How-It-Works"><a class="docs-heading-anchor" href="#How-It-Works">How It Works</a><a id="How-It-Works-1"></a><a class="docs-heading-anchor-permalink" href="#How-It-Works" title="Permalink"></a></h4><ul><li><strong>On push to <code>main</code></strong>: Builds and deploys docs to <code>gh-pages</code> branch</li><li><strong>On pull requests</strong>: Builds docs to verify they work (doesn&#39;t deploy)</li><li><strong>On tags</strong>: Deploys versioned documentation</li></ul><p>Your documentation will be available at:</p><pre><code class="nohighlight hljs">https://YOUR_USERNAME.github.io/SymbolicDiagonalization.jl/</code></pre><h4 id="Testing-CI-Locally"><a class="docs-heading-anchor" href="#Testing-CI-Locally">Testing CI Locally</a><a id="Testing-CI-Locally-1"></a><a class="docs-heading-anchor-permalink" href="#Testing-CI-Locally" title="Permalink"></a></h4><p>You can test that the CI build will work:</p><pre><code class="language-bash hljs"># Simulate CI environment
-CI=true julia --project=docs -e &#39;
-    using Pkg
-    Pkg.develop(PackageSpec(path=pwd()))
-    Pkg.instantiate()
-&#39;
-CI=true julia --project=docs docs/make.jl</code></pre><h4 id="Troubleshooting"><a class="docs-heading-anchor" href="#Troubleshooting">Troubleshooting</a><a id="Troubleshooting-1"></a><a class="docs-heading-anchor-permalink" href="#Troubleshooting" title="Permalink"></a></h4><p><strong>&quot;SSH key authentication failed&quot;</strong></p><ul><li>Ensure <code>DOCUMENTER_KEY</code> secret contains the entire private key</li><li>Verify deploy key has write access enabled</li></ul><p><strong>&quot;gh-pages branch not found&quot;</strong></p><ul><li>First deployment creates the branch automatically</li><li>Wait a few minutes after first push</li></ul><p><strong>&quot;Documentation build failed&quot;</strong></p><ul><li>Check the Actions tab for error logs</li><li>Ensure all dependencies are in <code>docs/Project.toml</code></li><li>Test locally with <code>CI=true</code> as shown above</li></ul><p><strong>&quot;Pages not updating&quot;</strong></p><ul><li>Check GitHub Pages is enabled and pointing to <code>gh-pages</code></li><li>May take 5-10 minutes for changes to appear</li><li>Check Pages build status in Actions tab</li></ul><h2 id="Getting-Help"><a class="docs-heading-anchor" href="#Getting-Help">Getting Help</a><a id="Getting-Help-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-Help" title="Permalink"></a></h2><h3 id="Resources"><a class="docs-heading-anchor" href="#Resources">Resources</a><a id="Resources-1"></a><a class="docs-heading-anchor-permalink" href="#Resources" title="Permalink"></a></h3><ul><li><strong>Julia Discourse</strong>: https://discourse.julialang.org/</li><li><strong>Julia Slack</strong>: Get invited at https://julialang.org/slack/</li><li><strong>Symbolics.jl Docs</strong>: https://symbolics.juliasymbolics.org/</li></ul><h3 id="Questions?"><a class="docs-heading-anchor" href="#Questions?">Questions?</a><a id="Questions?-1"></a><a class="docs-heading-anchor-permalink" href="#Questions?" title="Permalink"></a></h3><p>Open an issue with:</p><ul><li>Clear description of the problem</li><li>Minimal reproducible example</li><li>Julia version and package versions (<code>Pkg.status()</code>)</li><li>Expected vs actual behavior</li></ul><h2 id="License"><a class="docs-heading-anchor" href="#License">License</a><a id="License-1"></a><a class="docs-heading-anchor-permalink" href="#License" title="Permalink"></a></h2><p>Contributions are assumed to be licensed under the same license as the package (MIT).</p><p>By contributing, you agree that your contributions will be licensed under the MIT License.</p><hr/><p>Thank you for contributing to SymbolicDiagonalization.jl!</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mathematical_background/">« Mathematical Background</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 1 January 2026 22:17">Thursday 1 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+# Serve locally (required for working navigation)
+cd docs/build &amp;&amp; python3 -m http.server 8000</code></pre><h2 id="Git-Workflow"><a class="docs-heading-anchor" href="#Git-Workflow">Git Workflow</a><a id="Git-Workflow-1"></a><a class="docs-heading-anchor-permalink" href="#Git-Workflow" title="Permalink"></a></h2><ul><li>Branch: <code>feature/pattern-name</code>, <code>fix/description</code></li><li>Commit: <code>type(scope): description</code> (feat, fix, docs, test)</li><li>All tests must pass before merge</li></ul><h2 id="Questions"><a class="docs-heading-anchor" href="#Questions">Questions</a><a id="Questions-1"></a><a class="docs-heading-anchor-permalink" href="#Questions" title="Permalink"></a></h2><p>Open an issue with:</p><ul><li>Clear problem description</li><li>Minimal reproducible example</li><li>Julia version (<code>versioninfo()</code>)</li></ul><h2 id="License"><a class="docs-heading-anchor" href="#License">License</a><a id="License-1"></a><a class="docs-heading-anchor-permalink" href="#License" title="Permalink"></a></h2><p>Contributions are MIT licensed.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mathematical_background/">« Mathematical Background</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 1 January 2026 22:42">Thursday 1 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
