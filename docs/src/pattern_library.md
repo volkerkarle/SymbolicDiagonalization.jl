@@ -1,249 +1,85 @@
 # Pattern Library
 
-Complete catalog of all special matrix patterns with closed-form eigenvalue solutions implemented in `SymbolicDiagonalization.jl`.
+Catalog of matrix patterns with closed-form eigenvalue solutions.
 
-## Table of Contents
+## Quick Reference
 
-1. [Basic Patterns](#basic-patterns)
-   - [Diagonal Matrices](#diagonal-matrices)
-   - [Triangular Matrices](#triangular-matrices)
-   - [Jordan Blocks](#jordan-blocks)
-2. [Structure-Based Patterns](#structure-based-patterns)
-   - [Block-Diagonal](#block-diagonal-matrices)
-   - [Persymmetric](#persymmetric-matrices)
-3. [Symmetry-Based Patterns](#symmetry-based-patterns)
-   - [Circulant Matrices](#circulant-matrices)
-   - [Block Circulant](#block-circulant-matrices)
-   - [Anti-Diagonal](#anti-diagonal-matrices)
-4. [Tensor Product Patterns](#tensor-product-patterns)
-   - [Kronecker Products](#kronecker-products)
-5. [Tridiagonal Patterns](#tridiagonal-patterns)
-   - [Symmetric Toeplitz Tridiagonal](#symmetric-toeplitz-tridiagonal)
-   - [Special 5×5 Patterns](#special-5×5-tridiagonal-patterns)
-6. [Permutation Patterns](#permutation-patterns)
-   - [Permutation Matrices](#permutation-matrices)
+| Pattern | Formula/Method | Complexity |
+|---------|---------------|------------|
+| Diagonal | Direct: $\lambda_i = d_i$ | $O(n)$ |
+| Triangular | Diagonal entries | $O(n)$ |
+| Block-diagonal | Union of block eigenvalues | $\sum O(n_i)$ |
+| Circulant | DFT: $\lambda_k = \sum c_j \omega^{jk}$ | $O(n)$ |
+| Sym. Toeplitz tridiag | $\lambda_k = a + 2b\cos(k\pi/(n+1))$ | $O(n)$ |
+| Kronecker $A \otimes B$ | Products: $\lambda_i(A) \cdot \lambda_j(B)$ | $O(m+n)$ |
+| Permutation | Roots of unity from cycle structure | $O(n)$ |
+| Persymmetric | Half-size decomposition | $O(n/2)$ |
+| Anti-diagonal | $\pm$ pairs | $O(n)$ |
+| Jordan block | Single eigenvalue $\lambda$ with multiplicity $n$ | $O(1)$ |
 
 ---
 
 ## Basic Patterns
 
-### Diagonal Matrices
+### Diagonal
 
-**Structure**: Non-zero only on main diagonal
+**Eigenvalues**: Diagonal entries $\{d_1, d_2, \ldots, d_n\}$
 
-**Matrix Form**:
-```math
-\mathbf{D} = \begin{bmatrix}
-d_1 & 0 & 0 & \cdots & 0 \\
-0 & d_2 & 0 & \cdots & 0 \\
-0 & 0 & d_3 & \cdots & 0 \\
-\vdots & \vdots & \vdots & \ddots & \vdots \\
-0 & 0 & 0 & \cdots & d_n
-\end{bmatrix}
-```
-
-**Eigenvalues**: $\{d_1, d_2, d_3, \ldots, d_n\}$ (diagonal entries)
-
-**Eigenvectors**: Standard basis vectors $\mathbf{e}_i$
-
-**Complexity**: $O(n)$ - direct reading
-
-**Example**:
 ```julia
 @variables a b c
 D = [a 0 0; 0 b 0; 0 0 c]
-
 eigvals(D)  # [a, b, c]
 ```
 
-**Why this works**: Diagonal matrices are already in eigenvalue form. The eigenvalue equation $\mathbf{D}\mathbf{v} = \lambda\mathbf{v}$ is satisfied by standard basis vectors.
+### Triangular
 
-**Mathematical properties**:
-- Always diagonalizable
-- Eigenvectors are orthogonal
-- Simple eigenvalue structure
+**Eigenvalues**: Diagonal entries (upper or lower triangular)
 
----
-
-### Triangular Matrices
-
-**Structure**: Upper or lower triangular (zeros below or above diagonal)
-
-**Upper Triangular Form**:
-```math
-\mathbf{U} = \begin{bmatrix}
-u_{11} & u_{12} & u_{13} & \cdots & u_{1n} \\
-0 & u_{22} & u_{23} & \cdots & u_{2n} \\
-0 & 0 & u_{33} & \cdots & u_{3n} \\
-\vdots & \vdots & \vdots & \ddots & \vdots \\
-0 & 0 & 0 & \cdots & u_{nn}
-\end{bmatrix}
-```
-
-**Eigenvalues**: $\{u_{11}, u_{22}, u_{33}, \ldots, u_{nn}\}$ (diagonal entries)
-
-**Eigenvectors**: Computed via back-substitution
-
-**Complexity**: $O(n)$ for eigenvalues, $O(n^2)$ for eigenvectors
-
-**Example**:
 ```julia
 @variables a b c
 U = [a 1 2; 0 b 3; 0 0 c]
-
 eigvals(U)  # [a, b, c]
 ```
 
-**Why this works**: For triangular matrices, $\det(\lambda\mathbf{I} - \mathbf{U})$ is a product of diagonal terms $(\lambda - u_{ii})$, so eigenvalues are exactly the diagonal entries.
-
-**Mathematical properties**:
-- May not be diagonalizable (if repeated eigenvalues)
-- Eigenvalues independent of off-diagonal entries
-- Characteristic polynomial factorizes immediately
-
----
-
 ### Jordan Blocks
 
-**Structure**: Single repeated eigenvalue on diagonal, ones on superdiagonal
+**Eigenvalues**: $\lambda$ with algebraic multiplicity $n$, geometric multiplicity 1
 
-**Matrix Form**:
-```math
-\mathbf{J}(\lambda, n) = \begin{bmatrix}
-\lambda & 1 & 0 & \cdots & 0 \\
-0 & \lambda & 1 & \cdots & 0 \\
-0 & 0 & \lambda & \cdots & 0 \\
-\vdots & \vdots & \vdots & \ddots & \vdots \\
-0 & 0 & 0 & \cdots & \lambda
-\end{bmatrix}
-```
-
-**Eigenvalues**: $\{\lambda\}$ with algebraic multiplicity $n$
-
-**Eigenvectors**: Only ONE eigenvector (not diagonalizable for $n > 1$)
-
-**Complexity**: $O(1)$ for eigenvalues
-
-**Example**:
 ```julia
 @variables λ
 J = [λ 1 0; 0 λ 1; 0 0 λ]
-
 eigvals(J)  # [λ, λ, λ]
 ```
 
-**Why this works**: $\det(t\mathbf{I} - \mathbf{J}) = (t - \lambda)^n$, giving repeated root $\lambda$. Geometric multiplicity is 1 (rank deficiency).
-
-**Mathematical properties**:
-- **Not diagonalizable** (unless $n = 1$)
-- Prototype of non-diagonalizable matrices
-- Appears in Jordan normal form decomposition
-
-**Caution**: `symbolic_diagonalize()` will throw error since Jordan blocks ($n > 1$) are not diagonalizable.
+**Note**: Not diagonalizable for $n > 1$.
 
 ---
 
 ## Structure-Based Patterns
 
-### Block-Diagonal Matrices
+### Block-Diagonal
 
-**Structure**: Non-zero only in diagonal blocks
+**Eigenvalues**: $\lambda(B) = \lambda(A_1) \cup \lambda(A_2) \cup \cdots$
 
-**Matrix Form**:
-```math
-\mathbf{B} = \begin{bmatrix}
-\mathbf{A}_1 & \mathbf{0} & \mathbf{0} & \cdots & \mathbf{0} \\
-\mathbf{0} & \mathbf{A}_2 & \mathbf{0} & \cdots & \mathbf{0} \\
-\mathbf{0} & \mathbf{0} & \mathbf{A}_3 & \cdots & \mathbf{0} \\
-\vdots & \vdots & \vdots & \ddots & \vdots \\
-\mathbf{0} & \mathbf{0} & \mathbf{0} & \cdots & \mathbf{A}_k
-\end{bmatrix}
-```
-where each $\mathbf{A}_i$ is a square matrix (possibly different sizes).
-
-**Eigenvalues**: $\lambda(\mathbf{B}) = \lambda(\mathbf{A}_1) \cup \lambda(\mathbf{A}_2) \cup \cdots \cup \lambda(\mathbf{A}_k)$
-
-**Complexity**: $O(\sum_i f(n_i))$ where $f(n)$ is cost to solve size-$n$ block
-
-**Example**:
 ```julia
 @variables a b c d
-B = [a  b  0  0;
-     b  a  0  0;
-     0  0  c  d;
-     0  0  d  c]
-
+B = [a b 0 0; b a 0 0; 0 0 c d; 0 0 d c]
 eigvals(B)  # [a+b, a-b, c+d, c-d]
 ```
 
-**Why this works**: The characteristic polynomial factorizes:
-```math
-\det(\lambda\mathbf{I} - \mathbf{B}) = \det(\lambda\mathbf{I} - \mathbf{A}_1) \cdot \det(\lambda\mathbf{I} - \mathbf{A}_2) \cdot \ldots \cdot \det(\lambda\mathbf{I} - \mathbf{A}_k)
-```
+Reduces degree-$n$ problem to smaller independent problems.
 
-So eigenvalues are union of eigenvalues of each block.
+### Persymmetric
 
-**Detection algorithm**:
-1. Find connected components of non-zero structure
-2. Recursively solve each block independently
-3. Concatenate eigenvalues
+**Definition**: $Q[i,j] = Q[n+1-j, n+1-i]$ (symmetric about anti-diagonal)
 
-**Practical importance**: An $8 \times 8$ matrix with four $2 \times 2$ blocks requires solving 4 quadratics, not one degree-8 polynomial!
+Splits into two half-sized eigenvalue problems via transformation with flip matrix.
 
-**Mathematical properties**:
-- Diagonalizable iff all blocks are diagonalizable
-- Eigenvectors are block-structured
-- Extremely common in practice (physical subsystems, symmetry blocks)
-
----
-
-### Persymmetric Matrices
-
-**Structure**: Symmetric about anti-diagonal: $Q[i,j] = Q[n+1-j, n+1-i]$
-
-**Matrix Form** ($4 \times 4$ example):
-```math
-\mathbf{P} = \begin{bmatrix}
-a & b & c & d \\
-b & e & f & c \\
-c & f & e & b \\
-d & c & b & a
-\end{bmatrix}
-```
-
-**Eigenvalues**: Computed by splitting into half-sized problems
-
-**Complexity**: $O(f(n/2))$ where $f$ is cost for size $n/2$
-
-**Example**:
 ```julia
 @variables a b c d e f
 P = [a b c d; b e f c; c f e b; d c b a]
-
-eigvals(P)  # Splits into two 2×2 problems
+eigvals(P)  # Solves two 2×2 problems
 ```
-
-**Why this works**: Persymmetric structure allows transformation:
-```math
-\mathbf{Q} = \mathbf{J} \mathbf{P} \mathbf{J} \quad \text{(where } \mathbf{J} \text{ is anti-diagonal identity)}
-```
-
-This creates block structure in eigenvector space, splitting problem in half.
-
-**Transformation details**:
-- Let $\mathbf{J}$ be the flip matrix (anti-diagonal identity)
-- Form symmetric combinations: $(\mathbf{P} \pm \mathbf{JPJ})/2$
-- These commute and can be simultaneously diagonalized
-- Reduces to two half-sized eigenvalue problems
-
-**Detection**: Check if $Q[i,j] = Q[n+1-j, n+1-i]$ for all $i,j$
-
-**Mathematical properties**:
-- Always diagonalizable (if symmetric)
-- Eigenspaces split into symmetric/antisymmetric subspaces
-- Often appears in signal processing, centrosymmetric matrices
-
-**Limitation**: Current implementation handles some but not all persymmetric cases.
 
 ---
 
@@ -251,197 +87,37 @@ This creates block structure in eigenvector space, splitting problem in half.
 
 ### Circulant Matrices
 
-**Structure**: Each row is cyclic shift of previous row
+**Definition**: Each row is cyclic shift of previous row
 
-**Matrix Form**:
-```math
-\mathbf{C} = \begin{bmatrix}
-c_0 & c_1 & c_2 & \cdots & c_{n-1} \\
-c_{n-1} & c_0 & c_1 & \cdots & c_{n-2} \\
-c_{n-2} & c_{n-1} & c_0 & \cdots & c_{n-3} \\
-\vdots & \vdots & \vdots & \ddots & \vdots \\
-c_1 & c_2 & c_3 & \cdots & c_0
-\end{bmatrix}
-```
+**Eigenvalues** (any size $n$):
+$$\lambda_k = \sum_{j=0}^{n-1} c_j \omega^{jk}, \quad \omega = e^{2\pi i/n}$$
 
-**Eigenvalues** (closed-form for any $n$):
-```math
-\lambda_k = \sum_{j=0}^{n-1} c_j \cdot \omega^{kj} \quad \text{for } k = 0, 1, \ldots, n-1
-```
-where $\omega = \exp(2\pi i/n)$ is the $n$th root of unity.
-
-**Eigenvectors**: Columns of DFT matrix (independent of entries!)
-
-**Complexity**: $O(n)$ to compute all $n$ eigenvalues
-
-**Example** ($3 \times 3$):
 ```julia
 @variables a b c
 C = [a b c; c a b; b c a]
-
-# ω = exp(2πi/3)
-eigvals(C)  # [a+b+c, a+b*ω+c*ω², a+b*ω²+c*ω]
+eigvals(C)  # DFT of first row
 ```
 
-**Why this works**: Circulant matrices commute with cyclic shifts. The DFT diagonalizes ALL circulant matrices simultaneously. The eigenvalues are exactly the Discrete Fourier Transform of the first row.
+Works for arbitrarily large $n$ - bypasses Abel-Ruffini.
 
-**Mathematical foundation**:
-- Circulant matrices form a commutative algebra
-- All share the same eigenvectors (DFT basis)
-- Multiplication in circulant space = convolution in sequence space
-- Diagonalization in DFT space = pointwise multiplication
+### Block Circulant
 
-**Detection algorithm**:
-1. Check if $C[i,j] = C[(i-1) \bmod n, (j-1) \bmod n]$ for all $i,j$
-2. Extract first row $[c_0, c_1, \ldots, c_{n-1}]$
-3. Apply DFT formula
+Block-level circulant structure. Eigenvalues from $n$ problems of size $k$:
+$$\lambda(BC) = \bigcup_{m=0}^{n-1} \lambda\left(\sum_j A_j \omega^{mj}\right)$$
 
-**Applications**:
-- Signal processing (circular convolution)
-- Time series analysis (periodic processes)
-- Graph Laplacians (cycle graphs)
-- Coding theory
+Requires block size $k \leq 4$ for closed form.
 
-**Practical notes**:
-- Works for ANY size $n$ (even $n = 100+$!)
-- Generic $n \times n$ requires degree-$n$ polynomial (impossible for $n \geq 5$)
-- Circulant structure bypasses Abel-Ruffini limitation
+### Anti-Diagonal
 
-**Variants**:
-- **Skew-circulant**: Last element negated on each shift
-- **g-circulant**: Generalized with group operation
-- **Block circulant**: See next section
+**Definition**: Non-zero only on anti-diagonal with symmetry
 
----
+**Eigenvalues**: Come in $\pm$ pairs (center unpaired for odd $n$)
 
-### Block Circulant Matrices
-
-**Structure**: Block version of circulant (blocks shift instead of elements)
-
-**Matrix Form** (4 blocks, size $k \times k$ each):
-```math
-\mathbf{BC} = \begin{bmatrix}
-\mathbf{A}_0 & \mathbf{A}_1 & \mathbf{A}_2 & \mathbf{A}_3 \\
-\mathbf{A}_3 & \mathbf{A}_0 & \mathbf{A}_1 & \mathbf{A}_2 \\
-\mathbf{A}_2 & \mathbf{A}_3 & \mathbf{A}_0 & \mathbf{A}_1 \\
-\mathbf{A}_1 & \mathbf{A}_2 & \mathbf{A}_3 & \mathbf{A}_0
-\end{bmatrix}
-```
-
-**Eigenvalues**: Compute by solving $n$ eigenvalue problems of size $k \times k$:
-```math
-\lambda(\mathbf{BC}) = \bigcup_{m=0}^{n-1} \lambda\left(\sum_{j=0}^{n-1} \mathbf{A}_j \cdot \omega^{mj}\right)
-```
-where $\omega = \exp(2\pi i/n)$.
-
-**Complexity**: $O(n \cdot f(k))$ where $f(k)$ is cost for $k \times k$ matrix
-
-**Example** ($4 \times 4$ with $2 \times 2$ blocks):
-```julia
-@variables a b c d
-A = [a b; c d]
-B = [1 0; 0 1]
-
-# 4×4 block circulant [A B; B A]
-BC = [a b 1 0;
-      c d 0 1;
-      1 0 a b;
-      0 1 c d]
-
-eigvals(BC)  # Solves 2 problems of size 2×2
-```
-
-**Why this works**: Block circulant matrices are diagonalized by block DFT. The reduction formula creates $n$ different $k \times k$ matrices (linear combinations of blocks with DFT coefficients), which can be solved independently.
-
-**Mathematical foundation**:
-- Generalization of circulant to matrix entries
-- Block DFT plays same role as regular DFT
-- Eigenvalue problem decouples into $n$ independent $k \times k$ problems
-
-**Detection algorithm**:
-1. Check block structure (equal-sized blocks)
-2. Verify block circulant property
-3. Extract blocks $[\mathbf{A}_0, \mathbf{A}_1, \ldots, \mathbf{A}_{n-1}]$
-4. Form $n$ combinations with DFT weights
-5. Solve each $k \times k$ system
-
-**Key examples**:
-- **$12 \times 12$ with $3 \times 3$ blocks**: 4 blocks → solve 4 cubic equations (feasible)
-- **$8 \times 8$ with $4 \times 4$ blocks**: 2 blocks → solve 2 quartic equations (feasible but large)
-- **$16 \times 16$ with $2 \times 2$ blocks**: 8 blocks → solve 8 quadratic equations (easy)
-
-Without block structure, these would require degree-12, degree-8, and degree-16 polynomials (impossible)!
-
-**Applications**:
-- Multi-channel signal processing
-- Block Toeplitz systems
-- Vectorized circulant operations
-- Kronecker-structured problems
-
-**Limitation**: Requires $k \leq 4$ for closed form (unless further structure in blocks).
-
----
-
-### Anti-Diagonal Matrices
-
-**Structure**: Non-zero only on anti-diagonal, with symmetry
-
-**Matrix Form** ($n \times n$, symmetric about anti-diagonal):
-```math
-\mathbf{A} = \begin{bmatrix}
-0 & 0 & 0 & \cdots & 0 & a_n \\
-0 & 0 & 0 & \cdots & a_{n-1} & 0 \\
-0 & 0 & 0 & \cdots & 0 & 0 \\
-\vdots & \vdots & \vdots & \ddots & \vdots & \vdots \\
-a_{n-1} & 0 & 0 & \cdots & 0 & 0 \\
-a_n & 0 & 0 & \cdots & 0 & 0
-\end{bmatrix}
-```
-with symmetry: $A[i,j] = A[n+1-j, n+1-i]$
-
-**Eigenvalues** (closed-form for any $n$):
-- **Odd $n$**: $\{a_k, -a_k\}$ for $k = 1, \ldots, (n-1)/2$, plus $a_{(n+1)/2}$ (center element)
-- **Even $n$**: $\{a_k, -a_k\}$ for $k = 1, \ldots, n/2$
-
-**Eigenvector structure**: $\pm$ pairs with specific symmetry
-
-**Complexity**: $O(n)$ - direct computation
-
-**Example** ($5 \times 5$):
 ```julia
 @variables a b c
-A = [0 0 0 0 a;
-     0 0 0 b 0;
-     0 0 c 0 0;
-     0 b 0 0 0;
-     a 0 0 0 0]
-
+A = [0 0 0 0 a; 0 0 0 b 0; 0 0 c 0 0; 0 b 0 0 0; a 0 0 0 0]
 eigvals(A)  # {c, ±a, ±b}
 ```
-
-**Why this works**: The persymmetric symmetry combined with anti-diagonal structure forces eigenvalues into $\pm$ pairs. The transformation $\mathbf{J}\mathbf{A}$ (flip matrix) equals $\pm\mathbf{A}$, creating symmetric/antisymmetric subspaces.
-
-**Mathematical foundation**:
-- Anti-diagonal flip symmetry: $\mathbf{JAJ}^\dagger = \pm\mathbf{A}$
-- Eigenvectors come in symmetric/antisymmetric pairs
-- Eigenvalue equation: If $\mathbf{A}\mathbf{v} = \lambda\mathbf{v}$, then $\mathbf{A}(\mathbf{J}\mathbf{v}) = -\lambda(\mathbf{J}\mathbf{v})$
-
-**Detection algorithm**:
-1. Check if zeros everywhere except anti-diagonal
-2. Verify symmetry: $A[i, n+1-i] = A[n+1-i, i]$
-3. Extract anti-diagonal elements
-4. Form $\pm$ pairs (center unpaired if odd $n$)
-
-**Applications**:
-- Exchange matrices
-- Reversal operators
-- Symmetric perturbations of identity
-- Quantum mechanics (parity operators)
-
-**Mathematical properties**:
-- Always diagonalizable
-- Real eigenvalues if entries are real
-- Orthogonal eigenvectors (pairs)
 
 ---
 
@@ -449,76 +125,18 @@ eigvals(A)  # {c, ±a, ±b}
 
 ### Kronecker Products
 
-**Structure**: Tensor product $\mathbf{A} \otimes \mathbf{B} = [a_{ij}\mathbf{B}]$
+**Eigenvalues**: All products of factor eigenvalues
+$$\lambda(A \otimes B) = \{\lambda_i(A) \cdot \lambda_j(B)\}$$
 
-**Matrix Form** ($2 \times 2 \otimes 2 \times 2$ example):
-```math
-\mathbf{A} \otimes \mathbf{B} = \begin{bmatrix}
-a_{11}\mathbf{B} & a_{12}\mathbf{B} \\
-a_{21}\mathbf{B} & a_{22}\mathbf{B}
-\end{bmatrix}
-```
-
-where each entry $a_{ij}\mathbf{B}$ is a block.
-
-**Eigenvalues** (closed-form for any sizes $m$, $n$):
-```math
-\lambda(\mathbf{A} \otimes \mathbf{B}) = \{\lambda_i(\mathbf{A}) \cdot \lambda_j(\mathbf{B}) : i = 1\ldots m, j = 1\ldots n\}
-```
-
-All $m \cdot n$ products of eigenvalues of $\mathbf{A}$ and $\mathbf{B}$.
-
-**Eigenvectors**: $\mathbf{v}_{ij} = \mathbf{v}_i(\mathbf{A}) \otimes \mathbf{v}_j(\mathbf{B})$ (tensor products)
-
-**Complexity**: $O(f(m) + f(n))$ where $f$ is cost for each factor
-
-**Example** ($4 \times 4 = 2 \times 2 \otimes 2 \times 2$):
 ```julia
 @variables a b c d
-A = [a 0; 0 b]  # eigenvalues {a, b}
-B = [c 0; 0 d]  # eigenvalues {c, d}
-
-K = kron(A, B)  # 4×4 matrix
-
-eigvals(K)  # {ac, ad, bc, bd}
+A = [a 0; 0 b]
+B = [c 0; 0 d]
+K = kron(A, B)
+eigvals(K)  # [ac, ad, bc, bd]
 ```
 
-**Why this works**: The eigenvalue equation for Kronecker products:
-```math
-(\mathbf{A} \otimes \mathbf{B})(\mathbf{u} \otimes \mathbf{v}) = (\mathbf{A}\mathbf{u}) \otimes (\mathbf{B}\mathbf{v}) = (\lambda_u\mathbf{u}) \otimes (\lambda_v\mathbf{v}) = (\lambda_u\lambda_v)(\mathbf{u} \otimes \mathbf{v})
-```
-
-So if $\mathbf{u}$ is eigenvector of $\mathbf{A}$ with eigenvalue $\lambda_u$, and $\mathbf{v}$ is eigenvector of $\mathbf{B}$ with eigenvalue $\lambda_v$, then $\mathbf{u}\otimes\mathbf{v}$ is eigenvector of $\mathbf{A}\otimes\mathbf{B}$ with eigenvalue $\lambda_u\lambda_v$.
-
-**Mathematical foundation**:
-- Tensor product structure in linear algebra
-- Factorization of eigenspaces: $E(\mathbf{A}\otimes\mathbf{B}) = E(\mathbf{A}) \otimes E(\mathbf{B})$
-- Multiplicative property of eigenvalues
-
-**Detection algorithm**:
-1. Check block pattern: equal-sized blocks
-2. Verify scaling relationship between blocks
-3. Extract factor matrices $\mathbf{A}$ and $\mathbf{B}$
-4. Solve eigenvalues of $\mathbf{A}$ and $\mathbf{B}$ independently
-5. Form all products $\lambda_i(\mathbf{A}) \cdot \lambda_j(\mathbf{B})$
-
-**Key examples**:
-- **$6 \times 6 = 2 \times 2 \otimes 3 \times 3$**: Quadratic $\times$ cubic = feasible
-- **$12 \times 12 = 3 \times 3 \otimes 4 \times 4$**: Cubic $\times$ quartic = feasible (but large)
-- **$12 \times 12 = 4 \times 4 \otimes 3 \times 3$**: Same as above
-
-Without Kronecker structure, degree-6 and degree-12 would be impossible!
-
-**Applications**:
-- Multi-dimensional systems (separable PDEs)
-- Quantum mechanics (composite systems)
-- Graph products (Cartesian product graphs)
-- Multi-way tensor analysis
-
-**Detection challenges**:
-- Requires exact scaling pattern recognition
-- Floating-point errors can break detection
-- Current implementation: basic pattern matching
+Reduces $(mn) \times (mn)$ to $m \times m$ and $n \times n$ problems.
 
 ---
 
@@ -526,175 +144,34 @@ Without Kronecker structure, degree-6 and degree-12 would be impossible!
 
 ### Symmetric Toeplitz Tridiagonal
 
-**Structure**: Tridiagonal with constant diagonals (Toeplitz + tridiagonal)
+**Definition**: Constant diagonals $a$ (main), $b$ (off-diagonal)
 
-**Matrix Form**:
-```math
-\mathbf{T} = \begin{bmatrix}
-a & b & 0 & 0 & \cdots & 0 \\
-b & a & b & 0 & \cdots & 0 \\
-0 & b & a & b & \cdots & 0 \\
-\vdots & \vdots & \vdots & \vdots & \ddots & \vdots
-\end{bmatrix}
-```
+**Eigenvalues** (any size $n$):
+$$\lambda_k = a + 2b\cos\left(\frac{k\pi}{n+1}\right), \quad k = 1, \ldots, n$$
 
-**Eigenvalues** (closed-form for any $n$):
-```math
-\lambda_k = a + 2b\cos\left(\frac{k\pi}{n+1}\right) \quad \text{for } k = 1, 2, \ldots, n
-```
+**Eigenvectors**: $v_k(j) = \sin(jk\pi/(n+1))$
 
-**Eigenvectors** (known analytically):
-```math
-v_k(j) = \sin\left(\frac{jk\pi}{n+1}\right) \quad \text{for } j = 1, \ldots, n
-```
-
-**Complexity**: $O(n)$ to compute all eigenvalues
-
-**Example** ($4 \times 4$):
 ```julia
 @variables a b
-T = [a b 0 0;
-     b a b 0;
-     0 b a b;
-     0 0 b a]
-
-# λₖ = a + 2b·cos(kπ/5) for k=1,2,3,4
+T = [a b 0 0; b a b 0; 0 b a b; 0 0 b a]
 eigvals(T)
 ```
 
-**Why this works**: The eigenvectors are discrete sine functions, which are known eigenfunctions of the discrete Laplacian operator. The eigenvalues come from the cosine terms in the eigenvalue equation.
+### Special 5×5 Patterns
 
-**Mathematical foundation**:
-- Related to discrete Laplacian operator
-- Eigenvectors are Discrete Sine Transform (DST) basis
-- Connection to Chebyshev polynomials
-- Comes from finite-difference discretization of $d^2/dx^2$
+Two patterns with closed-form solutions discovered empirically:
 
-**Derivation**:
-The eigenvalue equation $\mathbf{T}\mathbf{v} = \lambda\mathbf{v}$ with $\mathbf{v} = [\sin(k\pi/(n+1)), \sin(2k\pi/(n+1)), \ldots, \sin(nk\pi/(n+1))]$ gives:
-```math
-a\sin\left(\frac{jk\pi}{n+1}\right) + b\sin\left(\frac{(j-1)k\pi}{n+1}\right) + b\sin\left(\frac{(j+1)k\pi}{n+1}\right) = \lambda_k\sin\left(\frac{jk\pi}{n+1}\right)
+**Pattern [b,d,b,b]**:
+```
+[a b 0 0 0; b a d 0 0; 0 d a b 0; 0 0 b a b; 0 0 0 b a]
 ```
 
-Using trigonometric identity $\sin(\alpha)+\sin(\beta) = 2\sin((\alpha+\beta)/2)\cos((\alpha-\beta)/2)$, this simplifies to $\lambda_k = a + 2b\cos(k\pi/(n+1))$.
-
-**Detection algorithm**:
-1. Check tridiagonal structure (zeros beyond sub/super-diagonals)
-2. Verify constant diagonals: all diagonal = $a$, all off-diagonal = $b$
-3. Verify symmetry: sub-diagonal = super-diagonal
-4. Apply formula for $k = 1, \ldots, n$
-
-**Applications**:
-- Finite difference methods (1D Laplacian)
-- Vibrating string (discrete model)
-- Heat equation discretization
-- Graph Laplacian (path graph)
-- Quantum mechanics (tight-binding model)
-
-**Generalizations**:
-- **Non-symmetric**: Different super/sub-diagonals (no closed form in general)
-- **Periodic**: Adds corner elements (circulant tridiagonal)
-- **Non-Toeplitz**: Variable diagonals (generally no closed form)
-
-**Why it scales to any $n$**: The eigenvector basis is KNOWN and independent of matrix size. We don't need to solve polynomial—we directly compute eigenvalues from formula.
-
----
-
-### Special 5×5 Tridiagonal Patterns
-
-**Structure**: Tridiagonal $5 \times 5$ with one "perturbation" from constant pattern
-
-Two specific patterns have been discovered with closed-form eigenvalues.
-
-#### Pattern 1: [b, d, b, b]
-
-**Matrix Form**:
-```math
-\mathbf{M} = \begin{bmatrix}
-a & b & 0 & 0 & 0 \\
-b & a & d & 0 & 0 \\
-0 & d & a & b & 0 \\
-0 & 0 & b & a & b \\
-0 & 0 & 0 & b & a
-\end{bmatrix}
+**Pattern [b,b,d,b]**:
+```
+[a b 0 0 0; b a b 0 0; 0 b a d 0; 0 0 d a b; 0 0 0 b a]
 ```
 
-Off-diagonal sequence: $[b, d, b, b]$
-
-**Eigenvalues** (closed-form):
-```math
-\left\{a + \sqrt{2b^2 + d^2}, \; a - \sqrt{2b^2 + d^2}, \; a + b, \; a - b, \; a\right\}
-```
-
-**Example**:
-```julia
-@variables a b d
-M = [a b 0 0 0; b a d 0 0; 0 d a b 0; 0 0 b a b; 0 0 0 b a]
-
-eigvals(M)  # {a ± √(2b² + d²), a ± b, a}
-```
-
-#### Pattern 2: [b, b, d, b]
-
-**Matrix Form**:
-```math
-\mathbf{M} = \begin{bmatrix}
-a & b & 0 & 0 & 0 \\
-b & a & b & 0 & 0 \\
-0 & b & a & d & 0 \\
-0 & 0 & d & a & b \\
-0 & 0 & 0 & b & a
-\end{bmatrix}
-```
-
-Off-diagonal sequence: $[b, b, d, b]$
-
-**Eigenvalues** (closed-form - SAME as Pattern 1!):
-```math
-\left\{a + \sqrt{2b^2 + d^2}, \; a - \sqrt{2b^2 + d^2}, \; a + b, \; a - b, \; a\right\}
-```
-
-**Example**:
-```julia
-@variables a b d
-M = [a b 0 0 0; b a b 0 0; 0 b a d 0; 0 0 d a b; 0 0 0 b a]
-
-eigvals(M)  # {a ± √(2b² + d²), a ± b, a}  (identical to Pattern 1!)
-```
-
-**Remarkable discovery**: Despite different positions of perturbation $d$, both patterns yield IDENTICAL eigenvalues!
-
-**Why this works**: Unknown! This is an empirical discovery. The mathematical explanation likely involves:
-- Hidden symmetry in characteristic polynomial
-- Isospectrality (different matrices, same spectrum)
-- Possibly related to Chebyshev polynomial structure
-
-**What doesn't work** (patterns without closed form):
-- **$[d, b, b, b]$**: Boundary perturbation at position 0
-- **$[b, b, b, d]$**: Boundary perturbation at position 3
-- **$[d, d, b, b]$**, **$[b, d, d, b]$**: Multiple perturbations
-- **$[c, d, e, f]$**: General perturbations
-
-**Key insight from research**: Interior perturbations (positions 1-2) admit closed forms, but boundary perturbations (positions 0, 3) break the pattern.
-
-**Detection algorithm**:
-1. Check $5 \times 5$ tridiagonal structure
-2. Extract super-diagonal sequence
-3. Match against known patterns $[b,d,b,b]$ or $[b,b,d,b]$
-4. Verify constant diagonal = $a$
-5. Apply closed-form formula
-
-**Applications**:
-- Perturbed vibrating strings
-- Defects in 1D lattice models
-- Specific quantum systems
-
-**Research opportunity**: 
-- Why do these specific patterns work?
-- Are there similar $7 \times 7$ or $9 \times 9$ patterns?
-- Can we characterize all solvable perturbation patterns?
-
-See `notes/PATTERN_DISCOVERIES.md` for more details on discovery methodology.
+**Both have identical eigenvalues**: $\{a \pm \sqrt{2b^2 + d^2}, a \pm b, a\}$
 
 ---
 
@@ -702,461 +179,68 @@ See `notes/PATTERN_DISCOVERIES.md` for more details on discovery methodology.
 
 ### Permutation Matrices
 
-**Structure**: Exactly one 1 in each row and column, rest zeros
+**Definition**: Exactly one 1 per row/column, rest zeros
 
-**Matrix Form** (example: permutation $1 \to 2$, $2 \to 3$, $3 \to 1$):
-```math
-\mathbf{P} = \begin{bmatrix}
-0 & 1 & 0 \\
-0 & 0 & 1 \\
-1 & 0 & 0
-\end{bmatrix}
-```
+**Eigenvalues**: Roots of unity from cycle decomposition
+- $k$-cycle contributes: $\{1, \omega, \omega^2, \ldots, \omega^{k-1}\}$ where $\omega = e^{2\pi i/k}$
 
-**Eigenvalues** (closed-form for any permutation):
-- Each $k$-cycle contributes $k$-th roots of unity: $\{1, \omega, \omega^2, \ldots, \omega^{k-1}\}$ where $\omega = \exp(2\pi i/k)$
-- All eigenvalues have magnitude 1 (on unit circle)
-
-**Complexity**: $O(n)$ to compute cycle decomposition and roots
-
-**Example** ($6 \times 6$ with 3-cycle, 2-cycle, fixed point):
 ```julia
-# Permutation: (1→2→3→1), (4↔5), (6)
-P = [0 1 0 0 0 0;   # 1→2
-     0 0 1 0 0 0;   # 2→3
-     1 0 0 0 0 0;   # 3→1
-     0 0 0 0 1 0;   # 4→5
-     0 0 0 1 0 0;   # 5→4
-     0 0 0 0 0 1]   # 6→6
-
-eigvals(P)
-# 3-cycle contributes: {1, ω, ω²} where ω = exp(2πi/3)
-# 2-cycle contributes: {1, -1}
-# Fixed point contributes: {1}
-# Total: {1, 1, 1, -1, ω, ω²}
+# 3-cycle (1→2→3→1)
+P = [0 1 0; 0 0 1; 1 0 0]
+eigvals(P)  # {1, ω, ω²} where ω = e^{2πi/3}
 ```
-
-**Why this works**: 
-1. Permutation matrices have finite order: $\mathbf{P}^k = \mathbf{I}$ for some $k$
-2. If $\mathbf{P}^k\mathbf{v} = \mathbf{v}$, then $\mathbf{P}$ has eigenvalues that are $k$-th roots of unity
-3. Cycle decomposition determines which roots appear
-
-**Mathematical foundation**:
-- **Cayley's theorem**: Every permutation decomposes into disjoint cycles
-- **Root of unity property**: If $\mathbf{P}^k = \mathbf{I}$, then $\lambda^k = 1$, so $\lambda$ is a $k$-th root of unity
-- **Cycle length = root order**: $k$-cycle gives $k$-th roots of unity
-
-**Cycle decomposition algorithm**:
-1. Find permutation: which column has 1 in each row
-2. Follow cycle: start at 1, go to $P(1)$, then $P(P(1))$, until back to 1
-3. Repeat for unvisited elements
-4. Count cycle lengths
-
-**Eigenvalue computation**:
-For each $k$-cycle, add $k$ eigenvalues $\{\exp(2\pi ij/k) : j = 0, \ldots, k-1\}$
-
-**Applications**:
-- Sorting algorithms (permutation analysis)
-- Group theory (symmetric group representations)
-- Graph automorphisms
-- Coding theory (permutation codes)
-- Fourier analysis on symmetric group
-
-**Mathematical properties**:
-- Always orthogonal: $\mathbf{P}^\dagger\mathbf{P} = \mathbf{I}$
-- Eigenvalues on unit circle: $|\lambda| = 1$
-- Diagonalizable (orthogonally)
-- Determinant = $\pm 1$ (sign of permutation)
-
-**Special cases**:
-- **Identity**: One $n$-cycle → eigenvalue 1 with multiplicity $n$
-- **Full cycle**: One $n$-cycle → all $n$-th roots of unity $\{\exp(2\pi ik/n) : k=0\ldots n-1\}$
-- **Transposition**: (2-cycle) → eigenvalues $\{1, -1\}$
-- **Fixed points**: Contribute eigenvalue 1
-
-**Detection algorithm**:
-1. Check if matrix has exactly one 1 per row and column
-2. All other entries must be 0
-3. Extract permutation mapping
-4. Compute cycle decomposition
-5. Generate roots of unity for each cycle
 
 ---
 
-## Group-Theoretic Patterns
+## Graph Patterns
 
-### Dihedral Symmetry Matrices
+### Dihedral Symmetry
 
-**Structure**: Matrix commuting with dihedral group $D_n$ (rotations and reflections)
-
-**Symmetry conditions**:
-- Commutes with $n$-fold cyclic rotation $\mathbf{R}$: $\mathbf{A}\mathbf{R} = \mathbf{R}\mathbf{A}$
-- Commutes with reflection $\mathbf{F}$: $\mathbf{A}\mathbf{F} = \mathbf{F}\mathbf{A}$
-- Group relations: $\mathbf{R}^n = \mathbf{I}$, $\mathbf{F}^2 = \mathbf{I}$, $\mathbf{F}\mathbf{R}\mathbf{F} = \mathbf{R}^{-1}$
-
-**Example (Pentagon adjacency, $n=5$)**:
-```julia
-# Regular pentagon graph - 5-fold rotational and reflection symmetry
-A = [0 1 0 0 1;
-     1 0 1 0 0;
-     0 1 0 1 0;
-     0 0 1 0 1;
-     1 0 0 1 0]
-
-eigvals(A)  # [2, φ, φ, -1/φ, -1/φ] where φ = (1+√5)/2 (golden ratio)
-```
-
-**Eigenvalue structure**:
-- Irreducible representations of $D_n$ determine eigenspace dimensions
-- For $D_n$: Two 1-dimensional irreps + multiple 2-dimensional irreps
-- Reduces degree-$n$ problem to multiple smaller problems (often quadratic)
-
-**For odd $n$**:
-- 1 symmetric eigenvalue (irrep $A_1$)
-- 1 antisymmetric eigenvalue (irrep $A_2$)  
-- $(n-1)/2$ doubly degenerate eigenvalue pairs (2D irreps $E_k$)
-
-**For even $n$**:
-- 2 one-dimensional (symmetric/antisymmetric)
-- 2 one-dimensional (symmetric/antisymmetric w.r.t. perpendicular axis)
-- $(n-4)/2$ doubly degenerate pairs
-
-**Complexity**: $O(n)$ for detection + solving $(n-1)/2$ quadratic equations
-
-**Why this works**: 
-- Representation theory guarantees block-diagonal structure in symmetry-adapted basis
-- Each irrep block often has degree ≤ 2
-- Avoids solving full degree-$n$ characteristic polynomial
-
-**Applications**:
-- Regular polygon graphs (chemistry: cyclic molecules)
-- Crystal lattice symmetries
-- Molecular orbital theory (molecules with rotational + mirror symmetry)
-- Signal processing on circular arrays with reflection symmetry
-
-**Detection algorithm**:
-1. Test if matrix is circulant (rotation symmetry)
-2. Generate reflection operators for different axes
-3. Check if $[\mathbf{A}, \mathbf{F}] = 0$ for any reflection
-4. If both rotation and reflection symmetries → dihedral
-5. Apply character table decomposition
-
-**Mathematical properties**:
-- Real eigenvalues if matrix is real symmetric
-- Eigenvalues come in pairs (except for 1D irreps)
-- More efficient than general degree-$n$ polynomial
-
----
+Matrices commuting with rotation and reflection. Eigenspaces decompose by representation theory, often reducing to quadratic equations.
 
 ### Strongly Regular Graphs
 
-**Structure**: Adjacency matrix of strongly regular graph with parameters $(n, k, \lambda, \mu)$
+Parameters $(n, k, \lambda, \mu)$ determine exactly 3 distinct eigenvalues:
+- $\lambda_1 = k$
+- $\lambda_{2,3} = \frac{(\lambda-\mu) \pm \sqrt{(\lambda-\mu)^2 + 4(k-\mu)}}{2}$
 
-**Parameters**:
-- $n$: number of vertices
-- $k$: degree (each vertex has $k$ neighbors)
-- $\lambda$: adjacent vertices have $\lambda$ common neighbors
-- $\mu$: non-adjacent vertices have $\mu$ common neighbors
+**Example**: Petersen graph $(10,3,0,1)$ → eigenvalues $\{3, 1^{(5)}, -2^{(4)}\}$
 
-**Verification conditions**:
-1. Binary matrix (entries 0 or 1)
-2. Zero diagonal (no self-loops)
-3. Symmetric
-4. All row sums equal $k$ (regular)
-5. For adjacent vertices $i,j$: exactly $\lambda$ common neighbors
-6. For non-adjacent vertices $i,j$: exactly $\mu$ common neighbors
+### Hypercube $Q_n$
 
-**Eigenvalues** (only 3 distinct values!):
-```math
-\lambda_1 = k \quad \text{(multiplicity 1)}
-```
-```math
-\lambda_2 = \frac{(\lambda - \mu) + \sqrt{\Delta}}{2} \quad \text{(multiplicity } f \text{)}
-```
-```math
-\lambda_3 = \frac{(\lambda - \mu) - \sqrt{\Delta}}{2} \quad \text{(multiplicity } g \text{)}
-```
-where $\Delta = (\lambda - \mu)^2 + 4(k - \mu)$ and $f + g = n - 1$.
+**Eigenvalues**: $\lambda_k = n - 2k$ with multiplicity $\binom{n}{k}$
 
-**Example 1: Petersen Graph** ($n=10, k=3, \lambda=0, \mu=1$):
 ```julia
-# Petersen graph adjacency matrix (10×10)
-# Parameters: (10, 3, 0, 1)
-P = [0 1 0 0 1 1 0 0 0 0;
-     1 0 1 0 0 0 1 0 0 0;
-     0 1 0 1 0 0 0 1 0 0;
-     0 0 1 0 1 0 0 0 1 0;
-     1 0 0 1 0 0 0 0 0 1;
-     1 0 0 0 0 0 0 1 1 0;
-     0 1 0 0 0 0 0 0 1 1;
-     0 0 1 0 0 1 0 0 0 1;
-     0 0 0 1 0 1 1 0 0 0;
-     0 0 0 0 1 0 1 1 0 0]
-
-eigvals(P)  # [3, 1, 1, 1, 1, 1, -2, -2, -2, -2]
-```
-
-Formula: $\lambda_1 = 3$, $\Delta = (0-1)^2 + 4(3-1) = 9$
-- $\lambda_2 = (-1 + 3)/2 = 1$ (multiplicity 5)
-- $\lambda_3 = (-1 - 3)/2 = -2$ (multiplicity 4)
-
-**Example 2: Complete Bipartite Graph** $K_{m,n}$:
-```julia
-# K_{3,3} - complete bipartite graph
-K33 = [0 0 0 1 1 1;
-       0 0 0 1 1 1;
-       0 0 0 1 1 1;
-       1 1 1 0 0 0;
-       1 1 1 0 0 0;
-       1 1 1 0 0 0]
-
-eigvals(K33)  # [3, -3, 0, 0, 0, 0]
-```
-
-General: $K_{m,n}$ has eigenvalues $\{\sqrt{mn}, -\sqrt{mn}, 0, \ldots, 0\}$ with $m+n-2$ zeros.
-
-**Example 3: Cycle Graph** $C_5$ (also circulant):
-```julia
-C5 = [0 1 0 0 1;
-      1 0 1 0 0;
-      0 1 0 1 0;
-      0 0 1 0 1;
-      1 0 0 1 0]
-
-eigvals(C5)  # [2, φ, φ, -1/φ, -1/φ] where φ = (1+√5)/2
-```
-
-**Complexity**: $O(n^2)$ for verification, $O(1)$ for eigenvalue computation
-
-**Why this works**:
-- Strong regularity imposes severe constraints on eigenvalue structure
-- Symmetry forces all but 3 eigenvalues to be determined by the other two
-- Parameters $(n,k,\lambda,\mu)$ completely determine spectrum
-
-**Applications**:
-- Combinatorial designs
-- Error-correcting codes
-- Association schemes
-- Graph isomorphism testing
-- Network analysis (highly symmetric networks)
-
-**Famous examples**:
-- **Petersen graph**: $(10, 3, 0, 1)$
-- **Paley graphs**: Prime $p \equiv 1 \pmod{4}$, parameters $(p, (p-1)/2, (p-5)/4, (p-1)/4)$
-- **Conference graphs**: $n \equiv 2 \pmod{4}$, parameters $(n, (n-1)/2, (n-5)/4, (n-1)/4)$
-- **Latin square graphs**: From orthogonal Latin squares
-- **Triangular graphs** $T(n)$: Vertices = 2-subsets of $\{1,\ldots,n\}$
-
-**Mathematical properties**:
-- Eigenvalues are algebraic integers
-- Integer eigenvalues occur frequently
-- Spectrum often involves quadratic irrationals
-- Strong regularity $\Rightarrow$ walk-regularity (number of walks depends only on distance)
-
----
-
-### Block-Circulant with Circulant Blocks (BCCB)
-
-**Structure**: Block-circulant matrix where each block is itself circulant
-
-**Matrix form** ($m \times m$ blocks, each $n \times n$):
-```math
-\mathbf{A} = \begin{bmatrix}
-C_0 & C_1 & C_2 & \cdots & C_{m-1} \\
-C_{m-1} & C_0 & C_1 & \cdots & C_{m-2} \\
-C_{m-2} & C_{m-1} & C_0 & \cdots & C_{m-3} \\
-\vdots & \vdots & \vdots & \ddots & \vdots \\
-C_1 & C_2 & C_3 & \cdots & C_0
-\end{bmatrix}
-```
-where each $C_i$ is an $n \times n$ circulant matrix.
-
-**Example** ($2 \times 2$ blocks, each $3 \times 3$):
-```julia
-# Create 3×3 circulant blocks
-C0 = [1 2 3; 3 1 2; 2 3 1]
-C1 = [4 5 6; 6 4 5; 5 6 4]
-
-# Assemble 6×6 BCCB matrix
-A = [C0 C1;
-     C1 C0]
-
-eigvals(A)  # Computed via 2D DFT
-```
-
-**Eigenvalues**: 
-```math
-\lambda_{jk} = \sum_{p=0}^{m-1} \sum_{q=0}^{n-1} a_{pq} \cdot \omega_m^{jp} \cdot \omega_n^{kq}
-```
-where $\omega_m = e^{2\pi i/m}$, $\omega_n = e^{2\pi i/n}$, and $a_{pq}$ is the $(p,q)$ entry in the first block row.
-
-**Alternative formulation**:
-- View as doubly-circulant $(mn) \times (mn)$ matrix with 2D structure
-- Eigenvalues = 2D DFT of the $m \times n$ "generator matrix"
-
-**Complexity**: $O(mn \log(mn))$ using Fast Fourier Transform
-
-**Why this works**:
-- Combines two levels of circulant structure
-- Diagonalized by 2D Fourier basis (Kronecker product of 1D DFT matrices)
-- Extension of circulant matrix theory to higher dimensions
-
-**Applications**:
-- **Image processing**: Natural images have approximate BCCB structure
-- **2D convolution**: Convolution matrices are BCCB
-- **Partial differential equations**: Discretized 2D Laplacian with periodic BCs
-- **Signal processing**: 2D signals, video processing
-- **Compressed sensing**: Fast matrix-vector multiplication
-
-**Detection algorithm**:
-1. Check if matrix can be partitioned into blocks
-2. Verify block-level circulant structure (each block row is cyclic shift)
-3. Verify each block is circulant
-4. Extract generator matrix (first row of blocks, first row of each block)
-5. Apply 2D FFT
-
-**Mathematical properties**:
-- Always diagonalized by 2D DFT matrix
-- Eigenvalues can be complex even if matrix is real
-- Fast matrix-vector multiplication: $O(mn \log(mn))$ via FFT
-- Generalization: 3D, 4D, ... multi-level circulant (used in tensor computations)
-
-**Extensions**:
-- **Block-Toeplitz with Toeplitz blocks (BTTB)**: Similar but without circulant constraint
-- **Multi-level circulant**: More than 2 levels of nesting
-- **Kronecker sum structure**: Related to tensor product problems
-
----
-
-### Hypercube Graphs
-
-**Structure**: Adjacency matrix of $n$-dimensional hypercube $Q_n$
-
-**Definition**: 
-- Vertices: Binary strings of length $n$ (total: $2^n$ vertices)
-- Edges: Connect vertices differing in exactly one bit
-
-**Example** ($Q_3$, 3D cube, 8 vertices):
-```julia
-# Vertices: 000, 001, 010, 011, 100, 101, 110, 111
-# Edges connect vertices differing in one bit
-Q3 = [0 1 1 0 1 0 0 0;
-      1 0 0 1 0 1 0 0;
-      1 0 0 1 0 0 1 0;
-      0 1 1 0 0 0 0 1;
-      1 0 0 0 0 1 1 0;
-      0 1 0 0 1 0 0 1;
-      0 0 1 0 1 0 0 1;
-      0 0 0 1 0 1 1 0]
-
+# Q_3 (8×8 cube adjacency)
 eigvals(Q3)  # [3, 1, 1, 1, -1, -1, -1, -3]
 ```
 
-**Eigenvalues** (closed-form for any dimension $n$):
-```math
-\lambda_k = n - 2k, \quad k = 0, 1, 2, \ldots, n
-```
+### BCCB (Block-Circulant with Circulant Blocks)
 
-**Multiplicities**:
-```math
-m_k = \binom{n}{k}
-```
-
-**Complete spectrum for $Q_n$**:
-- $\lambda = n$ with multiplicity $\binom{n}{0} = 1$
-- $\lambda = n-2$ with multiplicity $\binom{n}{1} = n$
-- $\lambda = n-4$ with multiplicity $\binom{n}{2}$
-- $\vdots$
-- $\lambda = -n+2$ with multiplicity $\binom{n}{n-1} = n$
-- $\lambda = -n$ with multiplicity $\binom{n}{n} = 1$
-
-**Examples**:
-- $Q_1$ (line): eigenvalues $\{1, -1\}$
-- $Q_2$ (square): eigenvalues $\{2, 0, 0, -2\}$
-- $Q_3$ (cube): eigenvalues $\{3, 1, 1, 1, -1, -1, -1, -3\}$
-- $Q_4$ (tesseract): eigenvalues $\{4, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, -2, -2, -2, -2, -2, -2, -4\}$
-
-**Complexity**: $O(1)$ for eigenvalue generation (just binomial coefficients!)
-
-**Why this works**:
-- Hypercube has extremely high symmetry (automorphism group is large)
-- Graph is Cayley graph of $\mathbb{Z}_2^n$ (Boolean group)
-- Eigenvectors are Walsh-Hadamard functions
-- Connection to Gray code and Boolean function analysis
-
-**Applications**:
-- **Parallel computing**: Hypercube network topology
-- **Boolean function analysis**: Walsh-Hadamard transform
-- **Coding theory**: Hamming distance, error correction
-- **Quantum computing**: Qubit state spaces
-- **Combinatorial optimization**: Traveling salesman, graph coloring
-
-**Detection algorithm**:
-1. Check if matrix is $2^n \times 2^n$ for some integer $n$
-2. Verify binary (0-1) adjacency matrix
-3. Check regularity: all vertices have degree $n$
-4. Verify diameter is $n$ (furthest vertices are $n$ edges apart)
-5. Check if matrix equals $I \otimes A_{n-1} + J \otimes I$ where $A_{n-1}$ is $(n-1)$-hypercube and $J$ is anti-diagonal
-
-**Mathematical properties**:
-- Bipartite graph (vertices partition by parity of bit sum)
-- Distance-regular graph
-- Symmetric (undirected edges)
-- Eigenvalues are integers
-- Maximum eigenvalue = degree = $n$
-- Characteristic polynomial: $\prod_{k=0}^n (\lambda - (n-2k))^{\binom{n}{k}}$
-
-**Relation to other structures**:
-- **Hamming graphs** $H(n,2)$: Equivalent to hypercube
-- **Johnson graphs** $J(2n, n)$: Related but different spectrum
-- **Cayley graphs**: Hypercube is Cayley graph of $(\mathbb{Z}_2)^n$
+Diagonalized by 2D DFT. Common in image processing and 2D convolution.
 
 ---
 
-## Summary Table
+## Detection Notes
 
-| Pattern | Size Limit | Complexity | Key Property |
-|---------|-----------|------------|--------------|
-| Diagonal | Any $n$ | $O(n)$ | Direct reading |
-| Triangular | Any $n$ | $O(n)$ | Diagonal entries |
-| Jordan Block | Any $n$ | $O(1)$ | Single eigenvalue |
-| Block-Diagonal | Any $n$ | $\sum O(n_i)$ | Union of blocks |
-| Persymmetric | Any $n$ | $O(n/2)$ | Half-size split |
-| Circulant | Any $n$ | $O(n)$ | DFT formula |
-| Block Circulant | Any $n$ ($k \leq 4$) | $O(n \cdot k)$ | Block DFT |
-| Kronecker $\mathbf{A}\otimes\mathbf{B}$ | Any $m,n$ ($\leq 4$) | $O(m+n)$ | Product rule |
-| Toeplitz Tridiag | Any $n$ | $O(n)$ | Cosine formula |
-| Anti-Diagonal | Any $n$ | $O(n)$ | $\pm$ pairs |
-| Permutation | Any $n$ | $O(n)$ | Roots of unity |
-| Special $5 \times 5$ [b,d,b,b] | $5 \times 5$ only | $O(1)$ | Empirical |
-| Special $5 \times 5$ [b,b,d,b] | $5 \times 5$ only | $O(1)$ | Empirical |
-| **Dihedral Symmetry** | Any $n$ | $O(n)$ + quadratics | Rep theory |
-| **Strongly Regular Graph** | Any $n$ | $O(n^2)$ verify, $O(1)$ compute | 3 eigenvalues |
-| **BCCB** | Any $m \times n$ | $O(mn \log(mn))$ | 2D DFT |
-| **Hypercube** $Q_n$ | $2^n$ | $O(n)$ | Binomial coefficients |
+| Pattern | Detection Method |
+|---------|-----------------|
+| Diagonal | All off-diagonal zero |
+| Triangular | Zeros above/below diagonal |
+| Block-diagonal | Connected components of non-zero structure |
+| Circulant | Row $i$ = cyclic shift of row $i-1$ |
+| Toeplitz tridiag | Constant diagonals, symmetric |
+| Kronecker | Block scaling pattern |
+| Permutation | Exactly one 1 per row/column |
 
 ---
 
-## Pattern Discovery Resources
+## Adding New Patterns
 
-Additional resources available in the repository:
-
-- **PATTERN_DISCOVERIES.md** (`notes/PATTERN_DISCOVERIES.md`) - Detailed discovery notes and mathematical justifications
-- **DISCOVERY_METHODOLOGY.md** (`notes/DISCOVERY_METHODOLOGY.md`) - How to discover new patterns
-- **RESEARCH_SUMMARY.md** (`notes/RESEARCH_SUMMARY.md`) - Summary of research findings
-- **explore_patterns.jl** (`examples/explore_patterns.jl`) - Interactive pattern exploration tools
-
----
-
-## Contributing New Patterns
-
-If you discover a new pattern, please:
-
-1. Verify numerically (at least 3 test cases)
-2. Verify symbolically (check characteristic polynomial)
-3. Explain WHY it works (mathematical justification)
+1. Verify numerically (multiple test cases)
+2. Verify symbolically (characteristic polynomial)
+3. Explain mathematical basis
 4. Implement detector and solver
-5. Add comprehensive tests
-6. Document in this file
+5. Add tests and documentation
 
-See [Contributing Guide](contributing.md) for details.
+See [Contributing](contributing.md) for details.
