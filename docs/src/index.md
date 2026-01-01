@@ -20,6 +20,7 @@ Pkg.add("SymbolicDiagonalization")
 ```@example main
 using SymbolicDiagonalization
 using Symbolics
+using LinearAlgebra
 
 @variables a b c
 mat = [a 1 0; 0 b 1; 0 0 c]
