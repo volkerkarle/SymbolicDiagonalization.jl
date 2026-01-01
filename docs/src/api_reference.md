@@ -322,6 +322,9 @@ Hint about matrix structure for optimization.
 - `:symmetric` - Real symmetric (Aᵀ = A)
 - `:unitary` - Unitary matrix (A† = A⁻¹)
 - `:general` - No structure assumptions
+- `:diagonal` - Diagonal matrix (hint to skip detection)
+- `:triangular` - Triangular matrix (hint to skip detection)
+- `:none` - Skip all structure detection entirely
 
 **Example**:
 ```julia
@@ -333,6 +336,7 @@ vals = eigvals(hermitian_mat, structure=:hermitian)
 - Providing correct hint can speed up computation
 - Incorrect hint may give wrong results
 - `:auto` is safe but may be slower
+- `:none` skips detection entirely (fastest, but no pattern optimizations)
 
 ---
 
@@ -427,9 +431,7 @@ vals = eigvals(mat, max_terms=50000)
 Thrown when symbolic expression exceeds complexity limit.
 
 **Fields**:
-- `msg::String` - Error message
-- `terms::Int` - Number of terms encountered
-- `limit::Int` - Configured limit
+- `message::String` - Error message with details and suggestions for resolution
 
 **Example**:
 ```julia
@@ -437,7 +439,7 @@ try
     vals = eigvals(huge_mat, max_terms=1000)
 catch e
     if e isa ExpressionComplexityError
-        println("Expression too complex: $(e.terms) terms (limit: $(e.limit))")
+        println("Expression too complex: $(e.message)")
     end
 end
 ```
@@ -460,8 +462,7 @@ end
 Thrown when computation exceeds time limit.
 
 **Fields**:
-- `msg::String` - Error message
-- `timeout::Int` - Configured timeout in seconds
+- `message::String` - Error message with details and suggestions for resolution
 
 **Example**:
 ```julia
@@ -469,7 +470,7 @@ try
     vals = eigvals(mat, timeout=30)
 catch e
     if e isa ComputationTimeoutError
-        println("Timed out after $(e.timeout) seconds")
+        println("Timed out: $(e.message)")
     end
 end
 ```
