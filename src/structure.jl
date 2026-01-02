@@ -4,6 +4,95 @@
 # ============================================================================
 
 """
+    _prepare_diagonal_shift(mat)
+
+Prepare a diagonal shift transformation to reduce symbolic complexity.
+
+For a matrix A with n symbolic variables, if A[n,n] is a simple symbolic variable `f`
+that doesn't appear elsewhere, we can:
+1. Shift: A' = A - f*I (makes A'[n,n] = 0)
+2. Substitute: Replace compound diagonal terms (a-f) with fresh variables (ã)
+3. Solve: Compute eigenvalues with fewer effective variables
+4. Back-substitute: Replace fresh variables with original expressions
+
+This reduces a 6-variable 3×3 problem to a 5-variable problem.
+
+Returns `(shifted_mat, shift_val, back_substitution_dict)` if beneficial, otherwise `nothing`.
+The back_substitution_dict maps fresh variables back to their original expressions.
+"""
+function _prepare_diagonal_shift(mat)
+    n = size(mat, 1)
+    n >= 2 || return nothing
+    
+    # Get the [n,n] element
+    corner = mat[n, n]
+    
+    # Check if corner is a simple symbolic variable (not compound)
+    if !(corner isa Num)
+        return nothing
+    end
+    
+    corner_vars = Symbolics.get_variables(corner)
+    corner_vars_list = collect(corner_vars)
+    if !(length(corner_vars_list) == 1 && isequal(corner, corner_vars_list[1]))
+        return nothing  # Corner is not a simple variable
+    end
+    
+    # Check if corner variable appears elsewhere in the matrix
+    for i in 1:n, j in 1:n
+        (i == n && j == n) && continue
+        elem_vars = Symbolics.get_variables(mat[i, j])
+        if corner in elem_vars
+            return nothing  # Corner variable appears elsewhere, can't eliminate it
+        end
+    end
+    
+    # Shift the matrix: A' = A - corner*I
+    shifted_mat = mat - corner * I
+    
+    # Now create fresh variables for diagonal elements that became compound (x - corner)
+    # and build the back-substitution dictionary
+    back_subs = Dict{Num, Any}()
+    
+    for i in 1:(n-1)
+        orig_diag = mat[i, i]
+        shifted_diag = shifted_mat[i, i]  # This is (orig_diag - corner)
+        
+        # Check if the original diagonal element has symbolic variables
+        orig_vars = Symbolics.get_variables(orig_diag)
+        if !isempty(orig_vars)
+            # Create a fresh variable for this shifted diagonal entry
+            # Use a name without underscore prefix to avoid Julia code generation issues
+            fresh_var = Symbolics.variable(Symbol("ξ", i))  # Greek xi for shifted variables
+            back_subs[fresh_var] = shifted_diag  # fresh_var → (orig - corner)
+            
+            # Replace in the shifted matrix
+            shifted_mat[i, i] = fresh_var
+        end
+    end
+    
+    # If no substitutions were made (all diagonal elements were numeric), 
+    # we still benefit from eliminating the corner variable
+    return (shifted_mat, corner, back_subs)
+end
+
+"""
+    _apply_back_substitution(exprs, back_subs)
+
+Apply back-substitution to replace fresh variables with original expressions.
+"""
+function _apply_back_substitution(exprs, back_subs)
+    if isempty(back_subs)
+        return exprs
+    end
+    
+    # Build substitution rules
+    rules = [fresh => orig for (fresh, orig) in back_subs]
+    
+    return [Symbolics.substitute(expr, Dict(rules)) for expr in exprs]
+end
+
+"""
     _detect_structure(mat)
 
 Detect the structure of a matrix for eigenvalue computation optimization.
@@ -423,4 +512,201 @@ function _build_eigenvalue_result(vals, λ, expand)
     poly_raw = prod(λ .- vals)
     poly = expand ? Symbolics.expand(poly_raw) : poly_raw
     return vals, poly, λ
+end
+
+# ============================================================================
+# Numerical Evaluation Utilities
+# ============================================================================
+
+"""
+    _safe_complex_sqrt(x)
+
+Compute sqrt that handles tiny negative numbers due to floating-point precision.
+Returns a complex result when the argument is negative.
+"""
+function _safe_complex_sqrt(x::Real)
+    if x >= 0
+        return Complex(sqrt(x), 0.0)
+    else
+        # Negative argument - return purely imaginary result
+        return Complex(0.0, sqrt(-x))
+    end
+end
+_safe_complex_sqrt(x::Complex) = sqrt(x)
+
+"""
+    _evaluate_symbolic_expr(expr, var_values::Dict)
+
+Evaluate a symbolic expression with numerical values, handling complex arithmetic
+robustly to avoid domain errors from sqrt of tiny negative numbers.
+
+# Arguments
+- `expr`: A symbolic expression (Num or Complex{Num})
+- `var_values`: Dict mapping symbolic variables to their numerical values
+
+# Returns
+A Complex{Float64} value
+
+# Example
+```julia
+@variables a b c
+expr = sqrt(a^2 + b^2) + c
+result = _evaluate_symbolic_expr(expr, Dict(a => 3.0, b => 4.0, c => 1.0))
+# result == 6.0 + 0.0im
+```
+
+# Notes
+This function is designed to handle expressions from cubic/quartic formulas where
+floating-point precision can cause discriminants that should be zero to become
+tiny negative numbers. It uses complex arithmetic throughout to avoid NaN results.
+"""
+function _evaluate_symbolic_expr(expr, var_values::Dict)
+    # Handle Complex{Num}
+    re_expr = real(expr)
+    im_expr = imag(expr)
+    
+    # Substitute values
+    re_subbed = Symbolics.substitute(re_expr, var_values)
+    im_subbed = Symbolics.substitute(im_expr, var_values)
+    
+    # Convert to Julia expression and evaluate with complex-safe functions
+    re_val = _eval_with_complex_sqrt(re_subbed)
+    im_val = _eval_with_complex_sqrt(im_subbed)
+    
+    return Complex(re_val, im_val)
+end
+
+"""
+    _eval_with_complex_sqrt(expr)
+
+Evaluate a substituted symbolic expression using complex-safe sqrt.
+"""
+function _eval_with_complex_sqrt(expr)
+    # Handle Num type first (since Num <: Number in Symbolics)
+    if expr isa Num
+        # Try to extract the underlying value
+        val = Symbolics.value(expr)
+        # Check if it's a plain number (not symbolic)
+        if val isa AbstractFloat || val isa Integer || val isa Rational
+            return Float64(val)
+        end
+        # Otherwise, convert to Julia expression and evaluate
+        julia_expr = Symbolics.toexpr(expr)
+        result = _eval_expr_safe(julia_expr)
+        return real(result)
+    end
+    
+    # If it's already a plain Julia number, return it
+    if expr isa Real
+        return Float64(expr)
+    end
+    
+    # Shouldn't reach here, but handle gracefully
+    julia_expr = Symbolics.toexpr(expr)
+    result = _eval_expr_safe(julia_expr)
+    return real(result)
+end
+
+"""
+    _eval_expr_safe(expr)
+
+Recursively evaluate an expression tree, using complex-safe sqrt.
+"""
+function _eval_expr_safe(expr)
+    if expr isa Number
+        return Complex{Float64}(expr)
+    elseif expr isa Symbol
+        # Should not happen after substitution, but handle gracefully
+        error("Unsubstituted variable: $expr")
+    elseif expr isa Expr
+        if expr.head == :call
+            fn = expr.args[1]
+            args = [_eval_expr_safe(a) for a in expr.args[2:end]]
+            
+            # Handle both Symbol (:sqrt) and function object (sqrt) cases
+            fn_name = fn isa Symbol ? fn : nameof(fn)
+            
+            if fn_name == :sqrt || fn_name == :√
+                return sqrt(Complex{Float64}(args[1]))
+            elseif fn_name == :cbrt || fn_name == :∛
+                # cbrt of negative real is real, but we use complex for consistency
+                return cbrt(Complex{Float64}(real(args[1])))
+            elseif fn_name == :^
+                base, exp = args
+                if exp isa Rational && exp.den != 1
+                    # Fractional power - use complex
+                    return Complex{Float64}(base)^exp
+                else
+                    return base^exp
+                end
+            elseif fn_name == :+
+                return sum(args)
+            elseif fn_name == :-
+                if length(args) == 1
+                    return -args[1]
+                else
+                    return args[1] - args[2]
+                end
+            elseif fn_name == :*
+                return prod(args)
+            elseif fn_name == :/
+                return args[1] / args[2]
+            elseif fn_name == :sin
+                return sin(args[1])
+            elseif fn_name == :cos
+                return cos(args[1])
+            elseif fn_name == :tan
+                return tan(args[1])
+            elseif fn_name == :atan
+                if length(args) == 1
+                    return atan(args[1])
+                else
+                    # Two-argument atan(y, x) - use real parts since this is for angle computation
+                    return Complex{Float64}(atan(real(args[1]), real(args[2])))
+                end
+            elseif fn_name == :acos
+                return acos(args[1])
+            elseif fn_name == :asin
+                return asin(args[1])
+            elseif fn_name == :exp
+                return exp(args[1])
+            elseif fn_name == :log
+                return log(Complex{Float64}(args[1]))
+            elseif fn_name == :abs
+                return abs(args[1])
+            elseif fn_name == :real
+                return real(args[1])
+            elseif fn_name == :imag
+                return imag(args[1])
+            elseif fn_name == :conj
+                return conj(args[1])
+            else
+                # Try to call the function directly
+                if fn isa Function
+                    return fn(args...)
+                else
+                    f = getfield(Base, fn_name)
+                    return f(args...)
+                end
+            end
+        elseif expr.head == :if || expr.head == :elseif
+            # Handle conditional expressions
+            cond = _eval_expr_safe(expr.args[1])
+            if real(cond) != 0
+                return _eval_expr_safe(expr.args[2])
+            elseif length(expr.args) >= 3
+                return _eval_expr_safe(expr.args[3])
+            else
+                return Complex{Float64}(0)
+            end
+        else
+            error("Unsupported expression head: $(expr.head)")
+        end
+    elseif expr isa Function
+        # Function objects can appear in expressions, just return them for later use
+        # This shouldn't happen in numerical evaluation context
+        error("Unexpected function object in expression: $expr")
+    else
+        return Complex{Float64}(expr)
+    end
 end

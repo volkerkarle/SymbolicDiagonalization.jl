@@ -129,7 +129,11 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         A, B, m, n = kron_info
         try
             vals = _kronecker_eigenvalues(A, B, m, n; var=λ, timeout=timeout, max_terms=max_terms)
-            return _build_eigenvalue_result(vals, λ, expand)
+            # For Kronecker products, avoid expanding the characteristic polynomial
+            # as it can be extremely large (product of m*n terms)
+            # Just return the factored form: prod(λ - val_i)
+            poly = prod(λ .- vals)
+            return vals, poly, λ
         catch e
             # If Kronecker eigenvalue computation fails, fall through to other methods
             @debug "Kronecker product structure detected but eigenvalue computation failed" exception=e
@@ -217,6 +221,35 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
               "No exploitable structure (block-diagonal, persymmetric, diagonal, or triangular) was found. " *
               "Consider: (1) rearranging to expose block structure, " *
               "(2) using numeric methods, or (3) computing the characteristic polynomial only.")
+    end
+    
+    # Diagonal shift trick with variable substitution:
+    # For a 6-variable matrix [a b c; b d e; c e f], we can:
+    # 1. Shift by f*I to get [a-f b c; b d-f e; c e 0]
+    # 2. Substitute fresh variables: ã = a-f, d̃ = d-f → [ã b c; b d̃ e; c e 0] (5 vars)
+    # 3. Solve for eigenvalues in terms of fresh variables
+    # 4. Substitute back: ã → a-f, d̃ → d-f
+    # 5. Add shift back: λ_orig = λ_shifted + f
+    shift_info = _prepare_diagonal_shift(mat)
+    if !isnothing(shift_info)
+        shifted_mat, shift_val, back_subs = shift_info
+        
+        # Compute eigenvalues of the shifted matrix (with fresh variables)
+        poly_shifted, coeffs_shifted, λ = characteristic_polynomial(shifted_mat; var = λ)
+        vals_shifted = symbolic_roots(coeffs_shifted; timeout = timeout, max_terms = max_terms)
+        
+        # Apply back-substitution to replace fresh variables with original expressions
+        vals_substituted = _apply_back_substitution(vals_shifted, back_subs)
+        
+        # Add shift back to get original eigenvalues
+        vals = [v + shift_val for v in vals_substituted]
+        
+        # Reconstruct polynomial for original matrix
+        poly = prod(λ .- vals)
+        if expand
+            poly = Symbolics.expand(poly)
+        end
+        return vals, poly, λ
     end
     
     poly, coeffs, λ = characteristic_polynomial(A; var = λ)

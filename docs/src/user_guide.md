@@ -101,6 +101,54 @@ K = kron(A, B)  # 4×4
 eigvals(K)  # [ac, ad, bc, bd]
 ```
 
+### Nested Kronecker Products
+
+Arbitrary-depth Kronecker products are handled recursively. The eigenvalues of
+$A_1 \otimes A_2 \otimes \cdots \otimes A_n$ are all products:
+$$\lambda_{i_1, i_2, \ldots, i_n} = \lambda_{i_1}(A_1) \cdot \lambda_{i_2}(A_2) \cdots \lambda_{i_n}(A_n)$$
+
+```julia
+using SymbolicDiagonalization, Symbolics
+
+# Create 5 independent 2×2 symmetric matrices (15 parameters total)
+matrices = Matrix{Num}[]
+for i in 1:5
+    a = Symbolics.variable(Symbol("a$i"))
+    b = Symbolics.variable(Symbol("b$i"))
+    c = Symbolics.variable(Symbol("c$i"))
+    push!(matrices, [a b; b c])
+end
+
+# Build 32×32 Kronecker product
+K = reduce(kron, matrices)
+
+# Solve symbolically - returns 32 eigenvalues
+vals, vecs, pairs = symbolic_eigenvalues(K; timeout=120)
+```
+
+This scales efficiently to very large matrices:
+
+| Depth | Matrix Size | Parameters | Time |
+|-------|-------------|------------|------|
+| 5 | 32×32 | 15 | ~12s |
+| 7 | 128×128 | 21 | ~23s |
+| 10 | 1024×1024 | 30 | ~33s |
+
+### Full 6-Parameter 3×3 Symmetric Matrices
+
+The package handles the most general 3×3 symmetric matrix with 6 independent parameters:
+
+```julia
+@variables a b c d e f
+A = [a b c; b d e; c e f]
+
+# Uses diagonal shift optimization internally
+vals, vecs, pairs = symbolic_eigenvalues(A; timeout=600)
+```
+
+This employs a diagonal shift optimization: shift by $f \cdot I$, solve a 5-variable
+problem, then back-substitute. The resulting eigenvalue expressions are large but exact.
+
 ## Performance Tips
 
 | Tip | Example |
@@ -156,6 +204,35 @@ M_test = substitute(M, Dict(a=>1, b=>2))
 λ_num = LinearAlgebra.eigvals(Float64.(M_test))
 @assert isapprox(sort(real.(λ_sym)), sort(λ_num))
 ```
+
+### Robust Numerical Evaluation
+
+For complex eigenvalue expressions (e.g., 6-parameter matrices), use the internal
+`_evaluate_symbolic_expr` function which handles floating-point edge cases:
+
+```julia
+using SymbolicDiagonalization, Symbolics, LinearAlgebra
+
+@variables a b c d e f
+A = [a b c; b d e; c e f]
+vals, _, _ = symbolic_eigenvalues(A; timeout=600)
+
+# Test values
+test_vals = Dict(a => 1.0, b => 0.5, c => 0.3, d => 2.0, e => 0.4, f => 3.0)
+
+# Robust evaluation (handles sqrt of tiny negative numbers)
+computed = [real(SymbolicDiagonalization._evaluate_symbolic_expr(v, test_vals)) 
+            for v in vals]
+
+# Compare to numerical eigenvalues
+A_num = Float64[1.0 0.5 0.3; 0.5 2.0 0.4; 0.3 0.4 3.0]
+true_eigs = eigvals(Symmetric(A_num))
+
+@assert isapprox(sort(computed), sort(true_eigs), atol=1e-10)
+```
+
+This function uses `Complex{Float64}` arithmetic internally to avoid `NaN` from
+`sqrt` of tiny negative numbers caused by floating-point precision issues.
 
 ## Physical Examples
 

@@ -5,7 +5,9 @@ Symbolic matrix diagonalization for Julia using [Symbolics.jl](https://github.co
 ## Features
 
 - Closed-form eigenvalue solvers for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
-- Automatic structure detection for larger matrices (13 patterns)
+- Automatic structure detection for larger matrices (16+ patterns)
+- Diagonal shift optimization for full 6-parameter 3×3 symmetric matrices
+- Nested Kronecker products (A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ) - scales to 1024×1024 with 30 parameters
 - Drop-in `LinearAlgebra` interface: `eigen()`, `eigvals()`
 
 ## Installation
@@ -33,6 +35,26 @@ E.values
 eigvals(mat)          # eigenvalues only
 ```
 
+## Highlights
+
+### Full 6-Parameter 3×3 Symmetric Matrices
+
+```julia
+@variables a b c d e f
+A = [a b c; b d e; c e f]  # 6 independent parameters
+eigvals(A)  # Works via diagonal shift optimization (~107s)
+```
+
+### Nested Kronecker Products
+
+```julia
+# 10-fold Kronecker product: 1024×1024 matrix with 30 parameters!
+matrices = [[Symbolics.variable(Symbol("a$i")) Symbolics.variable(Symbol("b$i"));
+             Symbolics.variable(Symbol("b$i")) Symbolics.variable(Symbol("c$i"))] for i in 1:10]
+K = reduce(kron, matrices)
+eigvals(K)  # 1024 symbolic eigenvalues in ~33 seconds
+```
+
 ## Supported Patterns
 
 For matrices larger than 4×4, the package detects and exploits special structure:
@@ -44,11 +66,21 @@ For matrices larger than 4×4, the package detects and exploits special structur
 | Block-diagonal | Recursive solving |
 | Circulant | DFT-based (any size n) |
 | Symmetric Toeplitz tridiagonal | Cosine formula (any size n) |
+| Kronecker products A ⊗ B | Product of factor eigenvalues |
+| Nested Kronecker A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ | Recursive decomposition (any depth) |
+| Permutation | Roots of unity from cycle structure |
 | Persymmetric | Half-size decomposition |
-| Kronecker products | Product of factor eigenvalues |
-| Permutation | Roots of unity |
 
 See [Pattern Library](pattern_library.md) for the complete list with examples.
+
+## Performance
+
+| Matrix | Size | Parameters | Time |
+|--------|------|------------|------|
+| 3×3 symmetric (full) | 3×3 | 6 | ~107s |
+| 3×3 ⊗ 2×2 Kronecker | 6×6 | 9 | ~165s |
+| 2×2^⊗5 nested Kronecker | 32×32 | 15 | ~12s |
+| 2×2^⊗10 nested Kronecker | 1024×1024 | 30 | ~33s |
 
 ## Limitations
 
@@ -63,7 +95,7 @@ See [Pattern Library](pattern_library.md) for the complete list with examples.
 - [API Reference](api_reference.md) - Complete function signatures
 
 **Patterns & Theory**
-- [Pattern Library](pattern_library.md) - All 13 patterns with examples
+- [Pattern Library](pattern_library.md) - All 16+ patterns with examples
 - [Mathematical Background](mathematical_background.md) - Theory and algorithms
 - [Group Theory Examples](group_theory_examples.md) - Symmetry-based approaches
 

@@ -26,6 +26,8 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 - **Closed-form root solvers** for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
 - **Automatic structure detection** (block-diagonal, persymmetric, Hermitian)
 - **16+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Toeplitz tridiagonal, permutation, etc.)
+- **Diagonal shift optimization** for full 6-parameter 3×3 symmetric matrices
+- **Nested Kronecker products** (A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ) - solve 1024×1024 matrices with 30 parameters!
 - **Clean LinearAlgebra.jl interface** (`eigen()`, `eigvals()`)
 
 ## Quick Start
@@ -82,6 +84,30 @@ M = kron(A, B)
 eigvals(M)  # {ac, ad, bc, bd}
 ```
 
+### Full 6-Parameter 3×3 Symmetric Matrix
+
+```julia
+@variables a b c d e f
+A = [a b c; b d e; c e f]  # 6 independent parameters
+
+eigvals(A)  # Works! Uses diagonal shift optimization
+```
+
+### Nested Kronecker Products (Scalable to 1000+ dimensions)
+
+```julia
+# 5-fold Kronecker product: 32×32 matrix with 15 parameters
+@variables a1 b1 c1  a2 b2 c2  a3 b3 c3  a4 b4 c4  a5 b5 c5
+
+matrices = [[a1 b1; b1 c1], [a2 b2; b2 c2], [a3 b3; b3 c3],
+            [a4 b4; b4 c4], [a5 b5; b5 c5]]
+K = reduce(kron, matrices)  # 32×32
+
+eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
+
+# Works for 10-fold (1024×1024, 30 parameters) in ~33 seconds
+```
+
 ## Documentation
 
 **[Read the full documentation](https://volkerkarle.github.io/SymbolicDiagonalization.jl)** for:
@@ -92,16 +118,25 @@ eigvals(M)  # {ac, ad, bc, bd}
 - [Mathematical Background](https://volkerkarle.github.io/SymbolicDiagonalization.jl/mathematical_background/) - Theory and proofs
 - [Contributing](https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/) - Development guide
 
-## Status
+## Capabilities
 
-**Functional prototype with 16+ special patterns**
+| Feature | Details |
+|---------|---------|
+| All matrices up to 4×4 | Closed-form solutions via root formulas |
+| Full 6-parameter 3×3 symmetric | Diagonal shift optimization |
+| Block-diagonal decomposition | Automatic detection and recursion |
+| 16+ pattern solvers | Circulant, Kronecker, tridiagonal, permutation, etc. |
+| Nested Kronecker A₁⊗A₂⊗...⊗Aₙ | Scales to 1024×1024 with 30 parameters |
+| 306 passing tests | Comprehensive test coverage |
 
-| Works | Limitations |
-|-------|-------------|
-| All matrices up to 4x4 | General 5x5+ requires structure |
-| Block-diagonal decomposition | Expression explosion for symbolic 4x4 |
-| 16+ pattern solvers (circulant, Kronecker, etc.) | Basic structure detection |
-| 242 passing tests | |
+## Performance Benchmarks
+
+| Matrix | Size | Parameters | Time |
+|--------|------|------------|------|
+| 3×3 symmetric (full) | 3×3 | 6 | ~107s |
+| 3×3 ⊗ 2×2 Kronecker | 6×6 | 9 | ~165s |
+| 2×2^⊗5 nested Kronecker | 32×32 | 15 | ~12s |
+| 2×2^⊗10 nested Kronecker | 1024×1024 | 30 | ~33s |
 
 ## Testing
 

@@ -136,11 +136,22 @@ end
 """
     _symbolic_sqrt(x)
 
-Compute square root in a way that works with symbolic Complex{Num} expressions.
+Compute square root in a way that works with symbolic expressions including Complex{Num}.
 Julia's Base sqrt(::Complex) has boolean checks that fail for symbolic values,
-so we implement the complex square root formula directly.
+so we implement special handling.
+
+For plain Num (non-complex symbolic), we add 0im to force complex arithmetic,
+which is necessary for the "casus irreducibilis" in cubic formulas where the
+discriminant is negative but all roots are real.
 """
 function _symbolic_sqrt(x)
+    # For plain Num (not already complex), wrap in Complex to handle potential negative values
+    # This is needed for casus irreducibilis in cubic formulas
+    if x isa Num && !(x isa Complex)
+        # Create Complex{Num} and use the formula below
+        return _symbolic_sqrt(Complex(x, zero(x)))
+    end
+    
     # If x is not Complex{Num}, use regular sqrt
     if !(x isa Complex{<:Any})
         return sqrt(x)
@@ -330,9 +341,13 @@ function _roots_cubic(c; max_terms = 10000)
     Δ = (q / 2)^2 + (p / 3)^3
     # Simplify the discriminant
     Δ = _aggressive_simplify(Δ; max_terms = max_terms)
-    sqrtΔ = sqrt(Δ)
-    C = cbrt(-q / 2 + sqrtΔ)
-    D = cbrt(-q / 2 - sqrtΔ)
+    # Use _symbolic_sqrt which handles negative values correctly by returning
+    # complex results. This is needed for "casus irreducibilis" where Δ < 0
+    # but all 3 roots are real.
+    sqrtΔ = _symbolic_sqrt(Δ)
+    # Use ^(1//3) instead of cbrt to handle complex arguments properly.
+    C = _symbolic_cbrt(-q / 2 + sqrtΔ)
+    D = _symbolic_cbrt(-q / 2 - sqrtΔ)
     # Primitive cube roots of unity: ω = e^(2πi/3), ω² = e^(4πi/3)
     # ω = -1/2 + √3/2·i, ω² = -1/2 - √3/2·i
     omega = -0.5 + 0.5 * sqrt(3) * im
@@ -341,6 +356,54 @@ function _roots_cubic(c; max_terms = 10000)
     return [shift + C + D,
             shift + omega * C + omega2 * D,
             shift + omega2 * C + omega * D]
+end
+
+"""
+    _symbolic_cbrt(x)
+
+Compute the cube root of x, handling both real and complex arguments.
+For symbolic expressions (Num), uses x^(1//3).
+For Complex{Num}, we must compute manually since Julia's Complex^power
+tries to use Symbolics.Pow which doesn't exist.
+
+The cube root of a complex number z = r*e^(iθ) is r^(1/3)*e^(iθ/3).
+In Cartesian form: if z = a + bi, then
+  r = sqrt(a² + b²)
+  θ = atan2(b, a)
+  cbrt(z) = r^(1/3) * (cos(θ/3) + i*sin(θ/3))
+
+For symbolic expressions, we use symbolic cos/sin/atan.
+"""
+function _symbolic_cbrt(x)
+    # For plain Num (not complex), use power form
+    if x isa Num && !(x isa Complex)
+        return x^(1//3)
+    end
+    
+    # For Complex{Num}, compute manually using polar form
+    if x isa Complex && (real(x) isa Num || imag(x) isa Num)
+        a = real(x)
+        b = imag(x)
+        # r = |z| = sqrt(a² + b²)
+        r = sqrt(a^2 + b^2)
+        # θ = atan(b, a) - angle of the complex number
+        θ = atan(b, a)
+        # Cube root: r^(1/3) * e^(iθ/3)
+        r_cbrt = r^(1//3)
+        θ_third = θ / 3
+        # cos and sin for symbolic expressions
+        real_part = r_cbrt * cos(θ_third)
+        imag_part = r_cbrt * sin(θ_third)
+        return Complex(real_part, imag_part)
+    end
+    
+    # For numeric complex, use power
+    if x isa Complex
+        return x^(1/3)
+    end
+    
+    # For real numbers, cbrt is fine
+    return cbrt(x)
 end
 
 function _roots_quartic(c; max_terms = 10000)

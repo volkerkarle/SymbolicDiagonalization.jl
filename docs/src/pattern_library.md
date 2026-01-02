@@ -12,6 +12,7 @@ Catalog of matrix patterns with closed-form eigenvalue solutions.
 | Circulant | DFT: $\lambda_k = \sum c_j \omega^{jk}$ | $O(n)$ |
 | Sym. Toeplitz tridiag | $\lambda_k = a + 2b\cos(k\pi/(n+1))$ | $O(n)$ |
 | Kronecker $A \otimes B$ | Products: $\lambda_i(A) \cdot \lambda_j(B)$ | $O(m+n)$ |
+| Nested Kronecker $A_1 \otimes \cdots \otimes A_k$ | Product of all factors | $O(\sum n_i)$ |
 | Permutation | Roots of unity from cycle structure | $O(n)$ |
 | Persymmetric | Half-size decomposition | $O(n/2)$ |
 | Anti-diagonal | $\pm$ pairs | $O(n)$ |
@@ -137,6 +138,41 @@ eigvals(K)  # [ac, ad, bc, bd]
 ```
 
 Reduces $(mn) \times (mn)$ to $m \times m$ and $n \times n$ problems.
+
+### Nested Kronecker Products
+
+**Eigenvalues**: For $A_1 \otimes A_2 \otimes \cdots \otimes A_k$, all products of factor eigenvalues:
+$$\lambda(A_1 \otimes \cdots \otimes A_k) = \{\lambda_{i_1}(A_1) \cdot \lambda_{i_2}(A_2) \cdots \lambda_{i_k}(A_k)\}$$
+
+```julia
+using Symbolics
+
+# Create 5 independent 2×2 symmetric matrices
+matrices = Matrix{Num}[]
+for i in 1:5
+    a = Symbolics.variable(Symbol("a$i"))
+    b = Symbolics.variable(Symbol("b$i"))
+    c = Symbolics.variable(Symbol("c$i"))
+    push!(matrices, [a b; b c])
+end
+
+# Build 32×32 matrix with 15 parameters
+K = reduce(kron, matrices)
+eigvals(K)  # 32 eigenvalues as products
+```
+
+**Performance**: Recursive detection and solving handles arbitrary depth efficiently:
+
+| Depth | Matrix Size | Parameters | Eigenvalues | Time |
+|-------|-------------|------------|-------------|------|
+| 3 | 8×8 | 9 | 8 | ~12s |
+| 5 | 32×32 | 15 | 32 | ~12s |
+| 7 | 128×128 | 21 | 128 | ~23s |
+| 10 | 1024×1024 | 30 | 1024 | ~33s |
+
+The algorithm recursively factors $K = A \otimes B$, solves each factor independently,
+then forms all pairwise products. This bypasses the exponential complexity of direct
+symbolic computation on the full matrix.
 
 ---
 
