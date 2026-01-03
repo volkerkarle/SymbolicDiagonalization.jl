@@ -289,6 +289,110 @@ roots = symbolic_roots(poly, λ)
 
 ---
 
+### Rotation Matrix Constructors
+
+Convenience constructors for rotation matrices with clean symbolic eigenvalues.
+
+#### `R2`
+
+```julia
+R2(θ) → Matrix{Num}
+rotation_matrix(θ) → Matrix{Num}
+```
+
+Construct a 2×2 rotation matrix (SO(2)).
+
+**Arguments**:
+- `θ` - Rotation angle (symbolic or numeric)
+
+**Returns**: 2×2 rotation matrix `[cos(θ) -sin(θ); sin(θ) cos(θ)]`
+
+**Example**:
+```julia
+@variables θ
+R = R2(θ)
+eigvals(R)  # [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+```
+
+---
+
+#### `Rx`, `Ry`, `Rz`
+
+```julia
+Rx(θ) → Matrix{Num}  # Rotation around x-axis
+Ry(θ) → Matrix{Num}  # Rotation around y-axis
+Rz(θ) → Matrix{Num}  # Rotation around z-axis
+```
+
+Construct 3×3 elementary rotation matrices in SO(3).
+
+**Arguments**:
+- `θ` - Rotation angle (symbolic or numeric)
+
+**Returns**: 3×3 rotation matrix
+
+**Example**:
+```julia
+@variables θ
+eigvals(Rx(θ))  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+eigvals(Ry(θ))  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+eigvals(Rz(θ))  # [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ), 1]
+```
+
+---
+
+#### `so2_kron`
+
+```julia
+so2_kron(angles::Vector) → Matrix{Num}
+```
+
+Construct the Kronecker product of SO(2) rotation matrices.
+
+**Arguments**:
+- `angles` - Vector of rotation angles `[θ₁, θ₂, ..., θₖ]`
+
+**Returns**: 2ᵏ × 2ᵏ matrix `R2(θ₁) ⊗ R2(θ₂) ⊗ ... ⊗ R2(θₖ)`
+
+**Example**:
+```julia
+@variables α β γ
+K = so2_kron([α, β, γ])  # 8×8 matrix
+size(K)  # (8, 8)
+```
+
+---
+
+#### `so2_kron_eigenvalues`
+
+```julia
+so2_kron_eigenvalues(angles::Vector) → Vector
+```
+
+Compute eigenvalues of SO(2) Kronecker products directly in clean trigonometric form.
+
+**Arguments**:
+- `angles` - Vector of rotation angles `[θ₁, θ₂, ..., θₖ]`
+
+**Returns**: Vector of 2ᵏ eigenvalues `cos(±θ₁±θ₂±...±θₖ) + i·sin(±θ₁±θ₂±...±θₖ)`
+
+**Example**:
+```julia
+@variables α β
+vals = so2_kron_eigenvalues([α, β])
+# [cos(-α-β) + im*sin(-α-β),
+#  cos(α-β) + im*sin(α-β),
+#  cos(-α+β) + im*sin(-α+β),
+#  cos(α+β) + im*sin(α+β)]
+```
+
+**Notes**:
+- Faster than building the matrix and computing eigenvalues
+- Always produces clean form without messy symbolic expressions
+- The same clean form is automatically detected when using `eigvals(so2_kron(angles))`
+
+---
+
 ### Trigonometric Simplification
 
 #### `trig_simplify`

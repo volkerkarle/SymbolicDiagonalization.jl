@@ -190,27 +190,40 @@ The four eigenvalues are:
 - $\cos(\theta - \phi) + i\sin(\theta - \phi)$
 - $\cos(\theta - \phi) - i\sin(\theta - \phi)$
 
-```julia
-@variables θ φ
-R(x) = [cos(x) -sin(x); sin(x) cos(x)]
+**Convenience constructors**: Use `R2(θ)` to create rotation matrices and `so2_kron(angles)` for Kronecker products:
 
-eigvals(kron(R(θ), R(φ)))
-# [cos(θ + φ) + im*sin(θ + φ), cos(θ - φ) + im*sin(θ - φ),
-#  cos(θ - φ) - im*sin(θ - φ), cos(θ + φ) - im*sin(θ + φ)]
+```julia
+@variables α β γ
+
+# 2-fold: 4×4 matrix
+K2 = so2_kron([α, β])
+eigvals(K2)
+# [cos(-α - β) + im*sin(-α - β), cos(α - β) + im*sin(α - β),
+#  cos(-α + β) + im*sin(-α + β), cos(α + β) + im*sin(α + β)]
+
+# 3-fold: 8×8 matrix with 8 clean eigenvalues
+K3 = so2_kron([α, β, γ])
+eigvals(K3)  # cos(±α ± β ± γ) + i·sin(±α ± β ± γ) for all 8 sign combinations
+```
+
+**Direct eigenvalue computation**: For faster computation without building the matrix:
+
+```julia
+so2_kron_eigenvalues([α, β, γ])  # Returns 8 eigenvalues directly
 ```
 
 **Same-angle case**: $R(\theta) \otimes R(\theta)$ uses double-angle formulas:
 
 ```julia
-eigvals(kron(R(θ), R(θ)))
+eigvals(kron(R2(θ), R2(θ)))
 # [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
 ```
 
-**Implementation**: Uses SymbolicUtils.jl rule-based rewriting for automatic
-trigonometric simplification (Pythagorean identity, angle addition formulas,
-double-angle formulas).
+**Implementation**: Uses direct extraction of (cos, sin) pairs from matrix entries,
+avoiding the `sqrt(cos²)` problem that produces messy symbolic expressions.
 
-**Nesting**: Works recursively for $R(\theta_1) \otimes R(\theta_2) \otimes \cdots \otimes R(\theta_k)$.
+**Nesting**: Works recursively for $R(\theta_1) \otimes R(\theta_2) \otimes \cdots \otimes R(\theta_k)$
+with $2^k$ clean eigenvalues.
 
 ---
 

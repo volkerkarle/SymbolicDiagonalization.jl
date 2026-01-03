@@ -175,6 +175,14 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         return _build_eigenvalue_result(vals, λ, expand)
     end
     
+    # Check for Kronecker product of SO(3) rotation matrices (SO(3)^⊗k)
+    # For 9×9, 27×27, etc. matrices that are products of 3D rotations
+    so3_kron_result = _detect_so3_kronecker_product(mat)
+    if !isnothing(so3_kron_result)
+        vals = so3_kron_result
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
     # Check for Kronecker product A ⊗ B (any size m*n)
     kron_info = _is_kronecker_product(mat)
     if !isnothing(kron_info)

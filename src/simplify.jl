@@ -310,12 +310,56 @@ end
 
 Check if an expression is symbolically zero, using trigonometric simplification
 to handle cases like sin²(θ) + cos²(θ) - 1.
+
+For Euler angle rotations and other composed trig expressions, we need to:
+1. First try basic simplify (handles simple Pythagorean identities)
+2. Try expand then simplify (handles nested trig products)
+3. Apply Pythagorean substitution sin²(x) → 1 - cos²(x) to force identity application
+4. Try trig_simplify rules as a fallback
 """
 function _issymzero_trig(expr)
+    # Fast path: already zero
     if _issymzero(expr)
         return true
     end
     
+    # Try Symbolics.simplify first (handles many cases)
+    try
+        simplified = Symbolics.simplify(expr)
+        if _issymzero(simplified)
+            return true
+        end
+    catch
+    end
+    
+    # Try expand then simplify - this is key for some Euler angle terms
+    try
+        expanded = Symbolics.expand(expr)
+        simplified = Symbolics.simplify(expanded)
+        if _issymzero(simplified)
+            return true
+        end
+    catch
+    end
+    
+    # Apply Pythagorean substitution: sin²(x) → 1 - cos²(x)
+    # This forces the Pythagorean identity to be applied even in nested contexts
+    # e.g., sin²α + cos²α in coefficients like: a*sin²α + a*cos²α → a
+    try
+        expanded = Symbolics.expand(expr)
+        result = expanded
+        for v in Symbolics.get_variables(expr)
+            result = Symbolics.substitute(result, Dict(sin(v)^2 => 1 - cos(v)^2))
+        end
+        result = Symbolics.expand(result)
+        result = Symbolics.simplify(result)
+        if _issymzero(result)
+            return true
+        end
+    catch
+    end
+    
+    # Try trig_simplify rules
     simplified = trig_simplify(expr)
     return _issymzero(simplified)
 end

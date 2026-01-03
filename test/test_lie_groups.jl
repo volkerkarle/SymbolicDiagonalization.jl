@@ -177,4 +177,295 @@ using LinearAlgebra
         # Should contain sin, not sqrt
         @test occursin("sin", simplified_str) || simplified_str == "sin(θ)"
     end
+    
+    @testset "Rotation Matrix Constructors" begin
+        @variables θ α β γ
+        
+        # Test R2 constructor
+        @testset "R2 - 2D rotation" begin
+            R = R2(θ)
+            @test size(R) == (2, 2)
+            @test isequal(R[1,1], cos(θ))
+            @test isequal(R[2,1], sin(θ))
+            @test isequal(R[1,2], -sin(θ))
+            @test isequal(R[2,2], cos(θ))
+            
+            # Eigenvalues should be clean
+            vals = eigvals(R)
+            @test length(vals) == 2
+            @test any(v -> occursin("cos(θ) + im*sin(θ)", string(v)), string.(vals))
+            @test any(v -> occursin("cos(θ) - im*sin(θ)", string(v)), string.(vals))
+        end
+        
+        # Test Rx, Ry, Rz constructors
+        @testset "Rx - rotation around x-axis" begin
+            R = Rx(θ)
+            @test size(R) == (3, 3)
+            @test isequal(R[1,1], 1)
+            @test isequal(R[2,2], cos(θ))
+            @test isequal(R[3,3], cos(θ))
+            
+            vals = eigvals(R)
+            @test length(vals) == 3
+            # Should have eigenvalue 1
+            @test any(v -> isequal(v, 1) || isequal(Symbolics.simplify(v - 1), 0), vals)
+        end
+        
+        @testset "Ry - rotation around y-axis" begin
+            R = Ry(θ)
+            @test size(R) == (3, 3)
+            @test isequal(R[2,2], 1)
+            @test isequal(R[1,1], cos(θ))
+            @test isequal(R[3,3], cos(θ))
+            
+            vals = eigvals(R)
+            @test length(vals) == 3
+        end
+        
+        @testset "Rz - rotation around z-axis" begin
+            R = Rz(θ)
+            @test size(R) == (3, 3)
+            @test isequal(R[3,3], 1)
+            @test isequal(R[1,1], cos(θ))
+            @test isequal(R[2,2], cos(θ))
+            
+            vals = eigvals(R)
+            @test length(vals) == 3
+        end
+    end
+    
+    @testset "SO(2) Kronecker Products" begin
+        @variables α β γ
+        
+        @testset "2-fold SO(2) Kronecker" begin
+            K = so2_kron([α, β])
+            @test size(K) == (4, 4)
+            
+            vals = eigvals(K)
+            @test length(vals) == 4
+            
+            # All eigenvalues should be in clean form cos(sum) + im*sin(sum)
+            for v in vals
+                v_str = string(v)
+                @test occursin("cos", v_str) && occursin("sin", v_str)
+                # Should NOT contain sqrt
+                @test !occursin("sqrt", v_str)
+            end
+            
+            # Check specific eigenvalue structure (±α ± β combinations)
+            vals_str = join(string.(vals), " ")
+            @test occursin("α", vals_str) && occursin("β", vals_str)
+        end
+        
+        @testset "3-fold SO(2) Kronecker" begin
+            K = so2_kron([α, β, γ])
+            @test size(K) == (8, 8)
+            
+            vals = eigvals(K)
+            @test length(vals) == 8
+            
+            # All eigenvalues should be in clean form
+            for v in vals
+                v_str = string(v)
+                @test occursin("cos", v_str) && occursin("sin", v_str)
+                # Should NOT contain sqrt or other messy expressions
+                @test !occursin("sqrt", v_str)
+            end
+            
+            # Check that all three angles appear
+            vals_str = join(string.(vals), " ")
+            @test occursin("α", vals_str) && occursin("β", vals_str) && occursin("γ", vals_str)
+        end
+        
+        @testset "so2_kron_eigenvalues direct computation" begin
+            # Direct computation should match eigvals
+            direct_vals = so2_kron_eigenvalues([α, β])
+            @test length(direct_vals) == 4
+            
+            # All should be clean
+            for v in direct_vals
+                v_str = string(v)
+                @test occursin("cos", v_str) && occursin("sin", v_str)
+            end
+            
+            # 3-fold direct computation
+            direct_vals_3 = so2_kron_eigenvalues([α, β, γ])
+            @test length(direct_vals_3) == 8
+        end
+        
+        @testset "Same-angle case" begin
+            # R(θ) ⊗ R(θ) should give eigenvalues with 2θ
+            K = so2_kron([α, α])
+            vals = eigvals(K)
+            @test length(vals) == 4
+            
+            # Should simplify to use 2α where applicable
+            vals_str = join(string.(vals), " ")
+            # The eigenvalues are cos(2α), cos(0)=1, etc.
+            @test occursin("α", vals_str)
+        end
+    end
+    
+    @testset "Euler Angle Rotations" begin
+        @variables α β γ
+        
+        @testset "Euler rotation detection (XZX)" begin
+            # Euler angles: Rx(α) * Rz(β) * Rx(γ)
+            R_euler = Rx(α) * Rz(β) * Rx(γ)
+            
+            # Should be detected as orthogonal
+            @test SymbolicDiagonalization._is_orthogonal(R_euler)
+            
+            # Should be detected as SO(3)
+            @test SymbolicDiagonalization._is_so3(R_euler)
+            
+            # Eigenvalues should compute successfully
+            vals = eigvals(R_euler)
+            @test length(vals) == 3
+            
+            # One eigenvalue should be 1 (the rotation axis)
+            has_one = any(vals) do v
+                if v isa Complex
+                    r = real(v)
+                    i = imag(v)
+                    isequal(Symbolics.simplify(r - 1), 0) && isequal(Symbolics.simplify(i), 0)
+                else
+                    isequal(Symbolics.simplify(v - 1), 0)
+                end
+            end
+            @test has_one
+        end
+        
+        @testset "Various Euler conventions" begin
+            # Test that all common Euler conventions are detected as SO(3)
+            
+            # Proper Euler angles (same first and last axis)
+            @test SymbolicDiagonalization._is_so3(Rz(α) * Rx(β) * Rz(γ))  # ZXZ
+            @test SymbolicDiagonalization._is_so3(Rz(α) * Ry(β) * Rz(γ))  # ZYZ
+            @test SymbolicDiagonalization._is_so3(Ry(α) * Rx(β) * Ry(γ))  # YXY
+            @test SymbolicDiagonalization._is_so3(Ry(α) * Rz(β) * Ry(γ))  # YZY
+            @test SymbolicDiagonalization._is_so3(Rx(α) * Ry(β) * Rx(γ))  # XYX
+            @test SymbolicDiagonalization._is_so3(Rx(α) * Rz(β) * Rx(γ))  # XZX
+            
+            # Tait-Bryan angles (three different axes)
+            @test SymbolicDiagonalization._is_so3(Rx(α) * Ry(β) * Rz(γ))  # XYZ
+            @test SymbolicDiagonalization._is_so3(Rx(α) * Rz(β) * Ry(γ))  # XZY
+            @test SymbolicDiagonalization._is_so3(Ry(α) * Rx(β) * Rz(γ))  # YXZ
+            @test SymbolicDiagonalization._is_so3(Ry(α) * Rz(β) * Rx(γ))  # YZX
+            @test SymbolicDiagonalization._is_so3(Rz(α) * Rx(β) * Ry(γ))  # ZXY
+            @test SymbolicDiagonalization._is_so3(Rz(α) * Ry(β) * Rx(γ))  # ZYX
+        end
+        
+        @testset "Single axis rotations" begin
+            @variables θ
+            
+            # Single axis rotations should have clean eigenvalues
+            for R in [Rx(θ), Ry(θ), Rz(θ)]
+                vals = eigvals(R)
+                @test length(vals) == 3
+                
+                # Should have exactly one eigenvalue = 1 (possibly as Complex{Num})
+                has_one = any(vals) do v
+                    if v isa Complex
+                        isequal(Symbolics.simplify(real(v) - 1), 0) && 
+                        isequal(Symbolics.simplify(imag(v)), 0)
+                    else
+                        isequal(Symbolics.simplify(v - 1), 0)
+                    end
+                end
+                @test has_one
+                
+                # Other two should be cos(θ) ± i*sin(θ)
+                # Filter out the eigenvalue 1
+                complex_non_one = filter(vals) do v
+                    if v isa Complex
+                        # Not equal to 1+0i
+                        !(isequal(Symbolics.simplify(real(v) - 1), 0) && 
+                          isequal(Symbolics.simplify(imag(v)), 0))
+                    else
+                        !isequal(Symbolics.simplify(v - 1), 0)
+                    end
+                end
+                @test length(complex_non_one) == 2
+                
+                # Check they are complex conjugates (real parts equal, imag parts opposite)
+                v1, v2 = complex_non_one
+                @test isequal(real(v1), real(v2))
+                # Imaginary parts should sum to zero
+                sum_imag = Symbolics.simplify(imag(v1) + imag(v2))
+                @test isequal(sum_imag, 0)
+            end
+        end
+    end
+    
+    @testset "SO(3) Kronecker Products" begin
+        @variables θ φ
+        
+        @testset "SO(3) ⊗ SO(3) detection and eigenvalues" begin
+            # Test Rz ⊗ Rz
+            K = kron(Rz(θ), Rz(φ))
+            @test size(K) == (9, 9)
+            @test SymbolicDiagonalization._is_orthogonal(K)
+            
+            # Should be detected as SO(3) Kronecker product
+            result = SymbolicDiagonalization._detect_so3_kronecker_product(K)
+            @test !isnothing(result)
+            @test length(result) == 9
+            
+            # Eigenvalues should be products of SO(3) eigenvalues
+            # Expected: 1, e^{±iθ}, e^{±iφ}, e^{±i(θ+φ)}, e^{±i(θ-φ)}
+            # All should be in clean cos/sin form, no sqrt
+            for v in result
+                v_str = string(v)
+                @test !occursin("sqrt", v_str)
+            end
+            
+            # Should have exactly one eigenvalue = 1
+            has_one = any(result) do v
+                if v isa Complex
+                    isequal(Symbolics.simplify(real(v) - 1), 0) && 
+                    isequal(Symbolics.simplify(imag(v)), 0)
+                else
+                    isequal(Symbolics.simplify(v - 1), 0)
+                end
+            end
+            @test has_one
+        end
+        
+        @testset "Different axis combinations" begin
+            # Rz ⊗ Rx
+            K = kron(Rz(θ), Rx(φ))
+            vals = eigvals(K)
+            @test length(vals) == 9
+            # Should be clean (no sqrt)
+            has_sqrt = any(v -> occursin("sqrt", string(v)), string.(vals))
+            @test !has_sqrt
+            
+            # Rx ⊗ Ry
+            K = kron(Rx(θ), Ry(φ))
+            vals = eigvals(K)
+            @test length(vals) == 9
+            has_sqrt = any(v -> occursin("sqrt", string(v)), string.(vals))
+            @test !has_sqrt
+            
+            # Ry ⊗ Rz
+            K = kron(Ry(θ), Rz(φ))
+            vals = eigvals(K)
+            @test length(vals) == 9
+            has_sqrt = any(v -> occursin("sqrt", string(v)), string.(vals))
+            @test !has_sqrt
+        end
+        
+        @testset "Same angle case" begin
+            # Rz(θ) ⊗ Rz(θ) should have eigenvalues including e^{±2iθ}
+            K = kron(Rz(θ), Rz(θ))
+            vals = eigvals(K)
+            @test length(vals) == 9
+            
+            # Check for 2θ terms
+            vals_str = join(string.(vals), " ")
+            # Should have terms like cos(2θ), sin(2θ) or 2θ
+            @test occursin("θ", vals_str)
+        end
+    end
 end

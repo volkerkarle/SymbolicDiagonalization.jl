@@ -13,7 +13,8 @@
 Check if matrix A is orthogonal: A^T * A = I.
 Returns true if A is orthogonal, false otherwise.
 
-Only uses symbolic zero checks - no numeric tolerance.
+Uses trig-aware simplification to handle composed rotations like Euler angles
+where entries involve expressions like cos(α)cos(β) + sin(α)sin(β).
 """
 function _is_orthogonal(A)
     n = size(A, 1)
@@ -23,7 +24,9 @@ function _is_orthogonal(A)
     for i in 1:n, j in 1:n
         target = i == j ? 1 : 0
         diff = ATA[i, j] - target
-        if !_issymzero(diff)
+        # Use _issymzero_trig for trig-aware simplification
+        # This is essential for Euler angle rotations like Rx(α)*Rz(β)*Rx(γ)
+        if !_issymzero_trig(diff)
             return false
         end
     end
@@ -35,13 +38,17 @@ end
 
 Check if matrix A is in SO(n): orthogonal with det = +1.
 Returns the dimension n if A is in SO(n), nothing otherwise.
+
+Uses trig-aware simplification for the determinant check to handle
+composed rotations like Euler angles.
 """
 function _is_special_orthogonal(A)
     n = size(A, 1)
     _is_orthogonal(A) || return nothing
     
     d = det(A)
-    if _issymzero(d - 1)
+    # Use _issymzero_trig for trig-aware determinant simplification
+    if _issymzero_trig(d - 1)
         return n
     end
     return nothing

@@ -52,6 +52,7 @@ include("patterns/tridiagonal.jl")  # Toeplitz tridiagonal, special 5×5, anti-d
 include("patterns/permutation.jl")  # Permutation matrices
 include("patterns/lie_groups.jl")   # SO(n), SU(n), Sp(2n), Lorentz groups
 include("patterns/lie_algebras.jl") # Lie algebra representations (spin-j, etc.)
+include("patterns/rotations.jl")    # Rotation matrix constructors and SO(2) Kronecker products
 
 # ============================================================================
 # Public API
@@ -67,6 +68,9 @@ export trig_simplify, aggressive_simplify, simplify_eigenvalue, simplify_eigenva
 
 # Export exception types for error handling
 export ExpressionComplexityError, ComputationTimeoutError
+
+# Export rotation matrix constructors
+export R2, Rx, Ry, Rz, rotation_matrix, so2_kron, so2_kron_eigenvalues
 
 
 

@@ -617,10 +617,8 @@ Detect if mat is a Kronecker product of SO(2) rotation matrices.
 For SO(2) ⊗ SO(2) (4×4 matrix), eigenvalues are e^{i(±θ±φ)}.
 For SO(2)^⊗k (2^k × 2^k matrix), eigenvalues are e^{i(±θ₁±θ₂±...±θₖ)}.
 
-This detection exploits the structure of rotation Kronecker products:
-1. The matrix is orthogonal: R^T R = I
-2. The dimension is a power of 2
-3. The trace and other invariants match the expected form
+Uses the cleaner extraction approach from rotations.jl that extracts (cos, sin)
+pairs directly from matrix entries, avoiding sqrt(cos²) expressions.
 
 Returns a vector of eigenvalues if detected, nothing otherwise.
 """
@@ -632,20 +630,393 @@ function _detect_rotation_kronecker_product(mat)
     _is_numeric_matrix(mat) && return nothing
     
     # Check if dimension is a power of 2
-    N < 4 && return nothing  # Need at least 4×4 for this
+    N < 2 && return nothing
     log2_N = log2(N)
     isinteger(log2_N) || return nothing
     k = Int(log2_N)
-    k >= 2 || return nothing  # Need at least 2 factors for this to be useful
     
-    # Check if orthogonal
-    if !_is_symbolic_orthogonal(mat)
+    # For 2×2 matrices, use Lie group detection (handled by _lie_group_eigenvalues)
+    k < 2 && return nothing
+    
+    # Try to extract cos/sin pairs directly from the first column structure
+    # This approach handles the scaling correctly and avoids sqrt(cos²) issues
+    pairs = try
+        _extract_so2_kron_pairs_from_first_column(mat, k)
+    catch
+        nothing
+    end
+    
+    isnothing(pairs) && return nothing
+    
+    # Compute clean eigenvalues from the pairs
+    return _so2_kron_eigenvalues_from_pairs_v2(pairs)
+end
+
+"""
+    _extract_so2_kron_cos_sin_pairs_v2(mat, k) -> Vector{Tuple}
+
+Extract (cos(θⱼ), sin(θⱼ)) pairs from a 2^k × 2^k SO(2) Kronecker product.
+
+Uses recursive block decomposition to extract cos/sin directly without sqrt.
+For mat = R(θ₁) ⊗ R(θ₂) ⊗ ... ⊗ R(θₖ):
+- block_11 = cos(θ₁) * M, block_21 = sin(θ₁) * M
+- where M = R(θ₂) ⊗ ... ⊗ R(θₖ)
+
+Extracts c₁, s₁ by dividing block entries by M[1,1] = product of inner cosines.
+"""
+function _extract_so2_kron_cos_sin_pairs_v2(mat, k)
+    N = 2^k
+    
+    if k == 1
+        # Base case: 2×2 should be SO(2)
+        c, s = mat[1, 1], mat[2, 1]
+        # Verify it's actually SO(2): check structure [c -s; s c]
+        if !_issymzero(Symbolics.simplify(mat[1, 2] + s)) ||
+           !_issymzero(Symbolics.simplify(mat[2, 2] - c))
+            return nothing
+        end
+        # Verify c² + s² = 1 with trig simplification
+        if !_issymzero_trig(Symbolics.simplify(c^2 + s^2 - 1))
+            return nothing
+        end
+        return [(c, s)]
+    end
+    
+    # For k > 1: decompose as R₁ ⊗ M
+    half = N ÷ 2
+    
+    block_11 = mat[1:half, 1:half]
+    block_12 = mat[1:half, half+1:N]
+    block_21 = mat[half+1:N, 1:half]
+    block_22 = mat[half+1:N, half+1:N]
+    
+    # Verify block structure: block_11 = block_22, block_12 = -block_21
+    for i in 1:half, j in 1:half
+        if !_issymzero(Symbolics.simplify(block_11[i,j] - block_22[i,j]))
+            return nothing
+        end
+        if !_issymzero(Symbolics.simplify(block_12[i,j] + block_21[i,j]))
+            return nothing
+        end
+    end
+    
+    # Recursively extract pairs from the inner matrix structure
+    # block_11 = c₁ * M, so we need to normalize by c₁ to get M
+    # But we don't know c₁ yet...
+    #
+    # Key insight: recursively decompose block_11 as if it were c₁*M.
+    # The inner pairs will be scaled by c₁, but we can recover c₁ from
+    # the product of inner cosines.
+    #
+    # Actually, for block_11 = c₁ * M where M = R₂ ⊗ ... ⊗ Rₖ:
+    # - block_11[1,1] = c₁ * M[1,1] = c₁ * c₂ * ... * cₖ
+    # - block_21[1,1] = s₁ * M[1,1] = s₁ * c₂ * ... * cₖ
+    #
+    # If we recursively decompose block_11/c₁ = M, we get the inner pairs.
+    # But we need c₁ first, which depends on knowing M[1,1]...
+    #
+    # Bootstrap: For k=2, we can directly read the pairs from the first column.
+    # For k>2, use the recursive structure.
+    
+    # Get first column entries (standard Kronecker structure)
+    # mat[1,1] = c₁ * c₂ * ... * cₖ (all cosines)
+    # mat[half+1, 1] = s₁ * c₂ * ... * cₖ (first sin, rest cos)
+    #
+    # Ratio: mat[half+1,1] / mat[1,1] = s₁/c₁ = tan(θ₁)
+    # This gives us tan(θ₁), but we want c₁ and s₁ directly.
+    
+    # Recursively get inner pairs from block_11 (which is c₁ * M)
+    # We treat block_11 as-is and extract its "pairs", which will be scaled.
+    inner_pairs = _extract_so2_kron_cos_sin_pairs_v2(block_11, k - 1)
+    isnothing(inner_pairs) && return nothing
+    
+    # The inner_pairs from block_11 = c₁ * M give us (c₁*c₂, c₁*s₂), (c₁*c₃, c₁*s₃)...
+    # Wait, that's not right either. Let me think again.
+    #
+    # For block_11 = c₁ * M where M is a rotation Kronecker product:
+    # - block_11 is NOT a rotation Kronecker product (it's scaled by c₁)
+    # - So the recursive call will fail unless c₁ = 1
+    #
+    # Better approach: Use the first column to extract all pairs directly.
+    # 
+    # For mat = R₁ ⊗ R₂ ⊗ ... ⊗ Rₖ, the first column is:
+    # [c₁c₂...cₖ, c₁c₂...sₖ, c₁c₂...cₖ₋₁sₖ₋₁cₖ, ..., s₁s₂...sₖ]
+    # 
+    # Actually the pattern is: element at index i (0-based) has factor sⱼ if bit j is set.
+    # mat[i+1, 1] = ∏ⱼ (if bit j of i is set then sⱼ else cⱼ)
+    
+    # Direct extraction using ratio method:
+    # For each j, compare elements differing only in bit j:
+    # mat[2^j + 1, 1] / mat[1, 1] = sⱼ / cⱼ (if all other bits are 0)
+    # Then use c² + s² = 1 with the known ratio
+    
+    pairs = Tuple{Any, Any}[]
+    
+    for j in 0:(k-1)
+        # Index with only bit j set (1-indexed)
+        idx_s = (1 << j) + 1  # Element with sⱼ instead of cⱼ at position j
+        
+        # mat[1,1] = product of all cⱼ
+        # mat[idx_s, 1] = sⱼ * (product of all other cⱼ)
+        
+        all_cos = mat[1, 1]
+        one_sin = mat[idx_s, 1]
+        
+        # Ratio = sⱼ / cⱼ
+        # We have: one_sin / all_cos = sⱼ / cⱼ (if other terms cancel)
+        # But actually: all_cos = c₀c₁...cⱼ...cₖ₋₁
+        #               one_sin = c₀c₁...sⱼ...cₖ₋₁
+        # So one_sin / all_cos = sⱼ / cⱼ ✓
+        
+        # Now: tanⱼ = sⱼ/cⱼ, and cⱼ² + sⱼ² = 1
+        # → cⱼ² (1 + tan²ⱼ) = 1 → cⱼ² = 1/(1+tan²ⱼ) = cos²(θⱼ)
+        # → cⱼ = ±cos(θⱼ), sⱼ = ±sin(θⱼ)
+        #
+        # But this still requires sqrt! The key is that the matrix entries
+        # already contain the trig functions directly (e.g., cos(α)*cos(β)).
+        #
+        # If mat = R(α) ⊗ R(β), then:
+        # mat[1,1] = cos(α)cos(β)
+        # mat[2,1] = cos(α)sin(β)
+        # mat[3,1] = sin(α)cos(β)
+        # mat[4,1] = sin(α)sin(β)
+        #
+        # We can factor these: GCD of column 1 entries at indices with bit j=0
+        # gives us all the cⱼ products except cⱼ, times something.
+        #
+        # Alternative: Use the known product structure.
+        # For j=0 (last factor): c₀ appears in mat[1,1], mat[3,1] (odd rows ÷2=even)
+        # For j=1 (first factor): c₁ appears in mat[1,1], mat[2,1] (rows < half)
+        #
+        # Division approach: 
+        # cⱼ = mat[1,1] / (product of other cᵢ where i≠j)
+        # But we don't know the other cᵢ...
+        #
+        # Recursive factoring:
+        # For k=2: mat[1,1] = c₀c₁, mat[2,1] = c₀s₁, mat[3,1] = s₀c₁, mat[4,1] = s₀s₁
+        # c₀ = mat[1,1]/c₁, s₀ = mat[3,1]/c₁
+        # c₁ = mat[1,1]/c₀, s₁ = mat[2,1]/c₀
+        # This is circular unless we can identify the individual trig functions.
+        #
+        # KEY INSIGHT: If the matrix was constructed from symbolic trig functions,
+        # the entries ARE products of cos(θᵢ) and sin(θᵢ). We just need to
+        # recognize this structure and extract the angles.
+        #
+        # Since we've verified the block structure (block_11 = block_22, 
+        # block_12 = -block_21), we know this is an SO(2) Kronecker product.
+        # The eigenvalues can be computed directly from any valid (c,s) pairs
+        # as long as they satisfy c² + s² = 1.
+        #
+        # SIMPLE APPROACH: Read (cⱼ, sⱼ) directly from the first column structure.
+        # For factor j (0-indexed from right), the 2×2 block structure at level j
+        # gives us cⱼ*something and sⱼ*something.
+        #
+        # Level 0: block size 1, elements 1 vs 2, 3 vs 4, etc.
+        # Level 1: block size 2, elements 1-2 vs 3-4, 5-6 vs 7-8, etc.
+        # etc.
+        
+        # For level j (0-indexed), the cos part is in indices with bit j = 0,
+        # the sin part is in indices with bit j = 1.
+        # 
+        # We need the ratio sⱼ/cⱼ = mat[idx_with_bit_j_set, 1] / mat[idx_with_bit_j_clear, 1]
+        # where both indices have the same bits except bit j.
+        #
+        # Simplest: use indices 0 and 2^j (base indices)
+    end
+    
+    # Fallback to the original approach that works for k=2
+    return _extract_so2_kron_pairs_from_first_column(mat, k)
+end
+
+"""
+    _extract_so2_kron_pairs_from_first_column(mat, k) -> Vector{Tuple}
+
+Extract (cos, sin) pairs from the first column of an SO(2) Kronecker product.
+Works by recursively factoring the first column structure.
+"""
+function _extract_so2_kron_pairs_from_first_column(mat, k)
+    N = 2^k
+    col1 = mat[:, 1]
+    
+    if k == 1
+        c, s = col1[1], col1[2]
+        return [(c, s)]
+    end
+    
+    half = N ÷ 2
+    
+    # For mat = R₁ ⊗ M:
+    # col1[1:half] = c₁ * M[:,1]
+    # col1[half+1:N] = s₁ * M[:,1]
+    
+    # M is the (k-1)-fold product, M[:,1] is its first column
+    # M[1,1] = product of cosines of remaining angles
+    
+    # Recursively get inner pairs
+    # We need M = mat[1:half, 1:half] / c₁, but we don't know c₁
+    # However, we can work with the scaled version and recover c₁ at the end
+    
+    # Extract inner pairs from the structure of col1[1:half]
+    # which equals c₁ * M[:,1]
+    
+    # For k=2: col1 = [c₁c₂, c₁s₂, s₁c₂, s₁s₂]
+    # col1[1:2] = [c₁c₂, c₁s₂] = c₁ * [c₂, s₂]
+    # col1[3:4] = [s₁c₂, s₁s₂] = s₁ * [c₂, s₂]
+    #
+    # From [c₁c₂, c₁s₂], we get c₂ = col1[1]/c₁, s₂ = col1[2]/c₁
+    # From [s₁c₂, s₁s₂], we get c₂ = col1[3]/s₁, s₂ = col1[4]/s₁
+    #
+    # Cross-multiply: col1[1]*col1[4] = c₁c₂s₁s₂ = col1[2]*col1[3] ✓
+    # This gives us the constraint but not the individual values.
+    #
+    # Use the block matrix M = block_11 / c₁:
+    # M is orthogonal, so M^T M = I
+    # block_11^T block_11 = c₁² I (since block_11 = c₁ M)
+    # So c₁² = (block_11^T block_11)[1,1] = sum of col1[1:half].^2
+    
+    block_11 = mat[1:half, 1:half]
+    block_21 = mat[half+1:N, 1:half]
+    
+    # c₁² = ||block_11[:,1]||² (first column of block_11)
+    c1_squared = Symbolics.simplify(sum(block_11[i, 1]^2 for i in 1:half))
+    s1_squared = Symbolics.simplify(sum(block_21[i, 1]^2 for i in 1:half))
+    
+    # Try to extract c₁ and s₁ from c₁² and s₁² using pattern matching
+    trig_result = _try_extract_trig_from_squared(c1_squared, s1_squared)
+    
+    if !isnothing(trig_result)
+        c1, s1 = trig_result
+        # Successfully extracted c₁ = cos(θ₁), s₁ = sin(θ₁)
+        # Now get M = block_11 / c₁ and recursively extract its pairs
+        M = Symbolics.simplify.(block_11 ./ c1)
+        
+        inner_pairs = _extract_so2_kron_pairs_from_first_column(M, k - 1)
+        if !isnothing(inner_pairs)
+            return vcat([(c1, s1)], inner_pairs)
+        end
+    end
+    
+    # Fallback: try direct extraction using first column ratios
+    # This works when the trig functions appear directly in matrix entries
+    
+    # For each factor j, compute (cⱼ, sⱼ) from the first column
+    # mat[1,1] = c₁c₂...cₖ
+    # mat[2^(k-1)+1, 1] = s₁c₂...cₖ (for first factor)
+    # etc.
+    
+    # Try using the product structure directly
+    # If mat[1,1] = cos(α)cos(β)... we can try to factor it
+    
+    # Last resort: compute scaled pairs and hope they work
+    # c₁ * M[1,1] = mat[1,1], s₁ * M[1,1] = mat[half+1, 1]
+    # If we set "virtual c₁" = mat[1,1] / inner_product and 
+    # "virtual s₁" = mat[half+1,1] / inner_product, we get valid eigenvalues
+    
+    # Get M's first entry from recursive structure
+    inner_pairs = _extract_so2_kron_pairs_from_first_column(block_11, k - 1)
+    if isnothing(inner_pairs)
         return nothing
     end
     
-    # Try to recursively decompose as SO(2) ⊗ (something)
-    result = _try_so2_kronecker_decomposition(mat, k)
-    return result
+    # M[1,1] = product of first elements of inner pairs (all the "c" values)
+    M_11 = prod(p[1] for p in inner_pairs)
+    
+    # Now extract c₁ and s₁
+    c1 = Symbolics.simplify(mat[1, 1] / M_11)
+    s1 = Symbolics.simplify(mat[half + 1, 1] / M_11)
+    
+    # Verify c₁² + s₁² = 1
+    check = Symbolics.simplify(c1^2 + s1^2)
+    if !_issymzero_trig(Symbolics.simplify(check - 1))
+        return nothing
+    end
+    
+    return vcat([(c1, s1)], inner_pairs)
+end
+
+"""
+    _so2_kron_eigenvalues_from_pairs_v2(pairs::Vector) -> Vector
+
+Compute eigenvalues from (cos, sin) pairs.
+If pairs are directly (cos(θ), sin(θ)), extracts θ and uses the angle-sum formula
+for cleaner output: cos(±θ₁±θ₂±...) + i·sin(±θ₁±θ₂±...).
+"""
+function _so2_kron_eigenvalues_from_pairs_v2(pairs)
+    k = length(pairs)
+    
+    # Try to extract angles directly from the pairs
+    # If c = cos(θ) and s = sin(θ), extract θ
+    angles = Any[]
+    for (c, s) in pairs
+        θ = _try_extract_angle_from_cos_sin(c, s)
+        if isnothing(θ)
+            # Fallback to multiplication approach
+            return _so2_kron_eigenvalues_from_pairs_multiply(pairs)
+        end
+        push!(angles, θ)
+    end
+    
+    # Use the clean angle-sum formula
+    eigenvalues = []
+    for signs in Iterators.product(fill([-1, 1], k)...)
+        angle_sum = sum(s * θ for (s, θ) in zip(signs, angles))
+        push!(eigenvalues, cos(angle_sum) + im * sin(angle_sum))
+    end
+    
+    return eigenvalues
+end
+
+"""
+    _try_extract_angle_from_cos_sin(c, s) -> Union{Num, Nothing}
+
+Try to extract θ from (cos(θ), sin(θ)) pair by pattern matching.
+Returns θ if both c and s are trig functions of the same angle, nothing otherwise.
+"""
+function _try_extract_angle_from_cos_sin(c, s)
+    unwrapped_c = Symbolics.unwrap(c)
+    unwrapped_s = Symbolics.unwrap(s)
+    
+    # Check if c = cos(θ) for some θ
+    if !Symbolics.iscall(unwrapped_c) || Symbolics.operation(unwrapped_c) !== cos
+        return nothing
+    end
+    θ_c = Num(Symbolics.arguments(unwrapped_c)[1])
+    
+    # Check if s = sin(θ) for the same θ
+    if !Symbolics.iscall(unwrapped_s) || Symbolics.operation(unwrapped_s) !== sin
+        return nothing
+    end
+    θ_s = Num(Symbolics.arguments(unwrapped_s)[1])
+    
+    # Verify same angle
+    if !_issymzero(Symbolics.simplify(θ_c - θ_s))
+        return nothing
+    end
+    
+    return θ_c
+end
+
+"""
+    _so2_kron_eigenvalues_from_pairs_multiply(pairs::Vector) -> Vector
+
+Fallback: compute eigenvalues by multiplying (c ± is) factors.
+Used when angle extraction fails.
+"""
+function _so2_kron_eigenvalues_from_pairs_multiply(pairs)
+    k = length(pairs)
+    
+    eigenvalues = [1 + 0im]
+    
+    for (c, s) in pairs
+        new_eigenvalues = []
+        for λ in eigenvalues
+            push!(new_eigenvalues, Symbolics.simplify(λ * (c + im*s)))
+            push!(new_eigenvalues, Symbolics.simplify(λ * (c - im*s)))
+        end
+        eigenvalues = new_eigenvalues
+    end
+    
+    return [trig_simplify(λ) for λ in eigenvalues]
 end
 
 """
@@ -1056,7 +1427,8 @@ function _try_extract_trig_from_squared(c_squared, s_squared)
     try
         if Symbolics.iscall(unwrapped_c) && Symbolics.operation(unwrapped_c) === (^)
             args = Symbolics.arguments(unwrapped_c)
-            if length(args) == 2 && args[2] == 2
+            # Note: args[2] may be a symbolic 2, so use isequal with value extraction
+            if length(args) == 2 && isequal(Symbolics.value(args[2]), 2)
                 base = args[1]
                 # Check if base is cos(something)
                 if Symbolics.iscall(base)
@@ -1080,4 +1452,228 @@ function _try_extract_trig_from_squared(c_squared, s_squared)
     end
     
     return nothing
+end
+
+# ============================================================================
+# SO(3) Kronecker Product Detection and Eigenvalue Computation
+# ============================================================================
+
+"""
+    _detect_so3_kronecker_product(mat)
+
+Detect if mat is a Kronecker product of SO(3) rotation matrices.
+
+For a 9×9 matrix, check if it's R₁ ⊗ R₂ where R₁, R₂ ∈ SO(3).
+For a 27×27 matrix, check if it's R₁ ⊗ R₂ ⊗ R₃ where Rᵢ ∈ SO(3).
+
+The eigenvalues of SO(3) ⊗ SO(3) are products of individual SO(3) eigenvalues:
+- SO(3) eigenvalues: {1, e^{iθ}, e^{-iθ}}
+- SO(3) ⊗ SO(3) eigenvalues: all 9 products
+
+Returns a vector of eigenvalues if detected, nothing otherwise.
+"""
+function _detect_so3_kronecker_product(mat)
+    N = size(mat, 1)
+    size(mat, 2) == N || return nothing
+    
+    # Only for symbolic matrices
+    _is_numeric_matrix(mat) && return nothing
+    
+    # Check if dimension is a power of 3 (9, 27, 81, ...)
+    N < 9 && return nothing
+    log3_N = log(3, N)
+    isinteger(round(log3_N)) || return nothing
+    k = Int(round(log3_N))
+    k < 2 && return nothing  # Need at least 3⊗3
+    
+    # For 9×9, try to extract two SO(3) factors
+    if k == 2
+        return _detect_so3_kron_2fold(mat)
+    elseif k == 3
+        return _detect_so3_kron_3fold(mat)
+    end
+    
+    # For higher powers, could implement recursively but skip for now
+    return nothing
+end
+
+"""
+    _detect_so3_kron_2fold(mat)
+
+Detect SO(3) ⊗ SO(3) structure in a 9×9 matrix.
+
+Uses the first column pattern to extract rotation information:
+- The 9×9 matrix has block structure with 3×3 blocks
+- Block (i,j) = R1[i,j] * R2
+
+Extracts R1 and R2 by analyzing the block structure, then computes
+eigenvalues as products of SO(3) eigenvalues.
+"""
+function _detect_so3_kron_2fold(mat)
+    size(mat) == (9, 9) || return nothing
+    
+    # First check if the matrix is orthogonal (necessary for SO(3) ⊗ SO(3))
+    _is_orthogonal(mat) || return nothing
+    
+    # Extract 3×3 blocks: blocks[i][j] = R1[i,j] * R2 for R1 ⊗ R2
+    blocks = [[mat[3(i-1)+1:3i, 3(j-1)+1:3j] for j in 1:3] for i in 1:3]
+    
+    # Strategy 1: Check diagonal blocks for SO(3) structure
+    # For R1 ⊗ R2, blocks[k][k] = R1[k,k] * R2
+    # If R1[k,k] = 1 for some k (axis of rotation), then blocks[k][k] = R2
+    # Rz has R1[3,3] = 1, Ry has R1[2,2] = 1, Rx has R1[1,1] = 1
+    
+    for diag_idx in [3, 2, 1]  # Try in order: Rz, Ry, Rx
+        Bkk = blocks[diag_idx][diag_idx]
+        if _is_so3_trig(Bkk)
+            R2_candidate = Bkk
+            
+            # Extract R1 from block ratios
+            # R1[i,j] = blocks[i][j][p,q] / R2[p,q] for some non-zero R2[p,q]
+            # Choose p,q based on which diagonal block we're using
+            ref_idx = diag_idx  # Use the same index for the reference element
+            R2_ref = R2_candidate[ref_idx, ref_idx]
+            
+            # If R2_ref is zero or symbolic-zero, try (1,1)
+            if _issymzero(R2_ref)
+                R2_ref = R2_candidate[1, 1]
+                ref_idx = 1
+            end
+            
+            if !_issymzero(R2_ref)
+                R1_entries = [Symbolics.simplify(blocks[i][j][ref_idx, ref_idx] / R2_ref) for i in 1:3, j in 1:3]
+                R1_candidate = R1_entries
+                
+                if _is_so3_trig(R1_candidate)
+                    # Success! Compute eigenvalues using SO(3) formula
+                    return _compute_so3_kron_eigenvalues(R1_candidate, R2_candidate)
+                end
+            end
+        end
+    end
+    
+    # Strategy 2: Try the general Kronecker factorization with SO(3) eigenvalue formula
+    kron_info = _try_kronecker_factorization(mat, 3, 3)
+    if !isnothing(kron_info)
+        A, B, m, n = kron_info
+        
+        # Check if A and B are SO(3)
+        A_simplified = Symbolics.simplify.(A)
+        B_simplified = Symbolics.simplify.(B)
+        
+        if _is_so3_trig(A_simplified) && _is_so3_trig(B_simplified)
+            return _compute_so3_kron_eigenvalues(A_simplified, B_simplified)
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    _compute_so3_kron_eigenvalues(R1, R2)
+
+Compute eigenvalues of R1 ⊗ R2 where R1, R2 ∈ SO(3).
+
+Uses the trace formula: SO(3) eigenvalues are {1, e^{iθ}, e^{-iθ}}
+where cos(θ) = (tr(R) - 1) / 2.
+
+For Kronecker product, eigenvalues are all 9 products of individual eigenvalues.
+"""
+function _compute_so3_kron_eigenvalues(R1, R2)
+    vals_R1 = _so3_eigenvalues(R1)
+    vals_R2 = _so3_eigenvalues(R2)
+    
+    if isnothing(vals_R1) || isnothing(vals_R2)
+        return nothing
+    end
+    
+    eigenvalues = []
+    for λ in vals_R1, μ in vals_R2
+        product = λ * μ
+        if product isa Complex
+            # Use light simplification: just Symbolics.simplify, not aggressive_simplify
+            # This avoids expensive trig simplification that can time out
+            re = Symbolics.simplify(real(product))
+            im_part = Symbolics.simplify(imag(product))
+            push!(eigenvalues, re + im * im_part)
+        else
+            push!(eigenvalues, Symbolics.simplify(product))
+        end
+    end
+    return eigenvalues
+end
+
+"""
+    _detect_so3_kron_3fold(mat)
+
+Detect SO(3) ⊗ SO(3) ⊗ SO(3) structure in a 27×27 matrix.
+"""
+function _detect_so3_kron_3fold(mat)
+    size(mat) == (27, 27) || return nothing
+    
+    # First try to factor as 3 ⊗ 9
+    kron_info = _try_kronecker_factorization(mat, 3, 9)
+    if !isnothing(kron_info)
+        A, B, m, n = kron_info
+        
+        # A should be SO(3), B should be SO(3) ⊗ SO(3)
+        A_simplified = Symbolics.simplify.(A)
+        if _is_so3_trig(A_simplified)
+            vals_A = _so3_eigenvalues(A_simplified)
+            
+            # Recursively detect B as SO(3) ⊗ SO(3)
+            vals_B = _detect_so3_kron_2fold(B)
+            
+            if !isnothing(vals_A) && !isnothing(vals_B)
+                eigenvalues = []
+                for λ in vals_A, μ in vals_B
+                    push!(eigenvalues, simplify_eigenvalue(Symbolics.simplify(λ * μ)))
+                end
+                return eigenvalues
+            end
+        end
+    end
+    
+    # Try to factor as 9 ⊗ 3
+    kron_info = _try_kronecker_factorization(mat, 9, 3)
+    if !isnothing(kron_info)
+        A, B, m, n = kron_info
+        
+        # A should be SO(3) ⊗ SO(3), B should be SO(3)
+        B_simplified = Symbolics.simplify.(B)
+        if _is_so3_trig(B_simplified)
+            vals_B = _so3_eigenvalues(B_simplified)
+            
+            # Recursively detect A as SO(3) ⊗ SO(3)
+            vals_A = _detect_so3_kron_2fold(A)
+            
+            if !isnothing(vals_A) && !isnothing(vals_B)
+                eigenvalues = []
+                for λ in vals_A, μ in vals_B
+                    push!(eigenvalues, simplify_eigenvalue(Symbolics.simplify(λ * μ)))
+                end
+                return eigenvalues
+            end
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    _is_so3_trig(A)
+
+Check if A is an SO(3) matrix using trig-aware simplification.
+"""
+function _is_so3_trig(A)
+    size(A) == (3, 3) || return false
+    
+    # Check orthogonality with trig simplification
+    _is_orthogonal(A) || return false
+    
+    # Check det = 1 with trig simplification
+    d = det(A)
+    _issymzero_trig(d - 1) || return false
+    
+    return true
 end
