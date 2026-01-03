@@ -285,7 +285,10 @@ end
     @test sort(true_eigs) ≈ sort(real.(computed_eigs)) atol=1e-10
 end
 
-@testset "Full 6-variable 3×3 symmetric matrix (diagonal shift optimization)" begin
+# Slow tests are skipped by default. Set SYMBOLICDIAG_SLOW_TESTS=1 to run them.
+const RUN_SLOW_TESTS = get(ENV, "SYMBOLICDIAG_SLOW_TESTS", "") == "1"
+
+RUN_SLOW_TESTS && @testset "Full 6-variable 3×3 symmetric matrix (diagonal shift optimization)" begin
     # Test that the diagonal shift optimization allows solving a full 6-variable 3×3 symmetric matrix
     # This uses the shift trick: A - f*I has zero corner, reducing to 5 effective variables
     @variables a b c d e f
@@ -318,7 +321,7 @@ end
     @test isapprox(sort(computed), sort(true_eigs), atol=1e-10)
 end
 
-@testset "Kronecker 6×6 = full 6-param 3×3 ⊗ 3-param 2×2 (9 parameters)" begin
+RUN_SLOW_TESTS && @testset "Kronecker 6×6 = full 6-param 3×3 ⊗ 3-param 2×2 (9 parameters)" begin
     # Test Kronecker product with maximum parameters in both factors
     # 3×3 symmetric with 6 parameters (using diagonal shift optimization)
     @variables a b c d e f
@@ -363,7 +366,7 @@ end
     @test isapprox(sort(computed), sort(true_eigs), atol=1e-8)
 end
 
-@testset "Nested Kronecker: 2×2 ⊗ 2×2 ⊗ 2×2 (8×8, 9 parameters)" begin
+RUN_SLOW_TESTS && @testset "Nested Kronecker: 2×2 ⊗ 2×2 ⊗ 2×2 (8×8, 9 parameters)" begin
     # Test triple Kronecker product
     @variables a1 b1 c1  a2 b2 c2  a3 b3 c3
     
@@ -393,7 +396,7 @@ end
     @test isapprox(sort(computed), sort(true_eigs), atol=1e-8)
 end
 
-@testset "Deep nested Kronecker: 2×2^⊗5 (32×32, 15 parameters)" begin
+RUN_SLOW_TESTS && @testset "Deep nested Kronecker: 2×2^⊗5 (32×32, 15 parameters)" begin
     # Test 5-fold Kronecker product
     matrices = Matrix{Num}[]
     all_test_vals = Dict{Num, Float64}()

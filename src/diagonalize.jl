@@ -143,6 +143,14 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         return _build_eigenvalue_result(vals, λ, expand)
     end
     
+    # Check for Kronecker product of rotation matrices (SO(2)^⊗k)
+    # This gives clean eigenvalues e^{i(±θ₁±θ₂±...)} without messy factorization
+    rotation_kron_result = _detect_rotation_kronecker_product(mat)
+    if !isnothing(rotation_kron_result)
+        vals = rotation_kron_result
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
     # Check for Kronecker product A ⊗ B (any size m*n)
     kron_info = _is_kronecker_product(mat)
     if !isnothing(kron_info)

@@ -161,7 +161,8 @@ end
 Check if all entries in the matrix are numeric (not symbolic).
 """
 function _is_numeric_matrix(mat)
-    return all(x -> x isa Number, mat)
+    # Num is a subtype of Number, so we need to explicitly check for it
+    return all(x -> x isa Number && !(x isa Num), mat)
 end
 
 """

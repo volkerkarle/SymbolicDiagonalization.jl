@@ -876,3 +876,57 @@ end
     @test count(==(-1), vals_int) == 4
 end
 
+
+@testset "SO(2) ⊗ SO(2) Kronecker Products" begin
+    @variables θ φ
+    
+    @testset "Basic SO(2) ⊗ SO(2)" begin
+        R1 = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+        R2 = [cos(φ) -sin(φ); sin(φ) cos(φ)]
+        R = kron(R1, R2)
+        
+        vals, _, _ = symbolic_eigenvalues(R)
+        @test length(vals) == 4
+        
+        # Verify numerically
+        θ_val, φ_val = 0.3, 0.7
+        
+        # Expected eigenvalues: e^{±i(θ±φ)}
+        expected = [
+            cos(θ_val + φ_val) + im*sin(θ_val + φ_val),
+            cos(θ_val - φ_val) + im*sin(θ_val - φ_val),
+            cos(-θ_val + φ_val) + im*sin(-θ_val + φ_val),
+            cos(-θ_val - φ_val) + im*sin(-θ_val - φ_val),
+        ]
+        
+        # Evaluate symbolic eigenvalues
+        computed = ComplexF64[]
+        for v in vals
+            re_func = Symbolics.build_function(real(v), [θ, φ], expression=Val{false})
+            im_func = Symbolics.build_function(imag(v), [θ, φ], expression=Val{false})
+            push!(computed, ComplexF64(re_func([θ_val, φ_val]), im_func([θ_val, φ_val])))
+        end
+        
+        @test isapprox(sort(computed, by=angle), sort(expected, by=angle), atol=1e-10)
+    end
+    
+    @testset "Clean output without sqrt" begin
+        R1 = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+        R2 = [cos(φ) -sin(φ); sin(φ) cos(φ)]
+        R = kron(R1, R2)
+        
+        vals, _, _ = symbolic_eigenvalues(R)
+        
+        # Check that no eigenvalue contains sqrt - clean trig expressions
+        for v in vals
+            str = string(v)
+            @test !occursin("sqrt", str) 
+        end
+    end
+    
+    # Note: Same-angle case (θ = φ) is a known limitation.
+    # When using the same symbolic variable for both rotations, 
+    # _is_symbolic_orthogonal may fail because Symbolics doesn't 
+    # simplify sin²(θ) + cos²(θ) = 1. The different-angle case works correctly.
+end
+
