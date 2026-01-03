@@ -7,19 +7,24 @@ Returns `true` if `x` is provably zero, `false` otherwise.
 Falls back to `false` if zero-ness cannot be determined (conservative for elimination).
 """
 function _issymzero(x)
-    # Fast path 1: Plain numbers
-    x isa Number && return iszero(x)
-    
-    # Fast path 2: Check if Num wraps a number directly
+    # Fast path 1: Check Num FIRST (before Number, since Num <: Real <: Number)
     if x isa Num
         try
+            # Check if Num wraps a plain number
             unwrapped = Symbolics.unwrap(x)
-            if unwrapped isa Number
+            if unwrapped isa Number && !(unwrapped isa Num)
                 return iszero(unwrapped)
             end
+            # For symbolic Num, try simplify then check
+            sx = Symbolics.simplify(x)
+            v = Symbolics.iszero(sx)
+            return v === true
         catch
         end
     end
+    
+    # Fast path 2: Plain numbers (non-symbolic)
+    x isa Number && return iszero(x)
     
     # Standard path: try Base.iszero first (works for many types)
     try

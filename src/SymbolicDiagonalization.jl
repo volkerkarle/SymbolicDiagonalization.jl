@@ -3,6 +3,7 @@ module SymbolicDiagonalization
 using LinearAlgebra
 using Symbolics
 
+
 # ============================================================================
 # Configuration Constants
 # ============================================================================
@@ -43,9 +44,11 @@ include("structure.jl")   # Structure detection, matrix properties, adjugate
 
 include("patterns/graphs.jl")       # Hypercube and strongly regular graphs
 include("patterns/circulant.jl")    # Circulant and block circulant matrices
-include("patterns/kronecker.jl")    # Kronecker product detection
+include("patterns/kronecker.jl")    # Kronecker product detection (matrix structure)
+
 include("patterns/tridiagonal.jl")  # Toeplitz tridiagonal, special 5×5, anti-diagonal
 include("patterns/permutation.jl")  # Permutation matrices
+include("patterns/lie_groups.jl")   # SO(n), SU(n), Sp(2n), Lorentz groups
 
 # ============================================================================
 # Public API
@@ -58,6 +61,8 @@ export characteristic_polynomial, symbolic_roots, symbolic_eigenvalues, symbolic
 
 # Export exception types for error handling
 export ExpressionComplexityError, ComputationTimeoutError
+
+
 
 # LinearAlgebra.eigen and LinearAlgebra.eigvals are automatically available when LinearAlgebra is imported
 

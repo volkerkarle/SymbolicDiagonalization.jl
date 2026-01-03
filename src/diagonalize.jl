@@ -65,6 +65,16 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         _check_complexity(mat; threshold = complexity_threshold)
     end
 
+    # Check for Lie group structure FIRST (SO(n), SU(n), Sp(2n), etc.)
+    # These have exact closed-form eigenvalue formulas with no floating-point artifacts.
+    # Only for symbolic matrices - numeric matrices are handled efficiently by LinearAlgebra
+    if eltype(mat) <: Num || eltype(mat) <: Complex{Num}
+        lie_vals = _lie_group_eigenvalues(mat)
+        if !isnothing(lie_vals)
+            return _build_eigenvalue_result(lie_vals, λ, expand)
+        end
+    end
+
     # Check for hypercube graph Q_n (any size 2^n)
     hypercube_dim = _is_hypercube_graph(mat)
     if !isnothing(hypercube_dim)

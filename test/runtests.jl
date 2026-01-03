@@ -34,4 +34,8 @@ using Aqua
     @testset "LinearAlgebra Interface" begin
         include("test_interface.jl")
     end
+    
+    @testset "Lie Group Patterns" begin
+        include("test_lie_groups.jl")
+    end
 end

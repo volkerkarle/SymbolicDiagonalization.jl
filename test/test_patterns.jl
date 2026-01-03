@@ -875,3 +875,4 @@ end
     @test count(==(4), vals_int) == 1
     @test count(==(-1), vals_int) == 4
 end
+
