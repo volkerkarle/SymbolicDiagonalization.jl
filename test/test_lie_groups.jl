@@ -133,4 +133,157 @@ using LinearAlgebra
             @test occursin("λ^2", poly_str) || occursin("λ²", poly_str)
         end
     end
+    
+    @testset "SO(n) for n = 4 to 9 (Numeric)" begin
+        # Helper to create rotation in a 2D plane
+        function rotation_matrix(n, i, j, θ)
+            R = Matrix{Float64}(LinearAlgebra.I, n, n)
+            R[i,i] = cos(θ)
+            R[j,j] = cos(θ)
+            R[i,j] = -sin(θ)
+            R[j,i] = sin(θ)
+            return R
+        end
+        
+        @testset "SO(4) numeric" begin
+            θ1, θ2 = 0.3, 0.7
+            R = rotation_matrix(4, 1, 2, θ1) * rotation_matrix(4, 3, 4, θ2)
+            
+            group, _ = SymbolicDiagonalization._detect_lie_group(R)
+            @test group == :SO4
+            
+            eigs = SymbolicDiagonalization._lie_group_eigenvalues(R)
+            julia_eigs = eigvals(R)
+            
+            # Sort by angle for comparison
+            computed_sorted = sort(eigs, by=x->angle(x))
+            julia_sorted = sort(julia_eigs, by=x->angle(x))
+            
+            @test all(isapprox.(computed_sorted, julia_sorted, atol=1e-10))
+        end
+        
+        @testset "SO(5) numeric" begin
+            θ1, θ2 = 0.2, 0.8
+            R = rotation_matrix(5, 1, 2, θ1) * rotation_matrix(5, 3, 4, θ2)
+            
+            group, _ = SymbolicDiagonalization._detect_lie_group(R)
+            @test group == :SO5
+            
+            eigs = SymbolicDiagonalization._lie_group_eigenvalues(R)
+            julia_eigs = eigvals(R)
+            
+            computed_sorted = sort(eigs, by=x->angle(x))
+            julia_sorted = sort(julia_eigs, by=x->angle(x))
+            
+            @test all(isapprox.(computed_sorted, julia_sorted, atol=1e-10))
+            
+            # SO(5) should have eigenvalue 1
+            @test any(e -> isapprox(e, 1.0, atol=1e-10), eigs)
+        end
+        
+        @testset "SO(6) numeric" begin
+            θ1, θ2, θ3 = 0.2, 0.5, 0.9
+            R = rotation_matrix(6, 1, 2, θ1) * rotation_matrix(6, 3, 4, θ2) * rotation_matrix(6, 5, 6, θ3)
+            
+            group, _ = SymbolicDiagonalization._detect_lie_group(R)
+            @test group == :SO6
+            
+            eigs = SymbolicDiagonalization._lie_group_eigenvalues(R)
+            julia_eigs = eigvals(R)
+            
+            computed_sorted = sort(eigs, by=x->angle(x))
+            julia_sorted = sort(julia_eigs, by=x->angle(x))
+            
+            @test all(isapprox.(computed_sorted, julia_sorted, atol=1e-6))
+        end
+        
+        @testset "SO(7) numeric" begin
+            θ1, θ2, θ3 = 0.1, 0.4, 0.8
+            R = rotation_matrix(7, 1, 2, θ1) * rotation_matrix(7, 3, 4, θ2) * rotation_matrix(7, 5, 6, θ3)
+            
+            group, _ = SymbolicDiagonalization._detect_lie_group(R)
+            @test group == :SO7
+            
+            eigs = SymbolicDiagonalization._lie_group_eigenvalues(R)
+            julia_eigs = eigvals(R)
+            
+            computed_sorted = sort(eigs, by=x->angle(x))
+            julia_sorted = sort(julia_eigs, by=x->angle(x))
+            
+            @test all(isapprox.(computed_sorted, julia_sorted, atol=1e-6))
+            
+            # SO(7) should have eigenvalue 1
+            @test any(e -> isapprox(e, 1.0, atol=1e-10), eigs)
+        end
+        
+        @testset "SO(8) numeric" begin
+            angles = [0.15, 0.35, 0.55, 0.75]
+            R = Matrix{Float64}(LinearAlgebra.I, 8, 8)
+            for (idx, θ) in enumerate(angles)
+                R = R * rotation_matrix(8, 2idx-1, 2idx, θ)
+            end
+            
+            group, _ = SymbolicDiagonalization._detect_lie_group(R)
+            @test group == :SO8
+            
+            eigs = SymbolicDiagonalization._lie_group_eigenvalues(R)
+            julia_eigs = eigvals(R)
+            
+            computed_sorted = sort(eigs, by=x->angle(x))
+            julia_sorted = sort(julia_eigs, by=x->angle(x))
+            
+            @test all(isapprox.(computed_sorted, julia_sorted, atol=1e-6))
+        end
+        
+        @testset "SO(9) numeric" begin
+            angles = [0.1, 0.3, 0.5, 0.7]
+            R = Matrix{Float64}(LinearAlgebra.I, 9, 9)
+            for (idx, θ) in enumerate(angles)
+                R = R * rotation_matrix(9, 2idx-1, 2idx, θ)
+            end
+            
+            group, _ = SymbolicDiagonalization._detect_lie_group(R)
+            @test group == :SO9
+            
+            eigs = SymbolicDiagonalization._lie_group_eigenvalues(R)
+            julia_eigs = eigvals(R)
+            
+            computed_sorted = sort(eigs, by=x->angle(x))
+            julia_sorted = sort(julia_eigs, by=x->angle(x))
+            
+            @test all(isapprox.(computed_sorted, julia_sorted, atol=1e-6))
+            
+            # SO(9) should have eigenvalue 1
+            @test any(e -> isapprox(e, 1.0, atol=1e-10), eigs)
+        end
+    end
+    
+    @testset "SO(n) Solvability Limits" begin
+        # Helper function
+        function rotation_matrix(n, i, j, θ)
+            R = Matrix{Float64}(LinearAlgebra.I, n, n)
+            R[i,i] = cos(θ)
+            R[j,j] = cos(θ)
+            R[i,j] = -sin(θ)
+            R[j,i] = sin(θ)
+            return R
+        end
+        
+        # SO(10) should be detected as special_orthogonal but NOT have closed-form eigenvalues
+        @testset "SO(10) - beyond quartic" begin
+            angles = [0.1, 0.2, 0.3, 0.4, 0.5]
+            R = Matrix{Float64}(LinearAlgebra.I, 10, 10)
+            for (idx, θ) in enumerate(angles)
+                R = R * rotation_matrix(10, 2idx-1, 2idx, θ)
+            end
+            
+            group, _ = SymbolicDiagonalization._detect_lie_group(R)
+            # Should still detect as special orthogonal, but not have a specific SO10 symbol
+            @test group == :special_orthogonal
+            
+            # Should return nothing for eigenvalues (no closed form)
+            eigs = SymbolicDiagonalization._lie_group_eigenvalues(R)
+            @test eigs === nothing
+        end
+    end
 end

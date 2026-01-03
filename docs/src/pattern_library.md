@@ -14,6 +14,7 @@ Catalog of matrix patterns with closed-form eigenvalue solutions.
 | Kronecker $A \otimes B$ | Products: $\lambda_i(A) \cdot \lambda_j(B)$ | $O(m+n)$ |
 | Nested Kronecker $A_1 \otimes \cdots \otimes A_k$ | Product of all factors | $O(\sum n_i)$ |
 | SO(2) Kronecker $R(\theta) \otimes R(\phi)$ | $e^{\pm i(\theta \pm \phi)}$ | $O(1)$ |
+| SO(n) for n ≤ 9 | Trace power sums → polynomial roots | $O(1)$ |
 | Permutation | Roots of unity from cycle structure | $O(n)$ |
 | Persymmetric | Half-size decomposition | $O(n/2)$ |
 | Anti-diagonal | $\pm$ pairs | $O(n)$ |
@@ -213,6 +214,61 @@ double-angle formulas).
 
 ---
 
+## Lie Group Patterns
+
+### SO(n) Rotation Matrices
+
+**Definition**: Orthogonal matrices with determinant +1 (special orthogonal group)
+
+**Eigenvalue Structure**:
+- All eigenvalues lie on the unit circle: $|\lambda| = 1$
+- They come in conjugate pairs: $e^{\pm i\theta_j}$
+- Odd dimensions have eigenvalue 1 (rotation axis)
+
+**Closed-form solutions** for $n \leq 9$ (uses quadratic/cubic/quartic formulas):
+
+| Dimension | Eigenvalues | Polynomial Degree |
+|-----------|-------------|-------------------|
+| SO(2) | $e^{\pm i\theta}$ | 1 (trivial) |
+| SO(3) | $1, e^{\pm i\theta}$ | 1 |
+| SO(4) | $e^{\pm i\theta_1}, e^{\pm i\theta_2}$ | 2 (quadratic) |
+| SO(5) | $1, e^{\pm i\theta_1}, e^{\pm i\theta_2}$ | 2 (quadratic) |
+| SO(6) | $e^{\pm i\theta_1}, e^{\pm i\theta_2}, e^{\pm i\theta_3}$ | 3 (cubic) |
+| SO(7) | $1, e^{\pm i\theta_1}, e^{\pm i\theta_2}, e^{\pm i\theta_3}$ | 3 (cubic) |
+| SO(8) | $e^{\pm i\theta_j}$ for $j=1,2,3,4$ | 4 (quartic) |
+| SO(9) | $1, e^{\pm i\theta_j}$ for $j=1,2,3,4$ | 4 (quartic) |
+
+**Note**: SO(10)+ requires degree 5+ polynomials, which cannot be solved in radicals (Abel-Ruffini theorem).
+
+**Method**: Extract angles from trace power sums using Newton's identities:
+- $\text{tr}(A) = 2\sum_j \cos\theta_j$ (plus 1 for odd $n$)
+- $\text{tr}(A^2) = 2\sum_j \cos(2\theta_j)$ (plus 1 for odd $n$)
+- etc.
+
+```julia
+# Numeric 5×5 rotation
+θ1, θ2 = 0.3, 0.7
+R5 = rotation_matrix(5, 1, 2, θ1) * rotation_matrix(5, 3, 4, θ2)
+eigvals(R5)  # [1, e^(±iθ1), e^(±iθ2)]
+
+# Symbolic 3×3 rotation
+@variables θ
+R3 = [cos(θ) -sin(θ) 0; sin(θ) cos(θ) 0; 0 0 1]
+eigvals(R3)  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+```
+
+### Other Supported Lie Groups
+
+| Group | Dimension | Description | Eigenvalue Property |
+|-------|-----------|-------------|---------------------|
+| SU(2) | 2×2 | Special unitary | $e^{\pm i\theta}$ on unit circle |
+| SU(3) | 3×3 | Special unitary | Product = 1 |
+| Sp(2) | 2×2 | Symplectic (≅ SL(2)) | Reciprocal pairs |
+| Sp(4) | 4×4 | Symplectic | Reciprocal pairs |
+| SO(1,1) | 2×2 | Lorentz boost | $e^{\pm\phi}$ (hyperbolic) |
+
+---
+
 ## Tridiagonal Patterns
 
 ### Symmetric Toeplitz Tridiagonal
@@ -305,6 +361,7 @@ Diagonalized by 2D DFT. Common in image processing and 2D convolution.
 | Toeplitz tridiag | Constant diagonals, symmetric |
 | Kronecker | Block scaling pattern |
 | SO(2) Kronecker | Block structure + orthogonality + trig pattern |
+| SO(n) | $A^T A = I$ and $\det(A) = 1$ |
 | Permutation | Exactly one 1 per row/column |
 
 ---

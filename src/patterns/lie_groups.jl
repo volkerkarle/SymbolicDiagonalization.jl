@@ -4,6 +4,54 @@
 # ============================================================================
 
 # ============================================================================
+# Helper Functions for Numeric/Symbolic Compatibility
+# ============================================================================
+
+"""
+    _safe_simplify(x)
+
+Apply Symbolics.simplify only to symbolic expressions.
+For numeric values, return as-is.
+"""
+function _safe_simplify(x)
+    if x isa Num || x isa Complex{Num}
+        return Symbolics.simplify(x)
+    end
+    return x
+end
+
+"""
+    _safe_sqrt_unit_circle(c)
+
+Compute sin(θ) = √(1 - cos²θ) safely for both symbolic and numeric values.
+Handles floating-point errors where cos²θ might be slightly > 1.
+"""
+function _safe_sqrt_unit_circle(c)
+    c_sq = c^2
+    if c_sq isa Number && !(c_sq isa Num)
+        # Numeric: clamp to handle floating point errors
+        arg = max(0.0, 1 - real(c_sq))
+        return sqrt(Complex(arg))
+    else
+        # Symbolic: use symbolic sqrt
+        return sqrt(1 - c_sq)
+    end
+end
+
+"""
+    _make_numeric_complex(coeffs)
+
+For numeric coefficient arrays, ensure they're Complex to handle
+cases where intermediate results might be complex.
+"""
+function _make_numeric_complex(coeffs)
+    if all(c -> c isa Number && !(c isa Num), coeffs)
+        return Complex{Float64}.(coeffs)
+    end
+    return coeffs
+end
+
+# ============================================================================
 # General Detection Functions
 # ============================================================================
 
@@ -12,6 +60,8 @@
 
 Check if matrix A is orthogonal: A^T * A = I.
 Returns true if A is orthogonal, false otherwise.
+
+Handles both symbolic and numeric matrices with appropriate tolerance.
 """
 function _is_orthogonal(A)
     n = size(A, 1)
@@ -20,8 +70,20 @@ function _is_orthogonal(A)
     ATA = transpose(A) * A
     for i in 1:n, j in 1:n
         target = i == j ? 1 : 0
-        if !_issymzero(ATA[i, j] - target)
-            return false
+        diff = ATA[i, j] - target
+        # Handle numeric vs symbolic differently
+        if diff isa Num || diff isa Complex{Num}
+            if !_issymzero(diff)
+                return false
+            end
+        elseif diff isa Number
+            if !isapprox(diff, 0, atol=1e-10)
+                return false
+            end
+        else
+            if !_issymzero(diff)
+                return false
+            end
         end
     end
     return true
@@ -32,6 +94,8 @@ end
 
 Check if matrix A is in SO(n): orthogonal with det = +1.
 Returns the dimension n if A is in SO(n), nothing otherwise.
+
+Handles both symbolic and numeric matrices.
 """
 function _is_special_orthogonal(A)
     n = size(A, 1)
@@ -39,8 +103,18 @@ function _is_special_orthogonal(A)
     
     # Check det = 1
     d = det(A)
-    if _issymzero(d - 1)
-        return n
+    if d isa Num || d isa Complex{Num}
+        if _issymzero(d - 1)
+            return n
+        end
+    elseif d isa Number
+        if isapprox(d, 1, atol=1e-10)
+            return n
+        end
+    else
+        if _issymzero(d - 1)
+            return n
+        end
     end
     return nothing
 end
@@ -359,14 +433,20 @@ function _so4_eigenvalues(A)
     
     # x, y are roots of: z² - (sum_cos)z + prod_cos = 0
     discriminant = sum_cos^2 - 4 * prod_cos
-    sqrt_disc = sqrt(discriminant)
+    
+    # Handle numeric case where discriminant might be slightly negative
+    if discriminant isa Number && !(discriminant isa Num)
+        sqrt_disc = sqrt(Complex(discriminant))
+    else
+        sqrt_disc = sqrt(discriminant)
+    end
     
     cos_θ1 = (sum_cos + sqrt_disc) / 2
     cos_θ2 = (sum_cos - sqrt_disc) / 2
     
     # sin θ = √(1 - cos²θ)
-    sin_θ1 = sqrt(1 - cos_θ1^2)
-    sin_θ2 = sqrt(1 - cos_θ2^2)
+    sin_θ1 = _safe_sqrt_unit_circle(cos_θ1)
+    sin_θ2 = _safe_sqrt_unit_circle(cos_θ2)
     
     # Eigenvalues: e^(±iθ₁), e^(±iθ₂)
     λ1 = cos_θ1 + im * sin_θ1
@@ -374,8 +454,426 @@ function _so4_eigenvalues(A)
     λ3 = cos_θ2 + im * sin_θ2
     λ4 = cos_θ2 - im * sin_θ2
     
-    return [Symbolics.simplify(λ1), Symbolics.simplify(λ2), 
-            Symbolics.simplify(λ3), Symbolics.simplify(λ4)]
+    return [_safe_simplify(λ1), _safe_simplify(λ2), 
+            _safe_simplify(λ3), _safe_simplify(λ4)]
+end
+
+# ============================================================================
+# SO(5) - 5D Rotations
+# ============================================================================
+
+"""
+    _is_so5(A)
+
+Check if A is a 5×5 rotation matrix (SO(5)).
+Returns true if it is, false otherwise.
+"""
+function _is_so5(A)
+    size(A) == (5, 5) || return false
+    return !isnothing(_is_special_orthogonal(A))
+end
+
+"""
+    _so5_eigenvalues(A)
+
+Compute eigenvalues of an SO(5) matrix (5D rotation).
+
+For SO(5) (odd dimension), eigenvalues are:
+- One eigenvalue is always 1 (the rotation axis in 5D)
+- Two conjugate pairs: e^(±iθ₁), e^(±iθ₂)
+
+The angles are extracted from trace invariants:
+- tr(A) = 1 + 2(cos θ₁ + cos θ₂)
+- tr(A²) = 1 + 2(cos 2θ₁ + cos 2θ₂) = 1 + 4(cos²θ₁ + cos²θ₂) - 4
+
+Returns vector of 5 eigenvalues: [1, e^(±iθ₁), e^(±iθ₂)]
+"""
+function _so5_eigenvalues(A)
+    _is_so5(A) || return nothing
+    
+    # For SO(5): eigenvalues are 1, e^(±iθ₁), e^(±iθ₂)
+    # tr(A) = 1 + 2(cos θ₁ + cos θ₂)
+    # tr(A²) = 1 + 2(cos 2θ₁ + cos 2θ₂) = 1 + 4(cos²θ₁ + cos²θ₂) - 4
+    
+    t1 = tr(A)
+    t2 = tr(A * A)
+    
+    # Let x = cos θ₁, y = cos θ₂
+    # t1 = 1 + 2(x + y) → x + y = (t1 - 1) / 2
+    # t2 = 1 + 4(x² + y²) - 4 = 4(x² + y²) - 3 → x² + y² = (t2 + 3) / 4
+    
+    sum_cos = (t1 - 1) / 2
+    sum_cos_sq = (t2 + 3) / 4
+    
+    # xy = [(x+y)² - (x² + y²)] / 2 = [sum_cos² - sum_cos_sq] / 2
+    prod_cos = (sum_cos^2 - sum_cos_sq) / 2
+    
+    # x, y are roots of: z² - (sum_cos)z + prod_cos = 0
+    discriminant = sum_cos^2 - 4 * prod_cos
+    discriminant = _safe_simplify(discriminant)
+    
+    # Handle numeric case where discriminant might be slightly negative
+    if discriminant isa Number && !(discriminant isa Num)
+        sqrt_disc = sqrt(Complex(discriminant))
+    else
+        sqrt_disc = sqrt(discriminant)
+    end
+    
+    cos_θ1 = (sum_cos + sqrt_disc) / 2
+    cos_θ2 = (sum_cos - sqrt_disc) / 2
+    
+    # sin θ = √(1 - cos²θ)
+    sin_θ1 = _safe_sqrt_unit_circle(cos_θ1)
+    sin_θ2 = _safe_sqrt_unit_circle(cos_θ2)
+    
+    # Eigenvalues
+    λ1 = one(eltype(A)) + zero(eltype(A))*im
+    λ2 = cos_θ1 + im * sin_θ1
+    λ3 = cos_θ1 - im * sin_θ1
+    λ4 = cos_θ2 + im * sin_θ2
+    λ5 = cos_θ2 - im * sin_θ2
+    
+    return [λ1, _safe_simplify(λ2), _safe_simplify(λ3),
+            _safe_simplify(λ4), _safe_simplify(λ5)]
+end
+
+# ============================================================================
+# SO(6) - 6D Rotations
+# ============================================================================
+
+"""
+    _is_so6(A)
+
+Check if A is a 6×6 rotation matrix (SO(6)).
+Returns true if it is, false otherwise.
+"""
+function _is_so6(A)
+    size(A) == (6, 6) || return false
+    return !isnothing(_is_special_orthogonal(A))
+end
+
+"""
+    _so6_eigenvalues(A)
+
+Compute eigenvalues of an SO(6) matrix (6D rotation).
+
+For SO(6) (even dimension), eigenvalues are three conjugate pairs:
+- e^(±iθ₁), e^(±iθ₂), e^(±iθ₃)
+
+The angles are extracted from trace invariants using Newton's identities.
+This requires solving a cubic equation for cos θⱼ.
+
+Returns vector of 6 eigenvalues.
+"""
+function _so6_eigenvalues(A)
+    _is_so6(A) || return nothing
+    
+    # For SO(6): eigenvalues are e^(±iθ₁), e^(±iθ₂), e^(±iθ₃)
+    # tr(A) = 2(cos θ₁ + cos θ₂ + cos θ₃)
+    # tr(A²) = 2(cos 2θ₁ + cos 2θ₂ + cos 2θ₃) = 4(cos²θ₁ + cos²θ₂ + cos²θ₃) - 6
+    # tr(A³) = 2(cos 3θ₁ + cos 3θ₂ + cos 3θ₃)
+    #        = 2(4cos³θⱼ - 3cosθⱼ) = 8(cos³θ₁ + cos³θ₂ + cos³θ₃) - 6(cos θ₁ + cos θ₂ + cos θ₃)
+    
+    t1 = tr(A)
+    t2 = tr(A * A)
+    t3 = tr(A * A * A)
+    
+    # Let p₁ = cos θ₁ + cos θ₂ + cos θ₃ (power sum)
+    # Let p₂ = cos²θ₁ + cos²θ₂ + cos²θ₃
+    # Let p₃ = cos³θ₁ + cos³θ₂ + cos³θ₃
+    
+    p1 = t1 / 2
+    p2 = (t2 + 6) / 4
+    p3 = (t3 + 6 * p1) / 8  # From cos 3θ = 4cos³θ - 3cosθ
+    
+    # Newton's identities: e₁ = p₁, e₂ = (p₁² - p₂)/2, e₃ = (p₁³ - 3p₁p₂ + 2p₃)/6
+    # where e₁, e₂, e₃ are elementary symmetric polynomials
+    e1 = p1
+    e2 = (p1^2 - p2) / 2
+    e3 = (p1^3 - 3*p1*p2 + 2*p3) / 6
+    
+    # Simplify coefficients (safe for numeric)
+    e1 = _safe_simplify(e1)
+    e2 = _safe_simplify(e2)
+    e3 = _safe_simplify(e3)
+    
+    # cos θⱼ are roots of: z³ - e₁z² + e₂z - e₃ = 0
+    # Coefficients in ascending order: [-e₃, e₂, -e₁, 1]
+    coeffs = _make_numeric_complex([-e3, e2, -e1, 1])
+    cos_vals = symbolic_roots(coeffs)
+    
+    # Build eigenvalues from cos values
+    eigenvalues = []
+    for c in cos_vals
+        s = _safe_sqrt_unit_circle(c)
+        push!(eigenvalues, _safe_simplify(c + im * s))
+        push!(eigenvalues, _safe_simplify(c - im * s))
+    end
+    
+    return eigenvalues
+end
+
+# ============================================================================
+# SO(7) - 7D Rotations
+# ============================================================================
+
+"""
+    _is_so7(A)
+
+Check if A is a 7×7 rotation matrix (SO(7)).
+Returns true if it is, false otherwise.
+"""
+function _is_so7(A)
+    size(A) == (7, 7) || return false
+    return !isnothing(_is_special_orthogonal(A))
+end
+
+"""
+    _so7_eigenvalues(A)
+
+Compute eigenvalues of an SO(7) matrix (7D rotation).
+
+For SO(7) (odd dimension), eigenvalues are:
+- One eigenvalue is always 1
+- Three conjugate pairs: e^(±iθ₁), e^(±iθ₂), e^(±iθ₃)
+
+Uses cubic formula for the three cos θⱼ values.
+
+Returns vector of 7 eigenvalues.
+"""
+function _so7_eigenvalues(A)
+    _is_so7(A) || return nothing
+    
+    # For SO(7): eigenvalues are 1, e^(±iθ₁), e^(±iθ₂), e^(±iθ₃)
+    # tr(A) = 1 + 2(cos θ₁ + cos θ₂ + cos θ₃)
+    # tr(A²) = 1 + 4(cos²θ₁ + cos²θ₂ + cos²θ₃) - 6
+    # tr(A³) = 1 + 8(cos³θ₁ + cos³θ₂ + cos³θ₃) - 6(cos θ₁ + cos θ₂ + cos θ₃)
+    
+    t1 = tr(A)
+    t2 = tr(A * A)
+    t3 = tr(A * A * A)
+    
+    # Power sums adjusted for the eigenvalue 1
+    p1 = (t1 - 1) / 2
+    p2 = (t2 - 1 + 6) / 4  # = (t2 + 5) / 4
+    p3 = (t3 - 1 + 6 * p1) / 8
+    
+    # Newton's identities
+    e1 = p1
+    e2 = (p1^2 - p2) / 2
+    e3 = (p1^3 - 3*p1*p2 + 2*p3) / 6
+    
+    e1 = _safe_simplify(e1)
+    e2 = _safe_simplify(e2)
+    e3 = _safe_simplify(e3)
+    
+    # cos θⱼ are roots of: z³ - e₁z² + e₂z - e₃ = 0
+    coeffs = _make_numeric_complex([-e3, e2, -e1, 1])
+    cos_vals = symbolic_roots(coeffs)
+    
+    # Build eigenvalues
+    eigenvalues = [one(eltype(A)) + zero(eltype(A))*im]  # 1 as first eigenvalue
+    for c in cos_vals
+        s = _safe_sqrt_unit_circle(c)
+        push!(eigenvalues, _safe_simplify(c + im * s))
+        push!(eigenvalues, _safe_simplify(c - im * s))
+    end
+    
+    return eigenvalues
+end
+
+# ============================================================================
+# SO(8) - 8D Rotations
+# ============================================================================
+
+"""
+    _is_so8(A)
+
+Check if A is an 8×8 rotation matrix (SO(8)).
+Returns true if it is, false otherwise.
+"""
+function _is_so8(A)
+    size(A) == (8, 8) || return false
+    return !isnothing(_is_special_orthogonal(A))
+end
+
+"""
+    _so8_eigenvalues(A)
+
+Compute eigenvalues of an SO(8) matrix (8D rotation).
+
+For SO(8) (even dimension), eigenvalues are four conjugate pairs:
+- e^(±iθ₁), e^(±iθ₂), e^(±iθ₃), e^(±iθ₄)
+
+Uses quartic formula for the four cos θⱼ values.
+
+Returns vector of 8 eigenvalues.
+"""
+function _so8_eigenvalues(A)
+    _is_so8(A) || return nothing
+    
+    # For SO(8): eigenvalues are e^(±iθⱼ) for j=1,2,3,4
+    # tr(Aᵏ) = 2 Σⱼ cos(k·θⱼ)
+    
+    t1 = tr(A)
+    t2 = tr(A * A)
+    t3 = tr(A * A * A)
+    t4 = tr(A * A * A * A)
+    
+    # Power sums: pₖ = Σⱼ cos^k(θⱼ)
+    # From cos(kθ) = Chebyshev polynomial in cos(θ)
+    # cos(2θ) = 2cos²θ - 1
+    # cos(3θ) = 4cos³θ - 3cosθ  
+    # cos(4θ) = 8cos⁴θ - 8cos²θ + 1
+    
+    p1 = t1 / 2  # Σ cos θⱼ
+    p2 = (t2 + 8) / 4  # Σ cos²θⱼ = (t2/2 + 4)/2 = (t2 + 8)/4
+    p3 = (t3 + 6 * p1) / 8  # From 2cos(3θ) = 8cos³θ - 6cosθ
+    p4 = (t4 - 8 + 16 * p2) / 16  # From 2cos(4θ) = 16cos⁴θ - 16cos²θ + 2
+    
+    # Newton's identities for elementary symmetric polynomials
+    e1 = p1
+    e2 = (p1^2 - p2) / 2
+    e3 = (p1^3 - 3*p1*p2 + 2*p3) / 6
+    e4 = (p1^4 - 6*p1^2*p2 + 3*p2^2 + 8*p1*p3 - 6*p4) / 24
+    
+    e1 = _safe_simplify(e1)
+    e2 = _safe_simplify(e2)
+    e3 = _safe_simplify(e3)
+    e4 = _safe_simplify(e4)
+    
+    # cos θⱼ are roots of: z⁴ - e₁z³ + e₂z² - e₃z + e₄ = 0
+    coeffs = _make_numeric_complex([e4, -e3, e2, -e1, 1])
+    cos_vals = symbolic_roots(coeffs)
+    
+    # Build eigenvalues
+    eigenvalues = []
+    for c in cos_vals
+        s = _safe_sqrt_unit_circle(c)
+        push!(eigenvalues, _safe_simplify(c + im * s))
+        push!(eigenvalues, _safe_simplify(c - im * s))
+    end
+    
+    return eigenvalues
+end
+
+# ============================================================================
+# SO(9) - 9D Rotations
+# ============================================================================
+
+"""
+    _is_so9(A)
+
+Check if A is a 9×9 rotation matrix (SO(9)).
+Returns true if it is, false otherwise.
+"""
+function _is_so9(A)
+    size(A) == (9, 9) || return false
+    return !isnothing(_is_special_orthogonal(A))
+end
+
+"""
+    _so9_eigenvalues(A)
+
+Compute eigenvalues of an SO(9) matrix (9D rotation).
+
+For SO(9) (odd dimension), eigenvalues are:
+- One eigenvalue is always 1
+- Four conjugate pairs: e^(±iθ₁), e^(±iθ₂), e^(±iθ₃), e^(±iθ₄)
+
+Uses quartic formula for the four cos θⱼ values.
+
+Returns vector of 9 eigenvalues.
+"""
+function _so9_eigenvalues(A)
+    _is_so9(A) || return nothing
+    
+    # For SO(9): eigenvalues are 1, e^(±iθⱼ) for j=1,2,3,4
+    
+    t1 = tr(A)
+    t2 = tr(A * A)
+    t3 = tr(A * A * A)
+    t4 = tr(A * A * A * A)
+    
+    # Power sums adjusted for eigenvalue 1
+    p1 = (t1 - 1) / 2
+    p2 = (t2 - 1 + 8) / 4  # = (t2 + 7) / 4
+    p3 = (t3 - 1 + 6 * p1) / 8
+    p4 = (t4 - 1 - 8 + 16 * p2) / 16  # = (t4 + 16*p2 - 9) / 16
+    
+    # Newton's identities
+    e1 = p1
+    e2 = (p1^2 - p2) / 2
+    e3 = (p1^3 - 3*p1*p2 + 2*p3) / 6
+    e4 = (p1^4 - 6*p1^2*p2 + 3*p2^2 + 8*p1*p3 - 6*p4) / 24
+    
+    e1 = _safe_simplify(e1)
+    e2 = _safe_simplify(e2)
+    e3 = _safe_simplify(e3)
+    e4 = _safe_simplify(e4)
+    
+    # cos θⱼ are roots of: z⁴ - e₁z³ + e₂z² - e₃z + e₄ = 0
+    coeffs = _make_numeric_complex([e4, -e3, e2, -e1, 1])
+    cos_vals = symbolic_roots(coeffs)
+    
+    # Build eigenvalues
+    eigenvalues = [one(eltype(A)) + zero(eltype(A))*im]  # 1 as first eigenvalue
+    for c in cos_vals
+        s = _safe_sqrt_unit_circle(c)
+        push!(eigenvalues, _safe_simplify(c + im * s))
+        push!(eigenvalues, _safe_simplify(c - im * s))
+    end
+    
+    return eigenvalues
+end
+
+# ============================================================================
+# General SO(n) eigenvalues for n ≤ 9
+# ============================================================================
+
+"""
+    _general_so_eigenvalues(A)
+
+Compute eigenvalues for any SO(n) matrix with n ≤ 9.
+
+For n ≤ 9, we can solve for the rotation angles symbolically:
+- n = 2k (even): k pairs e^(±iθⱼ) → degree k polynomial in cos θⱼ
+- n = 2k+1 (odd): eigenvalue 1 + k pairs → same degree k polynomial
+
+The solvability limits:
+- n ≤ 3: linear (trivial)
+- n ≤ 5: quadratic formula
+- n ≤ 7: cubic formula (Cardano)
+- n ≤ 9: quartic formula (Ferrari)
+- n ≥ 10: degree 5+ polynomial, not solvable in radicals (Abel-Ruffini)
+
+Returns eigenvalues if n ≤ 9 and A is in SO(n), nothing otherwise.
+"""
+function _general_so_eigenvalues(A)
+    n = size(A, 1)
+    size(A, 2) == n || return nothing
+    
+    # Dispatch to specific implementations
+    if n == 2
+        return _so2_eigenvalues(A)
+    elseif n == 3
+        return _so3_eigenvalues(A)
+    elseif n == 4
+        return _so4_eigenvalues(A)
+    elseif n == 5
+        return _so5_eigenvalues(A)
+    elseif n == 6
+        return _so6_eigenvalues(A)
+    elseif n == 7
+        return _so7_eigenvalues(A)
+    elseif n == 8
+        return _so8_eigenvalues(A)
+    elseif n == 9
+        return _so9_eigenvalues(A)
+    end
+    
+    # n ≥ 10: Cannot solve in radicals
+    return nothing
 end
 
 # ============================================================================
@@ -835,11 +1333,13 @@ end
 Detect if matrix A belongs to a known Lie group with closed-form eigenvalues.
 
 Returns a tuple (group_symbol, params) where:
-- group_symbol is one of :SO2, :SO3, :SO4, :SU2, :SU3, :Sp2, :Sp4, :SO11, :SO13, 
+- group_symbol is one of :SO2, :SO3, :SO4, :SO5, :SO6, :SO7, :SO8, :SO9,
+  :SU2, :SU3, :Sp2, :Sp4, :SO11, :SO13, 
   :orthogonal, :unitary, :special_unitary, :symplectic, or nothing
 - params contains group-specific parameters
 
 Priority is given to specific small groups with closed-form eigenvalue formulas.
+For SO(n) with n ≤ 9, we have closed-form eigenvalues using the quartic formula.
 """
 function _detect_lie_group(A)
     n = size(A, 1)
@@ -899,6 +1399,31 @@ function _detect_lie_group(A)
         end
     end
     
+    # SO(5) - 5D rotations
+    if n == 5 && _is_so5(A)
+        return (:SO5, nothing)
+    end
+    
+    # SO(6) - 6D rotations
+    if n == 6 && _is_so6(A)
+        return (:SO6, nothing)
+    end
+    
+    # SO(7) - 7D rotations
+    if n == 7 && _is_so7(A)
+        return (:SO7, nothing)
+    end
+    
+    # SO(8) - 8D rotations
+    if n == 8 && _is_so8(A)
+        return (:SO8, nothing)
+    end
+    
+    # SO(9) - 9D rotations (largest with closed-form via quartic)
+    if n == 9 && _is_so9(A)
+        return (:SO9, nothing)
+    end
+    
     # General structure detection for larger matrices
     # These provide structure hints but may not have closed-form eigenvalues
     
@@ -935,6 +1460,12 @@ Attempt to compute eigenvalues using Lie group structure.
 
 Returns the eigenvalues if A belongs to a Lie group with known closed-form formulas,
 or nothing if no such structure is detected or the group is too large for closed-form.
+
+Supports:
+- SO(n) for n ≤ 9: Uses trace invariants and polynomial root formulas
+- SU(2), SU(3): Via trace-based formulas
+- Sp(2), Sp(4): Via reciprocal pair structure
+- SO(1,1): Hyperbolic eigenvalues
 """
 function _lie_group_eigenvalues(A)
     group, params = _detect_lie_group(A)
@@ -948,6 +1479,16 @@ function _lie_group_eigenvalues(A)
         return _so3_eigenvalues(A)
     elseif group == :SO4
         return _so4_eigenvalues(A)
+    elseif group == :SO5
+        return _so5_eigenvalues(A)
+    elseif group == :SO6
+        return _so6_eigenvalues(A)
+    elseif group == :SO7
+        return _so7_eigenvalues(A)
+    elseif group == :SO8
+        return _so8_eigenvalues(A)
+    elseif group == :SO9
+        return _so9_eigenvalues(A)
     elseif group == :SU2
         return _su2_eigenvalues(A)
     elseif group == :SU3
@@ -960,6 +1501,10 @@ function _lie_group_eigenvalues(A)
         return _so11_eigenvalues(A)
     elseif group == :SO13
         # SO(1,3) falls back to general solver
+        return nothing
+    elseif group == :special_orthogonal
+        # For n ≤ 9, we should have already matched above
+        # For n ≥ 10, no closed form available
         return nothing
     end
     
