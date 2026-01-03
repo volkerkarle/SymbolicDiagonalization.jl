@@ -652,6 +652,7 @@ end
     _is_symbolic_orthogonal(mat)
 
 Check if mat is orthogonal: mat^T * mat = I (works for symbolic matrices).
+Uses trigonometric simplification to handle sin²(θ) + cos²(θ) = 1.
 """
 function _is_symbolic_orthogonal(mat)
     n = size(mat, 1)
@@ -660,7 +661,7 @@ function _is_symbolic_orthogonal(mat)
     for i in 1:n, j in 1:n
         expected = i == j ? 1 : 0
         diff = Symbolics.simplify(product[i, j] - expected)
-        if !_issymzero(diff)
+        if !_issymzero_trig(diff)
             return false
         end
     end
@@ -786,9 +787,9 @@ function _try_so2_kronecker_decomposition_impl(mat, k)
     c_squared = Symbolics.simplify(sum(block_11[i, 1]^2 for i in 1:half_N))
     s_squared = Symbolics.simplify(sum(block_21[i, 1]^2 for i in 1:half_N))
     
-    # Verify c² + s² = 1
+    # Verify c² + s² = 1 (use trig simplification for same-angle case)
     sum_check = Symbolics.simplify(c_squared + s_squared - 1)
-    if !_issymzero(sum_check)
+    if !_issymzero_trig(sum_check)
         return nothing
     end
     
@@ -989,12 +990,16 @@ function _try_so2_kronecker_decomposition_impl(mat, k)
             return nothing
         end
         
-        eigenvalues = [
-            Symbolics.simplify((a - d) + im*(b + c_entry)),     # e^{i(θ+φ)}
-            Symbolics.simplify((a + d) + im*(c_entry - b)),     # e^{i(θ-φ)}  -- wait, check signs
-            Symbolics.simplify((a + d) + im*(b - c_entry)),     # e^{i(-θ+φ)}
-            Symbolics.simplify((a - d) + im*(-b - c_entry))     # e^{-i(θ+φ)}
+        # Build eigenvalues and apply trig simplification for clean output
+        raw_eigenvalues = [
+            (a - d) + im*(b + c_entry),     # e^{i(θ+φ)}
+            (a + d) + im*(c_entry - b),     # e^{i(θ-φ)}
+            (a + d) + im*(b - c_entry),     # e^{i(-θ+φ)} = e^{i(φ-θ)}
+            (a - d) + im*(-b - c_entry)     # e^{-i(θ+φ)}
         ]
+        
+        # Apply trig simplification to get clean cos(θ±φ) + i·sin(θ±φ) form
+        eigenvalues = [trig_simplify(λ) for λ in raw_eigenvalues]
         
         # We don't have the individual (c,s) pairs, but eigenvalues are correct
         return (eigenvalues, nothing)

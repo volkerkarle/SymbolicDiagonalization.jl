@@ -2,7 +2,8 @@ module SymbolicDiagonalization
 
 using LinearAlgebra
 using Symbolics
-
+using SymbolicUtils
+using SymbolicUtils.Rewriters
 
 # ============================================================================
 # Configuration Constants
@@ -28,6 +29,7 @@ const VALID_STRUCTURES = (:auto, :hermitian, :symmetric, :unitary, :general, :no
 # ============================================================================
 
 include("rref.jl")        # RREF and _issymzero
+include("simplify.jl")    # Trigonometric and expression simplification rules
 include("charpoly.jl")    # Characteristic polynomial computation
 include("roots.jl")       # Polynomial root solvers
 
@@ -59,6 +61,9 @@ include("diagonalize.jl") # Main API: symbolic_eigenvalues, symbolic_eigenpairs,
 
 # Export original API for advanced use
 export characteristic_polynomial, symbolic_roots, symbolic_eigenvalues, symbolic_eigenpairs, symbolic_diagonalize
+
+# Export simplification utilities
+export trig_simplify
 
 # Export exception types for error handling
 export ExpressionComplexityError, ComputationTimeoutError
