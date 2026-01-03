@@ -38,4 +38,8 @@ using Aqua
     @testset "Lie Group Patterns" begin
         include("test_lie_groups.jl")
     end
+    
+    @testset "Lie Algebra Representations" begin
+        include("test_lie_algebras.jl")
+    end
 end

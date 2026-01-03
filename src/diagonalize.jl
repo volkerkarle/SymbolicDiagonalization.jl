@@ -74,6 +74,16 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
             return _build_eigenvalue_result(lie_vals, λ, expand)
         end
     end
+    
+    # Check for Lie algebra representations (spin-j of so(3)/su(2), etc.)
+    # These are elements of Lie algebra representations with constrained eigenvalue spectra.
+    # Only for symbolic matrices.
+    if eltype(mat) <: Num || eltype(mat) <: Complex{Num}
+        algebra_vals = _lie_algebra_eigenvalues(mat)
+        if !isnothing(algebra_vals)
+            return _build_eigenvalue_result(algebra_vals, λ, expand)
+        end
+    end
 
     # Check for hypercube graph Q_n (any size 2^n)
     hypercube_dim = _is_hypercube_graph(mat)

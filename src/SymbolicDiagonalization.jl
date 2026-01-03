@@ -49,6 +49,7 @@ include("patterns/kronecker.jl")    # Kronecker product detection (matrix struct
 include("patterns/tridiagonal.jl")  # Toeplitz tridiagonal, special 5×5, anti-diagonal
 include("patterns/permutation.jl")  # Permutation matrices
 include("patterns/lie_groups.jl")   # SO(n), SU(n), Sp(2n), Lorentz groups
+include("patterns/lie_algebras.jl") # Lie algebra representations (spin-j, etc.)
 
 # ============================================================================
 # Public API
