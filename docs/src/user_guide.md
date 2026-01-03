@@ -101,6 +101,35 @@ K = kron(A, B)  # 4×4
 eigvals(K)  # [ac, ad, bc, bd]
 ```
 
+### SO(2) Rotation Kronecker Products
+
+Kronecker products of SO(2) rotation matrices are automatically detected and produce
+clean trigonometric eigenvalues using angle addition formulas:
+
+```julia
+@variables θ φ
+R(x) = [cos(x) -sin(x); sin(x) cos(x)]  # SO(2) rotation matrix
+
+K = kron(R(θ), R(φ))
+eigvals(K)
+# [cos(θ + φ) + im*sin(θ + φ),   # e^{i(θ+φ)}
+#  cos(θ - φ) + im*sin(θ - φ),   # e^{i(θ-φ)}
+#  cos(θ - φ) - im*sin(θ - φ),   # e^{-i(θ-φ)}
+#  cos(θ + φ) - im*sin(θ + φ)]   # e^{-i(θ+φ)}
+```
+
+The same-angle case `R(θ) ⊗ R(θ)` automatically simplifies using double-angle formulas:
+
+```julia
+eigvals(kron(R(θ), R(θ)))
+# [cos(2θ) + im*sin(2θ),   # e^{2iθ}
+#  1,                       # θ - θ = 0
+#  1,                       # -(θ - θ) = 0
+#  cos(2θ) - im*sin(2θ)]   # e^{-2iθ}
+```
+
+This works recursively for nested SO(2) Kronecker products.
+
 ### Nested Kronecker Products
 
 Arbitrary-depth Kronecker products are handled recursively. The eigenvalues of
@@ -266,5 +295,5 @@ L = [2d -d 0 0 0 -d; -d 2d -d 0 0 0; 0 -d 2d -d 0 0;
 ## See Also
 
 - [API Reference](api_reference.md) - Complete function signatures
-- [Pattern Library](pattern_library.md) - All 13 patterns with details
+- [Pattern Library](pattern_library.md) - All 16+ patterns with details
 - [Mathematical Background](mathematical_background.md) - Theory

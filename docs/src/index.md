@@ -6,6 +6,8 @@ Symbolic matrix diagonalization for Julia using [Symbolics.jl](https://github.co
 
 - Closed-form eigenvalue solvers for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
 - Automatic structure detection for larger matrices (16+ patterns)
+- Lie group detection (SO(2), SU(2)) with clean trigonometric eigenvalues
+- SO(2) Kronecker products with automatic trig simplification
 - Diagonal shift optimization for full 6-parameter 3×3 symmetric matrices
 - Nested Kronecker products (A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ) - scales to 1024×1024 with 30 parameters
 - Drop-in `LinearAlgebra` interface: `eigen()`, `eigvals()`
@@ -55,6 +57,23 @@ K = reduce(kron, matrices)
 eigvals(K)  # 1024 symbolic eigenvalues in ~33 seconds
 ```
 
+### SO(2) Rotation Kronecker Products
+
+When Kronecker products of SO(2) rotation matrices are detected, eigenvalues are 
+automatically simplified to clean trigonometric form:
+
+```julia
+@variables θ φ
+R(x) = [cos(x) -sin(x); sin(x) cos(x)]
+
+eigvals(kron(R(θ), R(φ)))
+# [cos(θ+φ) + im*sin(θ+φ), cos(θ-φ) + im*sin(θ-φ),
+#  cos(θ-φ) - im*sin(θ-φ), cos(θ+φ) - im*sin(θ+φ)]
+
+eigvals(kron(R(θ), R(θ)))  # Same-angle case
+# [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
+```
+
 ## Supported Patterns
 
 For matrices larger than 4×4, the package detects and exploits special structure:
@@ -68,6 +87,7 @@ For matrices larger than 4×4, the package detects and exploits special structur
 | Symmetric Toeplitz tridiagonal | Cosine formula (any size n) |
 | Kronecker products A ⊗ B | Product of factor eigenvalues |
 | Nested Kronecker A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ | Recursive decomposition (any depth) |
+| SO(2) Kronecker R(θ) ⊗ R(φ) | Clean trig form: cos(θ±φ) + i·sin(θ±φ) |
 | Permutation | Roots of unity from cycle structure |
 | Persymmetric | Half-size decomposition |
 

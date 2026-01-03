@@ -26,6 +26,8 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 - **Closed-form root solvers** for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
 - **Automatic structure detection** (block-diagonal, persymmetric, Hermitian)
 - **16+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Toeplitz tridiagonal, permutation, etc.)
+- **Lie group detection** (SO(2), SU(2)) with clean trigonometric eigenvalues
+- **SO(2) Kronecker products** with automatic trig simplification (e.g., `cos(θ+φ) + i·sin(θ+φ)`)
 - **Diagonal shift optimization** for full 6-parameter 3×3 symmetric matrices
 - **Nested Kronecker products** (A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ) - solve 1024×1024 matrices with 30 parameters!
 - **Clean LinearAlgebra.jl interface** (`eigen()`, `eigvals()`)
@@ -84,6 +86,22 @@ M = kron(A, B)
 eigvals(M)  # {ac, ad, bc, bd}
 ```
 
+### SO(2) Rotation Kronecker Products
+
+```julia
+@variables θ φ
+R(x) = [cos(x) -sin(x); sin(x) cos(x)]  # SO(2) rotation matrix
+
+# Kronecker product of rotations → clean trig eigenvalues
+eigvals(kron(R(θ), R(φ)))
+# [cos(θ+φ) + im*sin(θ+φ), cos(θ-φ) + im*sin(θ-φ), 
+#  cos(θ-φ) - im*sin(θ-φ), cos(θ+φ) - im*sin(θ+φ)]
+
+# Same-angle case automatically simplifies
+eigvals(kron(R(θ), R(θ)))
+# [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
+```
+
 ### Full 6-Parameter 3×3 Symmetric Matrix
 
 ```julia
@@ -126,8 +144,10 @@ eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
 | Full 6-parameter 3×3 symmetric | Diagonal shift optimization |
 | Block-diagonal decomposition | Automatic detection and recursion |
 | 16+ pattern solvers | Circulant, Kronecker, tridiagonal, permutation, etc. |
+| Lie group detection | SO(2), SU(2) with clean trig eigenvalues |
+| SO(2) Kronecker products | `cos(θ±φ) + i·sin(θ±φ)` form via trig simplification |
 | Nested Kronecker A₁⊗A₂⊗...⊗Aₙ | Scales to 1024×1024 with 30 parameters |
-| 306 passing tests | Comprehensive test coverage |
+| 375 passing tests | Comprehensive test coverage |
 
 ## Performance Benchmarks
 

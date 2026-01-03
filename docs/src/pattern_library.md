@@ -13,6 +13,7 @@ Catalog of matrix patterns with closed-form eigenvalue solutions.
 | Sym. Toeplitz tridiag | $\lambda_k = a + 2b\cos(k\pi/(n+1))$ | $O(n)$ |
 | Kronecker $A \otimes B$ | Products: $\lambda_i(A) \cdot \lambda_j(B)$ | $O(m+n)$ |
 | Nested Kronecker $A_1 \otimes \cdots \otimes A_k$ | Product of all factors | $O(\sum n_i)$ |
+| SO(2) Kronecker $R(\theta) \otimes R(\phi)$ | $e^{\pm i(\theta \pm \phi)}$ | $O(1)$ |
 | Permutation | Roots of unity from cycle structure | $O(n)$ |
 | Persymmetric | Half-size decomposition | $O(n/2)$ |
 | Anti-diagonal | $\pm$ pairs | $O(n)$ |
@@ -174,6 +175,42 @@ The algorithm recursively factors $K = A \otimes B$, solves each factor independ
 then forms all pairwise products. This bypasses the exponential complexity of direct
 symbolic computation on the full matrix.
 
+### SO(2) Kronecker Products
+
+**Definition**: Kronecker product of SO(2) rotation matrices
+$$R(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix}$$
+
+**Eigenvalues** for $R(\theta) \otimes R(\phi)$:
+$$\lambda = e^{\pm i(\theta \pm \phi)} = \cos(\theta \pm \phi) \pm i \sin(\theta \pm \phi)$$
+
+The four eigenvalues are:
+- $\cos(\theta + \phi) + i\sin(\theta + \phi)$
+- $\cos(\theta + \phi) - i\sin(\theta + \phi)$
+- $\cos(\theta - \phi) + i\sin(\theta - \phi)$
+- $\cos(\theta - \phi) - i\sin(\theta - \phi)$
+
+```julia
+@variables θ φ
+R(x) = [cos(x) -sin(x); sin(x) cos(x)]
+
+eigvals(kron(R(θ), R(φ)))
+# [cos(θ + φ) + im*sin(θ + φ), cos(θ - φ) + im*sin(θ - φ),
+#  cos(θ - φ) - im*sin(θ - φ), cos(θ + φ) - im*sin(θ + φ)]
+```
+
+**Same-angle case**: $R(\theta) \otimes R(\theta)$ uses double-angle formulas:
+
+```julia
+eigvals(kron(R(θ), R(θ)))
+# [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
+```
+
+**Implementation**: Uses SymbolicUtils.jl rule-based rewriting for automatic
+trigonometric simplification (Pythagorean identity, angle addition formulas,
+double-angle formulas).
+
+**Nesting**: Works recursively for $R(\theta_1) \otimes R(\theta_2) \otimes \cdots \otimes R(\theta_k)$.
+
 ---
 
 ## Tridiagonal Patterns
@@ -267,6 +304,7 @@ Diagonalized by 2D DFT. Common in image processing and 2D convolution.
 | Circulant | Row $i$ = cyclic shift of row $i-1$ |
 | Toeplitz tridiag | Constant diagonals, symmetric |
 | Kronecker | Block scaling pattern |
+| SO(2) Kronecker | Block structure + orthogonality + trig pattern |
 | Permutation | Exactly one 1 per row/column |
 
 ---

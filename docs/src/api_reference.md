@@ -289,6 +289,44 @@ roots = symbolic_roots(poly, λ)
 
 ---
 
+### Trigonometric Simplification
+
+#### `trig_simplify`
+
+```julia
+trig_simplify(expr) → Num
+```
+
+Apply trigonometric simplification rules to a symbolic expression using SymbolicUtils.jl
+rule-based rewriting.
+
+**Arguments**:
+- `expr` - Symbolic expression containing trigonometric functions
+
+**Returns**: Simplified expression
+
+**Example**:
+```julia
+@variables θ φ
+trig_simplify(sin(θ)^2 + cos(θ)^2)           # → 1
+trig_simplify(cos(θ)*cos(φ) - sin(θ)*sin(φ)) # → cos(θ + φ)
+trig_simplify(2*sin(θ)*cos(θ))               # → sin(2θ)
+```
+
+**Supported identities**:
+- Pythagorean: $\sin^2(x) + \cos^2(x) = 1$
+- Squared Pythagorean: $\sin^4(x) + 2\sin^2(x)\cos^2(x) + \cos^4(x) = 1$
+- Angle addition: $\cos(a)\cos(b) - \sin(a)\sin(b) = \cos(a+b)$
+- Angle subtraction: $\cos(a)\cos(b) + \sin(a)\sin(b) = \cos(a-b)$
+- Double angle: $2\sin(x)\cos(x) = \sin(2x)$, $\cos^2(x) - \sin^2(x) = \cos(2x)$
+
+**Use cases**:
+- Simplifying eigenvalues of rotation matrices
+- Cleaning up trigonometric expressions in physics problems
+- Post-processing SO(2) Kronecker product eigenvalues
+
+---
+
 ## Keyword Arguments
 
 All main functions (`eigen`, `eigvals`, `symbolic_eigenvalues`, etc.) accept these keyword arguments:
@@ -537,6 +575,12 @@ Tests if matrix is a permutation matrix
 #### `_detect_special_5x5_tridiagonal(mat)`
 Tests for special 5×5 patterns with known eigenvalues
 
+#### `_is_symbolic_orthogonal(mat)`
+Tests if a symbolic matrix is orthogonal (M'*M = I) using trig simplification
+
+#### `_try_so2_kronecker_decomposition(mat, k)`
+Attempts to detect and decompose SO(2) Kronecker products R(θ₁) ⊗ R(θ₂) ⊗ ... ⊗ R(θₖ)
+
 ---
 
 ### Special Pattern Solvers
@@ -558,6 +602,9 @@ Computes eigenvalues of symmetric anti-diagonal matrix
 
 #### `_compute_permutation_eigenvalues(A)`
 Computes eigenvalues of permutation matrix via cycle decomposition
+
+#### `_issymzero_trig(expr)`
+Tests if expression is symbolically zero, using trigonometric simplification
 
 ---
 
