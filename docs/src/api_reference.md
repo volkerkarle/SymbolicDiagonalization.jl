@@ -327,6 +327,60 @@ trig_simplify(2*sin(θ)*cos(θ))               # → sin(2θ)
 
 ---
 
+#### `aggressive_simplify`
+
+```julia
+aggressive_simplify(expr) → Num
+```
+
+Apply aggressive simplification combining trigonometric, algebraic, and sqrt-trig rules.
+
+**Key feature**: Transforms `sqrt(1 - cos(θ)^2)` → `sin(θ)` and `sqrt(1 - sin(θ)^2)` → `cos(θ)`.
+
+**Example**:
+```julia
+@variables θ
+aggressive_simplify(sqrt(1 - cos(θ)^2))  # → sin(θ)
+aggressive_simplify(sqrt(1 - sin(θ)^2))  # → cos(θ)
+aggressive_simplify(sin(θ)^2 + cos(θ)^2) # → 1
+```
+
+---
+
+#### `simplify_eigenvalue`
+
+```julia
+simplify_eigenvalue(expr) → Complex{Num}
+```
+
+Specialized simplification for eigenvalue expressions. Handles real and imaginary parts separately.
+
+**Example**:
+```julia
+@variables θ
+expr = cos(θ) + im*sqrt(1 - cos(θ)^2)
+simplify_eigenvalue(expr)  # → cos(θ) + im*sin(θ)
+```
+
+---
+
+#### `simplify_eigenvalues`
+
+```julia
+simplify_eigenvalues(vals::Vector) → Vector
+```
+
+Apply `simplify_eigenvalue` to a vector of eigenvalues.
+
+**Example**:
+```julia
+@variables θ
+vals = [cos(θ) + im*sqrt(1 - cos(θ)^2), cos(θ) - im*sqrt(1 - cos(θ)^2)]
+simplify_eigenvalues(vals)  # → [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+```
+
+---
+
 ## Keyword Arguments
 
 All main functions (`eigen`, `eigvals`, `symbolic_eigenvalues`, etc.) accept these keyword arguments:
