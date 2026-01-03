@@ -65,8 +65,32 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         _check_complexity(mat; threshold = complexity_threshold)
     end
 
-    # Check for Lie group structure FIRST (SO(n), SU(n), Sp(2n), etc.)
-    # These have exact closed-form eigenvalue formulas with no floating-point artifacts.
+    # For symbolic matrices, check block-diagonal structure FIRST
+    # This produces the cleanest eigenvalues by solving each block independently
+    if eltype(mat) <: Num || eltype(mat) <: Complex{Num}
+        multiple_blocks = _detect_multiple_blocks(mat)
+        if !isnothing(multiple_blocks) && length(multiple_blocks) > 1
+            block_sizes = [stop - start + 1 for (start, stop) in multiple_blocks]
+            all_solvable = all(s -> s <= 4, block_sizes)
+            
+            if all_solvable
+                # Solve each block recursively
+                all_vals = Any[]
+                all_polys = Any[]
+                for (start, stop) in multiple_blocks
+                    block = mat[start:stop, start:stop]
+                    vals_block, poly_block, λ = symbolic_eigenvalues(block; var = λ, structure = struct_hint, expand = expand, complexity_threshold = nothing, timeout = timeout, max_terms = max_terms)
+                    append!(all_vals, vals_block)
+                    push!(all_polys, poly_block)
+                end
+                poly = expand ? Symbolics.expand(prod(all_polys)) : prod(all_polys)
+                return all_vals, poly, λ
+            end
+        end
+    end
+
+    # Check for Lie group structure (SO(n), SU(n), Sp(2n), etc.)
+    # These have exact closed-form eigenvalue formulas.
     # Only for symbolic matrices - numeric matrices are handled efficiently by LinearAlgebra
     if eltype(mat) <: Num || eltype(mat) <: Complex{Num}
         lie_vals = _lie_group_eigenvalues(mat)

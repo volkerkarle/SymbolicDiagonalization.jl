@@ -6,7 +6,8 @@ Symbolic matrix diagonalization for Julia using [Symbolics.jl](https://github.co
 
 - Closed-form eigenvalue solvers for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
 - Automatic structure detection for larger matrices (16+ patterns)
-- Lie group detection (SO(2), SU(2)) with clean trigonometric eigenvalues
+- Lie group detection (SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4)) with symbolic eigenvalues
+- Aggressive trigonometric simplification (sqrt(1-cos²θ) → sin(θ))
 - SO(2) Kronecker products with automatic trig simplification
 - Diagonal shift optimization for full 6-parameter 3×3 symmetric matrices
 - Nested Kronecker products (A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ) - scales to 1024×1024 with 30 parameters

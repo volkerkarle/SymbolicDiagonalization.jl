@@ -130,6 +130,47 @@ eigvals(kron(R(θ), R(θ)))
 
 This works recursively for nested SO(2) Kronecker products.
 
+### Simplifying Eigenvalue Expressions
+
+The package provides aggressive simplification functions for cleaning up symbolic eigenvalue expressions, particularly those involving trigonometric functions.
+
+#### Key Simplification Functions
+
+```julia
+using SymbolicDiagonalization: aggressive_simplify, simplify_eigenvalue, simplify_eigenvalues
+
+@variables θ
+
+# aggressive_simplify: Combines trig, algebraic, and sqrt-trig rules
+aggressive_simplify(sqrt(1 - cos(θ)^2))  # → sin(θ)
+aggressive_simplify(sqrt(1 - sin(θ)^2))  # → cos(θ)
+aggressive_simplify(sin(θ)^2 + cos(θ)^2) # → 1
+
+# simplify_eigenvalue: Specialized for eigenvalue expressions
+# Handles complex parts separately for clean output
+expr = cos(θ) + im*sqrt(1 - cos(θ)^2)
+simplify_eigenvalue(expr)  # → cos(θ) + im*sin(θ)
+
+# simplify_eigenvalues: Apply to a vector of eigenvalues
+vals = [cos(θ) + im*sqrt(1 - cos(θ)^2), cos(θ) - im*sqrt(1 - cos(θ)^2)]
+simplify_eigenvalues(vals)  # → [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+```
+
+#### When to Use
+
+- **Automatic**: Block-diagonal SO(4), SO(3), and SO(2) matrices automatically use these simplifications
+- **Manual**: When working with custom matrices that produce `sqrt(1 - cos²θ)` or similar expressions
+
+#### Simplification Rules Applied
+
+| Rule | Before | After |
+|------|--------|-------|
+| Pythagorean | `sin²θ + cos²θ` | `1` |
+| Sqrt-trig | `sqrt(1 - cos²θ)` | `sin(θ)` |
+| Sqrt-trig | `sqrt(1 - sin²θ)` | `cos(θ)` |
+| Algebraic | `sqrt(x)^2` | `x` |
+| Algebraic | `sqrt(a)*sqrt(b)` | `sqrt(a*b)` |
+
 ### Nested Kronecker Products
 
 Arbitrary-depth Kronecker products are handled recursively. The eigenvalues of

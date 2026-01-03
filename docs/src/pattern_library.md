@@ -14,7 +14,7 @@ Catalog of matrix patterns with closed-form eigenvalue solutions.
 | Kronecker $A \otimes B$ | Products: $\lambda_i(A) \cdot \lambda_j(B)$ | $O(m+n)$ |
 | Nested Kronecker $A_1 \otimes \cdots \otimes A_k$ | Product of all factors | $O(\sum n_i)$ |
 | SO(2) Kronecker $R(\theta) \otimes R(\phi)$ | $e^{\pm i(\theta \pm \phi)}$ | $O(1)$ |
-| SO(n) for n ≤ 9 | Trace power sums → polynomial roots | $O(1)$ |
+| SO(n) for n ≤ 4 | Trace-based symbolic formulas | $O(1)$ |
 | Permutation | Roots of unity from cycle structure | $O(n)$ |
 | Persymmetric | Half-size decomposition | $O(n/2)$ |
 | Anti-diagonal | $\pm$ pairs | $O(n)$ |
@@ -225,36 +225,28 @@ double-angle formulas).
 - They come in conjugate pairs: $e^{\pm i\theta_j}$
 - Odd dimensions have eigenvalue 1 (rotation axis)
 
-**Closed-form solutions** for $n \leq 9$ (uses quadratic/cubic/quartic formulas):
+**Symbolic closed-form solutions** for $n \leq 4$:
 
-| Dimension | Eigenvalues | Polynomial Degree |
-|-----------|-------------|-------------------|
-| SO(2) | $e^{\pm i\theta}$ | 1 (trivial) |
-| SO(3) | $1, e^{\pm i\theta}$ | 1 |
-| SO(4) | $e^{\pm i\theta_1}, e^{\pm i\theta_2}$ | 2 (quadratic) |
-| SO(5) | $1, e^{\pm i\theta_1}, e^{\pm i\theta_2}$ | 2 (quadratic) |
-| SO(6) | $e^{\pm i\theta_1}, e^{\pm i\theta_2}, e^{\pm i\theta_3}$ | 3 (cubic) |
-| SO(7) | $1, e^{\pm i\theta_1}, e^{\pm i\theta_2}, e^{\pm i\theta_3}$ | 3 (cubic) |
-| SO(8) | $e^{\pm i\theta_j}$ for $j=1,2,3,4$ | 4 (quartic) |
-| SO(9) | $1, e^{\pm i\theta_j}$ for $j=1,2,3,4$ | 4 (quartic) |
+| Dimension | Eigenvalues | Notes |
+|-----------|-------------|-------|
+| SO(2) | $\cos\theta \pm i\sin\theta$ | Direct extraction |
+| SO(3) | $1, \cos\theta \pm i\sin\theta$ | Trace-based |
+| SO(4) | $\cos\theta_1 \pm i\sin\theta_1, \cos\theta_2 \pm i\sin\theta_2$ | Block-diagonal preferred |
 
-**Note**: SO(10)+ requires degree 5+ polynomials, which cannot be solved in radicals (Abel-Ruffini theorem).
+**Note**: SO(5)+ are not supported symbolically. For numeric SO(n) matrices, use `LinearAlgebra.eigvals()`.
 
-**Method**: Extract angles from trace power sums using Newton's identities:
-- $\text{tr}(A) = 2\sum_j \cos\theta_j$ (plus 1 for odd $n$)
-- $\text{tr}(A^2) = 2\sum_j \cos(2\theta_j)$ (plus 1 for odd $n$)
-- etc.
+**Block-diagonal detection**: For SO(4) matrices that are block-diagonal (two independent SO(2) rotations), the package prioritizes block-diagonal detection to produce the cleanest eigenvalues.
 
 ```julia
-# Numeric 5×5 rotation
-θ1, θ2 = 0.3, 0.7
-R5 = rotation_matrix(5, 1, 2, θ1) * rotation_matrix(5, 3, 4, θ2)
-eigvals(R5)  # [1, e^(±iθ1), e^(±iθ2)]
-
-# Symbolic 3×3 rotation
+# Symbolic SO(3) rotation
 @variables θ
 R3 = [cos(θ) -sin(θ) 0; sin(θ) cos(θ) 0; 0 0 1]
 eigvals(R3)  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+
+# Block-diagonal SO(4) - cleanest output
+@variables θ φ
+R4 = [cos(θ) -sin(θ) 0 0; sin(θ) cos(θ) 0 0; 0 0 cos(φ) -sin(φ); 0 0 sin(φ) cos(φ)]
+eigvals(R4)  # [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ), cos(φ) + im*sin(φ), cos(φ) - im*sin(φ)]
 ```
 
 ### Other Supported Lie Groups
@@ -265,7 +257,6 @@ eigvals(R3)  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
 | SU(3) | 3×3 | Special unitary | Product = 1 |
 | Sp(2) | 2×2 | Symplectic (≅ SL(2)) | Reciprocal pairs |
 | Sp(4) | 4×4 | Symplectic | Reciprocal pairs |
-| SO(1,1) | 2×2 | Lorentz boost | $e^{\pm\phi}$ (hyperbolic) |
 
 ---
 

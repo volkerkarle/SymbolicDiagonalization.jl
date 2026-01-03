@@ -26,7 +26,7 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 - **Closed-form root solvers** for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
 - **Automatic structure detection** (block-diagonal, persymmetric, Hermitian)
 - **16+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Toeplitz tridiagonal, permutation, etc.)
-- **Lie group detection** (SO(2)-SO(9), SU(2), SU(3), Sp(2), Sp(4)) with closed-form eigenvalues
+- **Lie group detection** (SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4)) with symbolic eigenvalues
 - **SO(2) Kronecker products** with automatic trig simplification (e.g., `cos(θ+φ) + i·sin(θ+φ)`)
 - **Diagonal shift optimization** for full 6-parameter 3×3 symmetric matrices
 - **Nested Kronecker products** (A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ) - solve 1024×1024 matrices with 30 parameters!
@@ -102,6 +102,22 @@ eigvals(kron(R(θ), R(θ)))
 # [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
 ```
 
+### Aggressive Symbolic Simplification
+
+Clean eigenvalue expressions via automatic trigonometric simplification:
+
+```julia
+@variables θ
+using SymbolicDiagonalization: aggressive_simplify
+
+# sqrt(1 - cos²θ) automatically becomes sin(θ)
+aggressive_simplify(sqrt(1 - cos(θ)^2))  # sin(θ)
+
+# SO(3) rotation gives clean eigenvalues
+Rz = [cos(θ) -sin(θ) 0; sin(θ) cos(θ) 0; 0 0 1]
+eigvals(Rz)  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+```
+
 ### Full 6-Parameter 3×3 Symmetric Matrix
 
 ```julia
@@ -144,10 +160,10 @@ eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
 | Full 6-parameter 3×3 symmetric | Diagonal shift optimization |
 | Block-diagonal decomposition | Automatic detection and recursion |
 | 16+ pattern solvers | Circulant, Kronecker, tridiagonal, permutation, etc. |
-| Lie group detection | SO(2)-SO(9), SU(2), SU(3), Sp(2), Sp(4) with closed-form eigenvalues |
+| Lie group detection | SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4) with symbolic eigenvalues |
 | SO(2) Kronecker products | `cos(θ±φ) + i·sin(θ±φ)` form via trig simplification |
 | Nested Kronecker A₁⊗A₂⊗...⊗Aₙ | Scales to 1024×1024 with 30 parameters |
-| 392 passing tests | Comprehensive test coverage |
+| 382 passing tests | Comprehensive test coverage |
 
 ## Performance Benchmarks
 

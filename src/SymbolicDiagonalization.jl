@@ -63,7 +63,7 @@ include("diagonalize.jl") # Main API: symbolic_eigenvalues, symbolic_eigenpairs,
 export characteristic_polynomial, symbolic_roots, symbolic_eigenvalues, symbolic_eigenpairs, symbolic_diagonalize
 
 # Export simplification utilities
-export trig_simplify
+export trig_simplify, aggressive_simplify, simplify_eigenvalue, simplify_eigenvalues
 
 # Export exception types for error handling
 export ExpressionComplexityError, ComputationTimeoutError
