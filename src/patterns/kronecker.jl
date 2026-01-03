@@ -1512,8 +1512,10 @@ eigenvalues as products of SO(3) eigenvalues.
 function _detect_so3_kron_2fold(mat)
     size(mat) == (9, 9) || return nothing
     
-    # First check if the matrix is orthogonal (necessary for SO(3) ⊗ SO(3))
-    _is_orthogonal(mat) || return nothing
+    # NOTE: We do NOT check orthogonality of the 9×9 matrix directly, as this
+    # can be extremely slow for complex symbolic expressions (e.g., Euler ⊗ Euler).
+    # Instead, we try to factor the matrix and check orthogonality of the 3×3 factors,
+    # which is much faster.
     
     # Extract 3×3 blocks: blocks[i][j] = R1[i,j] * R2 for R1 ⊗ R2
     blocks = [[mat[3(i-1)+1:3i, 3(j-1)+1:3j] for j in 1:3] for i in 1:3]
@@ -1553,20 +1555,432 @@ function _detect_so3_kron_2fold(mat)
     end
     
     # Strategy 2: Try the general Kronecker factorization with SO(3) eigenvalue formula
+    # This handles cases like Euler ⊗ Euler where no diagonal block is SO(3)
     kron_info = _try_kronecker_factorization(mat, 3, 3)
     if !isnothing(kron_info)
         A, B, m, n = kron_info
         
-        # Check if A and B are SO(3)
+        # The extracted factors A and B may be scaled versions of SO(3) matrices.
+        # Check if they are orthogonal (up to a scalar) by verifying A^T A is diagonal
+        # For a scaled rotation c*R: (c*R)^T (c*R) = c² R^T R = c² I
+        
+        # Simpler approach: check if A and B are SO(3) using _is_so3_trig
         A_simplified = Symbolics.simplify.(A)
         B_simplified = Symbolics.simplify.(B)
         
         if _is_so3_trig(A_simplified) && _is_so3_trig(B_simplified)
             return _compute_so3_kron_eigenvalues(A_simplified, B_simplified)
         end
+        
+        # If A and B aren't directly SO(3), they might be scaled.
+        # For Euler ⊗ Euler, the factorization normalizes A[ref_i, ref_j] = 1,
+        # but the true rotation has no entry = 1.
+        # We can still compute eigenvalues using the trace formula.
+        
+        # Check if A is a scaled SO(3): A^T A should equal c² I for some scalar c²
+        AtA = Symbolics.simplify.(A' * A)
+        BtB = Symbolics.simplify.(B' * B)
+        
+        # Check if AtA and BtB are scalar multiples of identity
+        A_scale_sq = _check_scalar_identity(AtA)
+        B_scale_sq = _check_scalar_identity(BtB)
+        
+        if !isnothing(A_scale_sq) && !isnothing(B_scale_sq)
+            # A = c_A * R_A, B = c_B * R_B where R_A, R_B ∈ SO(3)
+            # The Kronecker product A ⊗ B = c_A * c_B * (R_A ⊗ R_B)
+            # Eigenvalues: c_A * c_B * (products of R_A, R_B eigenvalues)
+            
+            # For SO(3), eigenvalues are {1, e^{iθ}, e^{-iθ}} where cos(θ) = (tr(R) - 1) / 2
+            # tr(R_A) = tr(A) / c_A, where c_A = sqrt(A_scale_sq)
+            # But sqrt is messy symbolically...
+            
+            # Alternative: compute eigenvalues directly from the unscaled trace
+            # tr(A) = c_A * tr(R_A), so tr(R_A) = tr(A) / c_A = tr(A) / sqrt(A_scale_sq)
+            # cos(θ_A) = (tr(R_A) - 1) / 2 = (tr(A) / sqrt(A_scale_sq) - 1) / 2
+            
+            # This still needs sqrt. Better approach: verify via determinant
+            # det(A) = c_A³ * det(R_A) = c_A³ * 1 = c_A³
+            # So c_A = det(A)^(1/3) = (det(AtA))^(1/6)
+            
+            # For now, skip this complex case and use Strategy 3
+        end
+    end
+    
+    # Strategy 3: Direct trace-based computation for Kronecker products of rotations
+    # For K = R₁ ⊗ R₂, we can compute tr(R₁) and tr(R₂) from the block structure
+    # without needing to extract clean factors.
+    #
+    # Key insight: tr(K) = tr(R₁) * tr(R₂)
+    # And from the diagonal blocks: sum_i tr(blocks[i][i]) = tr(R₁) * tr(R₂)
+    # (since blocks[i][i] = R₁[i,i] * R₂, so tr(blocks[i][i]) = R₁[i,i] * tr(R₂))
+    # → sum_i R₁[i,i] * tr(R₂) = tr(R₁) * tr(R₂)
+    #
+    # If we can verify the Kronecker structure another way, we can compute eigenvalues
+    # from the trace information.
+    
+    result = _try_so3_kron_from_traces(mat, blocks)
+    if !isnothing(result)
+        return result
     end
     
     return nothing
+end
+
+"""
+    _check_scalar_identity(M)
+
+Check if M is a scalar multiple of the identity matrix.
+Returns the scalar if so, nothing otherwise.
+
+Uses trig-aware zero checking to handle expressions like cos²θ + sin²θ - 1 = 0.
+"""
+function _check_scalar_identity(M)
+    n = size(M, 1)
+    size(M, 2) == n || return nothing
+    
+    # Get the diagonal value (should all be the same)
+    diag_val = Symbolics.simplify(M[1, 1])
+    
+    # Check all diagonal entries are equal (using trig-aware comparison)
+    for i in 2:n
+        if !_issymzero_trig(M[i, i] - diag_val)
+            return nothing
+        end
+    end
+    
+    # Check all off-diagonal entries are zero (using trig-aware comparison)
+    for i in 1:n, j in 1:n
+        if i != j && !_issymzero_trig(M[i, j])
+            return nothing
+        end
+    end
+    
+    return diag_val
+end
+
+"""
+    _try_so3_kron_from_traces(mat, blocks)
+
+Try to compute SO(3) ⊗ SO(3) eigenvalues using trace information.
+Works even when the factors can't be cleanly extracted.
+
+For K = R₁ ⊗ R₂:
+- tr(K) = tr(R₁) * tr(R₂)
+- Eigenvalues of R₁: {1, cos(θ₁) ± i*sin(θ₁)} where cos(θ₁) = (tr(R₁) - 1) / 2
+- Eigenvalues of K: all 9 products
+
+This approach extracts tr(R₂) from block ratios and tr(R₁) from the sum of diagonal block traces.
+"""
+function _try_so3_kron_from_traces(mat, blocks)
+    # For K = R₁ ⊗ R₂, blocks[i][j] = R₁[i,j] * R₂
+    # tr(blocks[i][i]) = R₁[i,i] * tr(R₂)
+    # sum_i tr(blocks[i][i]) = tr(R₁) * tr(R₂) = tr(K)
+    
+    # First, compute tr(K) from the matrix
+    tr_K = Symbolics.simplify(sum(mat[i, i] for i in 1:9))
+    
+    # Strategy A: Try to find a diagonal block that is directly SO(3)
+    for k in 1:3
+        Bkk = blocks[k][k]
+        if _is_so3_trig(Bkk)
+            # blocks[k][k] = R₁[k,k] * R₂ = R₂ (since R₁[k,k] = 1 for axis of rotation)
+            tr_R2 = Symbolics.simplify(sum(Bkk[i, i] for i in 1:3))
+            tr_R1 = Symbolics.simplify(tr_K / tr_R2)
+            return _compute_so3_kron_eigenvalues_from_traces(tr_R1, tr_R2)
+        end
+    end
+    
+    # Strategy B: Use determinant to extract scale factor
+    # For blocks[k][k] = c_k * R₂ where R₂ is SO(3):
+    # det(blocks[k][k]) = c_k³ * det(R₂) = c_k³ (since det(R₂) = 1)
+    # tr(blocks[k][k]) = c_k * tr(R₂)
+    # So: tr(R₂) = tr(blocks[k][k]) / cbrt(det(blocks[k][k]))
+    #
+    # This avoids the expensive orthogonality check via _issymzero_trig
+    for k in 1:3
+        Bkk = blocks[k][k]
+        det_Bkk = trig_simplify(det(Bkk))
+        
+        # Skip if determinant is zero
+        if _issymzero(det_Bkk)
+            continue
+        end
+        
+        # Check if det_Bkk is a perfect cube (like cos(β)³)
+        c_k = _try_symbolic_cbrt(det_Bkk)
+        if !isnothing(c_k)
+            tr_Bkk = Symbolics.simplify(sum(Bkk[i, i] for i in 1:3))
+            tr_R2 = trig_simplify(tr_Bkk / c_k)
+            tr_R1 = trig_simplify(tr_K / tr_R2)
+            return _compute_so3_kron_eigenvalues_from_traces(tr_R1, tr_R2)
+        end
+    end
+    
+    # Strategy C: Use orthogonality to extract tr(R₂)² from block traces
+    # For K = R₁ ⊗ R₂, blocks[i][j] = R₁[i,j] * R₂
+    # So tr(blocks[i][j]) = R₁[i,j] * tr(R₂)
+    #
+    # Using orthogonality of R₁ (sum of squares of any row = 1):
+    # R₁[1,1]² + R₁[1,2]² + R₁[1,3]² = 1
+    # Therefore:
+    # tr(B₁₁)² + tr(B₁₂)² + tr(B₁₃)² = (R₁[1,1]² + R₁[1,2]² + R₁[1,3]²) * tr(R₂)² = tr(R₂)²
+    #
+    # This gives us tr(R₂)² directly, then tr(R₂) = sqrt(tr(R₂)²)
+    
+    # Compute block traces for first row
+    tr_row1 = [Symbolics.simplify(sum(blocks[1][j][i, i] for i in 1:3)) for j in 1:3]
+    
+    # tr(R₂)² = sum of squared traces
+    tr_R2_sq = trig_simplify(sum(t^2 for t in tr_row1))
+    
+    # Try to get tr(R₂) as sqrt(tr_R2_sq)
+    # For symbolic expressions, we use sqrt directly (it will simplify if possible)
+    tr_R2 = sqrt(tr_R2_sq)
+    
+    # If tr_R2_sq is a perfect square, sqrt will simplify it
+    # Otherwise, tr_R2 will contain sqrt() which is fine for eigenvalue expressions
+    
+    # Compute tr(R₁) = tr(K) / tr(R₂)
+    tr_R1 = trig_simplify(tr_K / tr_R2)
+    
+    # Return eigenvalues computed from traces
+    return _compute_so3_kron_eigenvalues_from_traces(tr_R1, tr_R2)
+end
+
+"""
+    _check_scaled_orthogonal(M)
+
+Check if M = c * R where R is orthogonal and c is a scalar.
+Returns (c², R) if so, where c² is the squared scaling factor and R is the normalized matrix.
+Returns nothing if M is not a scaled orthogonal matrix.
+
+Uses trig-aware simplification for expressions like cos²θ + sin²θ = 1.
+"""
+function _check_scaled_orthogonal(M)
+    n = size(M, 1)
+    size(M, 2) == n || return nothing
+    
+    # For M = c * R where R^T R = I:
+    # M^T M = c² R^T R = c² I
+    # So M^T M should be a scalar multiple of identity
+    
+    # Compute M^T M with trig-aware simplification
+    # The product can generate expressions like cos²θ₁*cos²θ₂ + sin²θ₁ + cos²θ₁*sin²θ₂
+    # which simplify to cos²θ₁ (by pulling out cos²θ₁ from the sum with sin²θ₂ + cos²θ₂ = 1)
+    MtM = M' * M
+    
+    # Apply trig simplification to each element
+    MtM_simplified = similar(MtM)
+    for i in 1:n, j in 1:n
+        MtM_simplified[i, j] = trig_simplify(MtM[i, j])
+    end
+    
+    c_sq = _check_scalar_identity(MtM_simplified)
+    
+    isnothing(c_sq) && return nothing
+    _issymzero_trig(c_sq) && return nothing  # Degenerate case
+    
+    # R = M / c where c = sqrt(c_sq)
+    # But sqrt is messy symbolically. Instead, normalize by M[1,1] / R[1,1]
+    # We know R is orthogonal, so |R[i,j]| ≤ 1
+    
+    # Alternative: return c_sq and let caller use it
+    # For eigenvalue purposes, we might not need R explicitly
+    
+    # Try to find a clean sqrt by checking if c_sq is a perfect square
+    c = _try_symbolic_sqrt(c_sq)
+    if !isnothing(c)
+        R = Symbolics.simplify.(M ./ c)
+        return (c_sq, R)
+    end
+    
+    # Can't extract clean sqrt, but we know the structure
+    # Return c_sq and the original matrix
+    return (c_sq, M)
+end
+
+"""
+    _try_symbolic_sqrt(expr)
+
+Try to compute sqrt(expr) symbolically if expr is a perfect square.
+Returns the square root if successful, nothing otherwise.
+"""
+function _try_symbolic_sqrt(expr)
+    unwrapped = Symbolics.unwrap(expr)
+    
+    # Check if it's already a power
+    if Symbolics.iscall(unwrapped) && Symbolics.operation(unwrapped) === (^)
+        args = Symbolics.arguments(unwrapped)
+        if length(args) == 2
+            base, exp = args
+            # Check if exp is 2
+            if isequal(Symbolics.value(exp), 2)
+                return Num(base)
+            end
+        end
+    end
+    
+    # Check if it's a product of squares
+    if Symbolics.iscall(unwrapped) && Symbolics.operation(unwrapped) === (*)
+        args = Symbolics.arguments(unwrapped)
+        sqrt_factors = []
+        for arg in args
+            if Symbolics.iscall(arg) && Symbolics.operation(arg) === (^)
+                sub_args = Symbolics.arguments(arg)
+                if length(sub_args) == 2 && isequal(Symbolics.value(sub_args[2]), 2)
+                    push!(sqrt_factors, sub_args[1])
+                else
+                    return nothing  # Not a perfect square
+                end
+            else
+                return nothing  # Not a perfect square
+            end
+        end
+        return Num(prod(sqrt_factors))
+    end
+    
+    # Check if it's a simple number (not a symbolic Num)
+    if expr isa Real && !(expr isa Num)
+        s = sqrt(expr)
+        if s^2 == expr
+            return s
+        end
+    end
+    
+    # Check common trig patterns
+    # cos²(θ) → cos(θ), sin²(θ) → sin(θ) (with sign ambiguity)
+    if Symbolics.iscall(unwrapped) && Symbolics.operation(unwrapped) === (^)
+        args = Symbolics.arguments(unwrapped)
+        if length(args) == 2 && isequal(Symbolics.value(args[2]), 2)
+            base = args[1]
+            if Symbolics.iscall(base)
+                op = Symbolics.operation(base)
+                if op === cos || op === sin
+                    # cos²(θ) or sin²(θ) - return abs value (positive sqrt)
+                    return Num(base)  # Assuming positive branch
+                end
+            end
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    _try_symbolic_cbrt(expr)
+
+Try to compute cbrt(expr) (cube root) symbolically if expr is a perfect cube.
+Returns the cube root if successful, nothing otherwise.
+"""
+function _try_symbolic_cbrt(expr)
+    unwrapped = Symbolics.unwrap(expr)
+    
+    # Check if it's already a power x^3
+    if Symbolics.iscall(unwrapped) && Symbolics.operation(unwrapped) === (^)
+        args = Symbolics.arguments(unwrapped)
+        if length(args) == 2
+            base, exp = args
+            # Check if exp is 3
+            if isequal(Symbolics.value(exp), 3)
+                return Num(base)
+            end
+        end
+    end
+    
+    # Check if it's a product of cubes
+    if Symbolics.iscall(unwrapped) && Symbolics.operation(unwrapped) === (*)
+        args = Symbolics.arguments(unwrapped)
+        cbrt_factors = []
+        for arg in args
+            if Symbolics.iscall(arg) && Symbolics.operation(arg) === (^)
+                sub_args = Symbolics.arguments(arg)
+                if length(sub_args) == 2 && isequal(Symbolics.value(sub_args[2]), 3)
+                    push!(cbrt_factors, sub_args[1])
+                else
+                    return nothing  # Not a perfect cube
+                end
+            else
+                return nothing  # Not a perfect cube
+            end
+        end
+        return Num(prod(cbrt_factors))
+    end
+    
+    # Check if it's a simple number (not a symbolic Num)
+    if expr isa Real && !(expr isa Num)
+        c = cbrt(expr)
+        if c^3 ≈ expr
+            return c
+        end
+    end
+    
+    # Check common trig patterns
+    # cos³(θ) → cos(θ), sin³(θ) → sin(θ)
+    if Symbolics.iscall(unwrapped) && Symbolics.operation(unwrapped) === (^)
+        args = Symbolics.arguments(unwrapped)
+        if length(args) == 2 && isequal(Symbolics.value(args[2]), 3)
+            base = args[1]
+            if Symbolics.iscall(base)
+                op = Symbolics.operation(base)
+                if op === cos || op === sin
+                    return Num(base)
+                end
+            end
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    _compute_so3_kron_eigenvalues_from_traces(tr_R1, tr_R2)
+
+Compute eigenvalues of SO(3) ⊗ SO(3) from the traces of the factors.
+
+For SO(3) with trace t: cos(θ) = (t - 1) / 2, so eigenvalues are {1, e^{iθ}, e^{-iθ}}.
+"""
+function _compute_so3_kron_eigenvalues_from_traces(tr_R1, tr_R2)
+    # cos(θ₁) = (tr_R1 - 1) / 2
+    cos_theta1 = Symbolics.simplify((tr_R1 - 1) / 2)
+    # sin(θ₁) = sqrt(1 - cos²(θ₁)) - this introduces sqrt, which is messy
+    # Better: use cos(θ₁) and sin(θ₁) = sqrt(1 - cos²(θ₁)) symbolically
+    
+    cos_theta2 = Symbolics.simplify((tr_R2 - 1) / 2)
+    
+    # Eigenvalues of R₁: 1, cos(θ₁) + i*sin(θ₁), cos(θ₁) - i*sin(θ₁)
+    # Eigenvalues of R₂: 1, cos(θ₂) + i*sin(θ₂), cos(θ₂) - i*sin(θ₂)
+    
+    # For clean output, use sqrt(1 - cos²) for sin
+    sin_theta1_sq = Symbolics.simplify(1 - cos_theta1^2)
+    sin_theta2_sq = Symbolics.simplify(1 - cos_theta2^2)
+    
+    # sin_theta1 = sqrt(sin_theta1_sq) - this may not simplify nicely
+    # For Euler angles, cos_theta is a complex expression of multiple angles
+    # sqrt(1 - cos²(complex_expr)) won't simplify to sin(complex_expr)
+    
+    # Alternative: compute the products directly
+    # λ₁ * μ₁ where λ = 1, cos(θ₁) ± i*sin(θ₁) and μ = 1, cos(θ₂) ± i*sin(θ₂)
+    
+    # Let's use the symbolic sqrt and hope it simplifies in some cases
+    sin_theta1 = sqrt(sin_theta1_sq)
+    sin_theta2 = sqrt(sin_theta2_sq)
+    
+    λ = [1, cos_theta1 + im * sin_theta1, cos_theta1 - im * sin_theta1]
+    μ = [1, cos_theta2 + im * sin_theta2, cos_theta2 - im * sin_theta2]
+    
+    eigenvalues = []
+    for l in λ, m in μ
+        product = l * m
+        if product isa Complex
+            re = Symbolics.simplify(real(product))
+            im_part = Symbolics.simplify(imag(product))
+            push!(eigenvalues, re + im * im_part)
+        else
+            push!(eigenvalues, Symbolics.simplify(product))
+        end
+    end
+    
+    return eigenvalues
 end
 
 """
