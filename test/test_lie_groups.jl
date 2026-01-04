@@ -467,5 +467,31 @@ using LinearAlgebra
             # Should have terms like cos(2θ), sin(2θ) or 2θ
             @test occursin("θ", vals_str)
         end
+        
+        @testset "Euler ⊗ Euler detection" begin
+            # Test that Euler angle rotations ⊗ Euler angle rotations are detected
+            # This is the most complex case where no diagonal block element = 1
+            @variables α β γ δ ε ζ
+            
+            # XZX Euler ⊗ YZY Euler
+            R1 = Rx(α) * Rz(β) * Rx(γ)
+            R2 = Ry(δ) * Rz(ε) * Ry(ζ)
+            K = kron(R1, R2)
+            
+            # eigvals should automatically detect and compute eigenvalues
+            vals = eigvals(K)
+            @test length(vals) == 9
+            
+            # One eigenvalue should be 1 (from the 1*1 product)
+            has_one = any(vals) do v
+                if v isa Complex
+                    SymbolicDiagonalization._issymzero(Symbolics.simplify(real(v) - 1)) && 
+                    SymbolicDiagonalization._issymzero(Symbolics.simplify(imag(v)))
+                else
+                    SymbolicDiagonalization._issymzero(Symbolics.simplify(v - 1))
+                end
+            end
+            @test has_one
+        end
     end
 end
