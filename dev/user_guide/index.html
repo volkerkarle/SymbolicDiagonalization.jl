@@ -50,7 +50,55 @@ eigvals(K)
 # [cos(2θ) + im*sin(2θ),   # e^{2iθ}
 #  1,                       # θ - θ = 0
 #  1,                       # -(θ - θ) = 0
-#  cos(2θ) - im*sin(2θ)]   # e^{-2iθ}</code></pre><p>This works recursively for nested SO(2) Kronecker products.</p><h3 id="Nested-Kronecker-Products"><a class="docs-heading-anchor" href="#Nested-Kronecker-Products">Nested Kronecker Products</a><a id="Nested-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#Nested-Kronecker-Products" title="Permalink"></a></h3><p>Arbitrary-depth Kronecker products are handled recursively. The eigenvalues of <span>$A_1 \otimes A_2 \otimes \cdots \otimes A_n$</span> are all products: <span>$\lambda_{i_1, i_2, \ldots, i_n} = \lambda_{i_1}(A_1) \cdot \lambda_{i_2}(A_2) \cdots \lambda_{i_n}(A_n)$</span></p><pre><code class="language-julia hljs">using SymbolicDiagonalization, Symbolics
+#  cos(2θ) - im*sin(2θ)]   # e^{-2iθ}</code></pre><p>This works recursively for nested SO(2) Kronecker products.</p><h3 id="SU(2)-Kronecker-Products"><a class="docs-heading-anchor" href="#SU(2)-Kronecker-Products">SU(2) Kronecker Products</a><a id="SU(2)-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#SU(2)-Kronecker-Products" title="Permalink"></a></h3><p>SU(2) is the group of 2×2 unitary matrices with determinant 1. In quantum mechanics, SU(2) describes spin-1/2 systems. The package provides Pauli matrices and SU(2) rotation constructors:</p><pre><code class="language-julia hljs">@variables α β
+
+# Pauli matrices
+σx()  # [0 1; 1 0]
+σy()  # [0 -im; im 0]
+σz()  # [1 0; 0 -1]
+
+# SU(2) rotation matrices (spin-1/2 representation)
+Ux(θ)  # exp(-i θ σx/2)
+Uy(θ)  # exp(-i θ σy/2) - same form as SO(2) but with half-angle
+Uz(θ)  # diagonal: [e^{-iθ/2}, e^{iθ/2}]
+
+# SU(2) ⊗ SU(2) Kronecker product
+K = su2_kron([α, β])  # 4×4 matrix
+eigvals(K)
+# [cos((α+β)/2) + im*sin((α+β)/2),   # e^{i(α+β)/2}
+#  cos((α-β)/2) + im*sin((α-β)/2),   # e^{i(α-β)/2}
+#  cos((α-β)/2) - im*sin((α-β)/2),   # e^{-i(α-β)/2}
+#  cos((α+β)/2) - im*sin((α+β)/2)]   # e^{-i(α+β)/2}</code></pre><p>The key difference from SO(2) is the half-angle: SU(2) uses <code>θ/2</code> instead of <code>θ</code>.</p><h3 id="SU(3)-Kronecker-Products"><a class="docs-heading-anchor" href="#SU(3)-Kronecker-Products">SU(3) Kronecker Products</a><a id="SU(3)-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#SU(3)-Kronecker-Products" title="Permalink"></a></h3><p>SU(3) is the group of 3×3 unitary matrices with determinant 1. It&#39;s fundamental in particle physics (color charge in QCD). The package provides Gell-Mann matrices and diagonal SU(3) constructors:</p><pre><code class="language-julia hljs">@variables α₁ α₂ β₁ β₂
+
+# Gell-Mann matrices (8 generators of SU(3))
+gellmann_matrices()  # Returns [λ1, λ2, ..., λ8]
+
+# Diagonal SU(3) matrix (Cartan subalgebra)
+# U = diag(e^{iα₁}, e^{iα₂}, e^{-i(α₁+α₂)})  # det = 1
+U = su3_diagonal_trig(α₁, α₂)
+
+# SU(3) ⊗ SU(3) Kronecker product (9×9 diagonal matrix)
+K = su3_kron((α₁, α₂), (β₁, β₂))
+eigvals(K)
+# 9 eigenvalues of the form cos(θ) + im*sin(θ) where θ is:
+# α₁+β₁, α₁+β₂, α₁-(β₁+β₂), α₂+β₁, α₂+β₂, α₂-(β₁+β₂),
+# -(α₁+α₂)+β₁, -(α₁+α₂)+β₂, -(α₁+α₂)-(β₁+β₂)</code></pre><p>Direct eigenvalue computation without building the matrix:</p><pre><code class="language-julia hljs">su3_kron_eigenvalues((α₁, α₂), (β₁, β₂))  # Returns 9 eigenvalues directly</code></pre><h3 id="Simplifying-Eigenvalue-Expressions"><a class="docs-heading-anchor" href="#Simplifying-Eigenvalue-Expressions">Simplifying Eigenvalue Expressions</a><a id="Simplifying-Eigenvalue-Expressions-1"></a><a class="docs-heading-anchor-permalink" href="#Simplifying-Eigenvalue-Expressions" title="Permalink"></a></h3><p>The package provides aggressive simplification functions for cleaning up symbolic eigenvalue expressions, particularly those involving trigonometric functions.</p><h4 id="Key-Simplification-Functions"><a class="docs-heading-anchor" href="#Key-Simplification-Functions">Key Simplification Functions</a><a id="Key-Simplification-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Key-Simplification-Functions" title="Permalink"></a></h4><pre><code class="language-julia hljs">using SymbolicDiagonalization: aggressive_simplify, simplify_eigenvalue, simplify_eigenvalues
+
+@variables θ
+
+# aggressive_simplify: Combines trig, algebraic, and sqrt-trig rules
+aggressive_simplify(sqrt(1 - cos(θ)^2))  # → sin(θ)
+aggressive_simplify(sqrt(1 - sin(θ)^2))  # → cos(θ)
+aggressive_simplify(sin(θ)^2 + cos(θ)^2) # → 1
+
+# simplify_eigenvalue: Specialized for eigenvalue expressions
+# Handles complex parts separately for clean output
+expr = cos(θ) + im*sqrt(1 - cos(θ)^2)
+simplify_eigenvalue(expr)  # → cos(θ) + im*sin(θ)
+
+# simplify_eigenvalues: Apply to a vector of eigenvalues
+vals = [cos(θ) + im*sqrt(1 - cos(θ)^2), cos(θ) - im*sqrt(1 - cos(θ)^2)]
+simplify_eigenvalues(vals)  # → [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]</code></pre><h4 id="When-to-Use"><a class="docs-heading-anchor" href="#When-to-Use">When to Use</a><a id="When-to-Use-1"></a><a class="docs-heading-anchor-permalink" href="#When-to-Use" title="Permalink"></a></h4><ul><li><strong>Automatic</strong>: Block-diagonal SO(4), SO(3), and SO(2) matrices automatically use these simplifications</li><li><strong>Manual</strong>: When working with custom matrices that produce <code>sqrt(1 - cos²θ)</code> or similar expressions</li></ul><h4 id="Simplification-Rules-Applied"><a class="docs-heading-anchor" href="#Simplification-Rules-Applied">Simplification Rules Applied</a><a id="Simplification-Rules-Applied-1"></a><a class="docs-heading-anchor-permalink" href="#Simplification-Rules-Applied" title="Permalink"></a></h4><table><tr><th style="text-align: right">Rule</th><th style="text-align: right">Before</th><th style="text-align: right">After</th></tr><tr><td style="text-align: right">Pythagorean</td><td style="text-align: right"><code>sin²θ + cos²θ</code></td><td style="text-align: right"><code>1</code></td></tr><tr><td style="text-align: right">Sqrt-trig</td><td style="text-align: right"><code>sqrt(1 - cos²θ)</code></td><td style="text-align: right"><code>sin(θ)</code></td></tr><tr><td style="text-align: right">Sqrt-trig</td><td style="text-align: right"><code>sqrt(1 - sin²θ)</code></td><td style="text-align: right"><code>cos(θ)</code></td></tr><tr><td style="text-align: right">Algebraic</td><td style="text-align: right"><code>sqrt(x)^2</code></td><td style="text-align: right"><code>x</code></td></tr><tr><td style="text-align: right">Algebraic</td><td style="text-align: right"><code>sqrt(a)*sqrt(b)</code></td><td style="text-align: right"><code>sqrt(a*b)</code></td></tr></table><h3 id="Nested-Kronecker-Products"><a class="docs-heading-anchor" href="#Nested-Kronecker-Products">Nested Kronecker Products</a><a id="Nested-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#Nested-Kronecker-Products" title="Permalink"></a></h3><p>Arbitrary-depth Kronecker products are handled recursively. The eigenvalues of <span>$A_1 \otimes A_2 \otimes \cdots \otimes A_n$</span> are all products: <span>$\lambda_{i_1, i_2, \ldots, i_n} = \lambda_{i_1}(A_1) \cdot \lambda_{i_2}(A_2) \cdots \lambda_{i_n}(A_n)$</span></p><pre><code class="language-julia hljs">using SymbolicDiagonalization, Symbolics
 
 # Create 5 independent 2×2 symmetric matrices (15 parameters total)
 matrices = Matrix{Num}[]
@@ -104,4 +152,4 @@ H = diagm(0 =&gt; fill(ε, n), 1 =&gt; fill(-t, n-1), -1 =&gt; fill(-t, n-1))
 E = eigvals(H)  # Eₖ = ε - 2t·cos(kπ/(n+1))</code></pre><h3 id="Cycle-Graph-Laplacian"><a class="docs-heading-anchor" href="#Cycle-Graph-Laplacian">Cycle Graph Laplacian</a><a id="Cycle-Graph-Laplacian-1"></a><a class="docs-heading-anchor-permalink" href="#Cycle-Graph-Laplacian" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables d
 L = [2d -d 0 0 0 -d; -d 2d -d 0 0 0; 0 -d 2d -d 0 0;
      0 0 -d 2d -d 0; 0 0 0 -d 2d -d; -d 0 0 0 -d 2d]
-λ = eigvals(L)  # λₖ = 2d(1 - cos(2πk/n))</code></pre><h2 id="See-Also"><a class="docs-heading-anchor" href="#See-Also">See Also</a><a id="See-Also-1"></a><a class="docs-heading-anchor-permalink" href="#See-Also" title="Permalink"></a></h2><ul><li><a href="../api_reference/">API Reference</a> - Complete function signatures</li><li><a href="../pattern_library/">Pattern Library</a> - All 16+ patterns with details</li><li><a href="../mathematical_background/">Mathematical Background</a> - Theory</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api_reference/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 3 January 2026 15:39">Saturday 3 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+λ = eigvals(L)  # λₖ = 2d(1 - cos(2πk/n))</code></pre><h2 id="See-Also"><a class="docs-heading-anchor" href="#See-Also">See Also</a><a id="See-Also-1"></a><a class="docs-heading-anchor-permalink" href="#See-Also" title="Permalink"></a></h2><ul><li><a href="../api_reference/">API Reference</a> - Complete function signatures</li><li><a href="../pattern_library/">Pattern Library</a> - All 16+ patterns with details</li><li><a href="../mathematical_background/">Mathematical Background</a> - Theory</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../api_reference/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Sunday 4 January 2026 15:52">Sunday 4 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
