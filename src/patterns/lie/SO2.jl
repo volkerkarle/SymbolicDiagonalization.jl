@@ -100,8 +100,134 @@ function _SO2_eigenvalues(A)
 end
 
 # ============================================================================
+# Eigenvectors
+# ============================================================================
+
+"""
+    _SO2_eigenvectors()
+
+Return the fixed eigenvectors of any SO(2) rotation matrix.
+
+For ANY rotation matrix R(θ) = [cos(θ) -sin(θ); sin(θ) cos(θ)]:
+- Eigenvalue e^{-iθ} = cos(θ) - i·sin(θ) has eigenvector [1, i] (unnormalized)
+- Eigenvalue e^{iθ} = cos(θ) + i·sin(θ) has eigenvector [1, -i] (unnormalized)
+
+These eigenvectors are INDEPENDENT of θ!
+"""
+function _SO2_eigenvectors()
+    # Fixed eigenvectors for all SO(2) matrices
+    v_minus = [1, im]     # eigenvector for e^{-iθ}
+    v_plus = [1, -im]     # eigenvector for e^{iθ}
+    return [v_minus, v_plus]
+end
+
+"""
+    _SO2_eigenpairs(A)
+
+Compute eigenvalue-eigenvector pairs for an SO(2) matrix.
+
+Returns Vector{Tuple{eigenvalue, Vector{eigenvector}}} or nothing.
+Each eigenvalue has exactly one eigenvector (geometric multiplicity 1).
+
+# Example
+```julia
+@variables θ
+R = SO2_rotation(θ)
+pairs = _SO2_eigenpairs(R)
+# pairs[1] = (cos(θ) - im*sin(θ), [[1, im]])
+# pairs[2] = (cos(θ) + im*sin(θ), [[1, -im]])
+```
+"""
+function _SO2_eigenpairs(A)
+    cs = _is_SO2(A)
+    isnothing(cs) && return nothing
+    c, s = cs
+    
+    # eigenvalues: e^{-iθ} = cos(θ) - i·sin(θ), e^{iθ} = cos(θ) + i·sin(θ)
+    λ_minus = c - im*s  # e^{-iθ}
+    λ_plus = c + im*s   # e^{iθ}
+    eigenvectors = _SO2_eigenvectors()
+    
+    # Return as vector of (eigenvalue, [eigenvector]) tuples
+    # eigenvectors[1] = [1, i] goes with λ_minus = e^{-iθ}
+    # eigenvectors[2] = [1, -i] goes with λ_plus = e^{iθ}
+    return [(λ_minus, [eigenvectors[1]]), (λ_plus, [eigenvectors[2]])]
+end
+
+# ============================================================================
 # Kronecker Products - Constructors
 # ============================================================================
+
+"""
+    SO2_kron_eigenvectors(k::Int)
+
+Compute the eigenvectors for a k-fold Kronecker product of SO(2) matrices.
+
+For R(θ₁) ⊗ R(θ₂) ⊗ ... ⊗ R(θₖ), the 2^k eigenvectors are all tensor products
+of the fixed SO(2) eigenvectors [1, i] and [1, -i].
+
+Returns a vector of 2^k eigenvectors corresponding to all sign combinations.
+The eigenvector for sign pattern (s₁, s₂, ..., sₖ) where sⱼ ∈ {+1, -1} is:
+    v(s₁) ⊗ v(s₂) ⊗ ... ⊗ v(sₖ)
+where v(+1) = [1, i] and v(-1) = [1, -i].
+"""
+function SO2_kron_eigenvectors(k::Int)
+    k >= 1 || error("Need at least one factor")
+    
+    v_plus = [1, im]      # eigenvector for e^{iθ}
+    v_minus = [1, -im]    # eigenvector for e^{-iθ}
+    
+    # Generate all 2^k tensor products
+    eigenvectors = []
+    for signs in Iterators.product(fill([-1, 1], k)...)
+        # Compute tensor product of eigenvectors
+        v = s -> s == 1 ? v_plus : v_minus
+        tensor_prod = reduce(kron, [v(s) for s in signs])
+        push!(eigenvectors, tensor_prod)
+    end
+    
+    return eigenvectors
+end
+
+"""
+    _SO2_kron_eigenpairs(mat)
+
+Compute eigenvalue-eigenvector pairs for a Kronecker product of SO(2) matrices.
+
+For R(θ₁) ⊗ R(θ₂) ⊗ ... ⊗ R(θₖ):
+- Eigenvalues are e^{i(±θ₁±θ₂±...±θₖ)}
+- Eigenvectors are tensor products of [1, ±i]
+
+Returns Vector{Tuple{eigenvalue, Vector{eigenvector}}} or nothing.
+
+# Example
+```julia
+@variables α β
+K = SO2_kron([α, β])  # 4×4 matrix
+pairs = _SO2_kron_eigenpairs(K)
+# 4 eigenpairs with tensor product eigenvectors
+```
+"""
+function _SO2_kron_eigenpairs(mat)
+    N = size(mat, 1)
+    size(mat, 2) == N || return nothing
+    
+    # Check if dimension is a power of 2
+    N < 4 && return nothing  # Need at least 2-fold for Kronecker
+    log2_N = log2(N)
+    isinteger(log2_N) || return nothing
+    k = Int(log2_N)
+    
+    # Try to detect as SO(2) Kronecker product
+    eigenvalues = _detect_SO2_kronecker_product(mat)
+    isnothing(eigenvalues) && return nothing
+    
+    # Get eigenvectors (independent of angles!)
+    eigenvectors = SO2_kron_eigenvectors(k)
+    
+    # Return as vector of (eigenvalue, [eigenvector]) tuples
+    return [(eigenvalues[i], [eigenvectors[i]]) for i in 1:length(eigenvalues)]
+end
 
 """
     SO2_kron_eigenvalues(angles::Vector) -> Vector

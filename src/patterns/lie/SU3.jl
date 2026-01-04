@@ -214,6 +214,59 @@ function _SU3_eigenvalues(A)
 end
 
 # ============================================================================
+# Eigenvectors
+# ============================================================================
+
+"""
+    _SU3_eigenpairs(A)
+
+Compute eigenvalue-eigenvector pairs for an SU(3) matrix.
+
+For diagonal SU(3) matrices, eigenvalues are directly on the diagonal
+and eigenvectors are the standard basis vectors [1,0,0], [0,1,0], [0,0,1].
+
+For general SU(3) matrices, returns nothing (requires nullspace computation).
+
+Returns Vector{Tuple{eigenvalue, Vector{eigenvector}}} or nothing.
+
+# Example
+```julia
+@variables θ₁ θ₂
+U = SU3_diagonal_trig(θ₁, θ₂)
+pairs = _SU3_eigenpairs(U)
+# pairs[1] = (e^{iθ₁}, [[1, 0, 0]])
+# pairs[2] = (e^{iθ₂}, [[0, 1, 0]])
+# pairs[3] = (e^{-i(θ₁+θ₂)}, [[0, 0, 1]])
+```
+"""
+function _SU3_eigenpairs(A)
+    size(A) == (3, 3) || return nothing
+    
+    # Check if matrix is diagonal first (fast check)
+    if !_is_diagonal_matrix(A)
+        # For non-diagonal SU(3), we need nullspace computation
+        # TODO: Could add special cases for other structured SU(3) matrices
+        return nothing
+    end
+    
+    # Verify it's actually SU(3) using trig-aware check
+    # (The standard _is_SU3 may fail on trig expressions)
+    _is_SU3(A) || _is_SU3_trig(A) || return nothing
+    
+    # For diagonal SU(3), eigenvalues are on the diagonal
+    # and eigenvectors are standard basis vectors
+    λ1 = A[1, 1]
+    λ2 = A[2, 2]
+    λ3 = A[3, 3]
+    
+    v1 = [1, 0, 0]
+    v2 = [0, 1, 0]
+    v3 = [0, 0, 1]
+    
+    return [(λ1, [v1]), (λ2, [v2]), (λ3, [v3])]
+end
+
+# ============================================================================
 # Kronecker Products - Constructors
 # ============================================================================
 

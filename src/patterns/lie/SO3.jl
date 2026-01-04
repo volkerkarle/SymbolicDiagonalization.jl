@@ -142,6 +142,149 @@ function _SO3_eigenvalues(A)
 end
 
 # ============================================================================
+# Eigenvectors
+# ============================================================================
+
+"""
+    _SO3_axis_type(A)
+
+Detect if A is a rotation around a principal axis (x, y, or z).
+
+Returns:
+- :Rx if rotation around x-axis: [1 0 0; 0 c -s; 0 s c]
+- :Ry if rotation around y-axis: [c 0 s; 0 1 0; -s 0 c]
+- :Rz if rotation around z-axis: [c -s 0; s c 0; 0 0 1]
+- nothing otherwise (general rotation)
+
+For axis-aligned rotations, we have closed-form eigenvectors.
+For general rotations, eigenvector computation requires symbolic nullspace.
+"""
+function _SO3_axis_type(A)
+    size(A) == (3, 3) || return nothing
+    
+    # Check for Rz: [c -s 0; s c 0; 0 0 1]
+    if _issymzero(A[1, 3]) && _issymzero(A[2, 3]) && 
+       _issymzero(A[3, 1]) && _issymzero(A[3, 2]) && _issymzero(A[3, 3] - 1)
+        # Verify 2x2 block is SO(2)
+        if !isnothing(_is_SO2(A[1:2, 1:2]))
+            return :Rz
+        end
+    end
+    
+    # Check for Rx: [1 0 0; 0 c -s; 0 s c]
+    if _issymzero(A[1, 1] - 1) && _issymzero(A[1, 2]) && _issymzero(A[1, 3]) &&
+       _issymzero(A[2, 1]) && _issymzero(A[3, 1])
+        # Verify 2x2 block is SO(2)
+        if !isnothing(_is_SO2(A[2:3, 2:3]))
+            return :Rx
+        end
+    end
+    
+    # Check for Ry: [c 0 s; 0 1 0; -s 0 c]
+    if _issymzero(A[2, 2] - 1) && _issymzero(A[1, 2]) && _issymzero(A[3, 2]) &&
+       _issymzero(A[2, 1]) && _issymzero(A[2, 3])
+        # Verify it's actually Ry structure: A[1,3] = sin(θ), A[3,1] = -sin(θ)
+        if _issymzero(A[1, 1] - A[3, 3]) && _issymzero(A[1, 3] + A[3, 1])
+            return :Ry
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    _SO3_axis_eigenvectors(axis_type)
+
+Return the eigenvectors for an axis-aligned SO(3) rotation.
+
+For eigenvalues {1, e^{-iθ}, e^{iθ}}:
+
+Rz (rotation around z): 
+  - λ=1: [0, 0, 1] (z-axis)
+  - λ=e^{-iθ}: [1, i, 0]/√2 
+  - λ=e^{iθ}: [1, -i, 0]/√2
+
+Rx (rotation around x):
+  - λ=1: [1, 0, 0] (x-axis)
+  - λ=e^{-iθ}: [0, 1, i]/√2
+  - λ=e^{iθ}: [0, 1, -i]/√2
+
+Ry (rotation around y):
+  - λ=1: [0, 1, 0] (y-axis)
+  - λ=e^{-iθ}: [1, 0, i]/√2
+  - λ=e^{iθ}: [1, 0, -i]/√2
+
+Note: Returns unnormalized eigenvectors (without 1/√2 factor).
+"""
+function _SO3_axis_eigenvectors(axis_type)
+    if axis_type == :Rz
+        # [1, i, 0] for e^{-iθ}, [1, -i, 0] for e^{iθ}
+        return [[0, 0, 1], [1, im, 0], [1, -im, 0]]
+    elseif axis_type == :Rx
+        # [0, 1, i] for e^{-iθ}, [0, 1, -i] for e^{iθ}
+        return [[1, 0, 0], [0, 1, im], [0, 1, -im]]
+    elseif axis_type == :Ry
+        # [1, 0, i] for e^{-iθ}, [1, 0, -i] for e^{iθ}
+        return [[0, 1, 0], [1, 0, im], [1, 0, -im]]
+    end
+    return nothing
+end
+
+"""
+    _SO3_eigenpairs(A)
+
+Compute eigenvalue-eigenvector pairs for an SO(3) matrix.
+
+For axis-aligned rotations (Rx, Ry, Rz), returns closed-form eigenpairs.
+For general rotations, returns nothing (requires nullspace computation).
+
+Returns Vector{Tuple{eigenvalue, Vector{eigenvector}}} or nothing.
+
+# Example
+```julia
+@variables θ
+R = SO3_Rz(θ)
+pairs = _SO3_eigenpairs(R)
+# pairs[1] = (1, [[0, 0, 1]])
+# pairs[2] = (cos(θ) - im*sin(θ), [[1, im, 0]])
+# pairs[3] = (cos(θ) + im*sin(θ), [[1, -im, 0]])
+```
+"""
+function _SO3_eigenpairs(A)
+    size(A) == (3, 3) || return nothing
+    
+    # First check axis type - this is fast and doesn't require full SO(3) verification
+    axis_type = _SO3_axis_type(A)
+    
+    # For general rotations, we don't have closed-form eigenvectors
+    # The rotation axis (eigenvector for λ=1) would need to be computed
+    # from the antisymmetric part of A, which is more complex symbolically
+    isnothing(axis_type) && return nothing
+    
+    # Verify it's actually SO(3) using trig-aware check
+    _is_SO3(A) || _is_SO3_trig(A) || return nothing
+    
+    # Compute eigenvalues
+    tr_A = tr(A)
+    cos_theta = (tr_A - 1) / 2
+    sin_theta_sq = 1 - cos_theta^2
+    sin_theta = aggressive_simplify(sqrt(sin_theta_sq))
+    
+    # Eigenvalues: 1, e^{-iθ}, e^{iθ}
+    lambda1 = 1
+    lambda2 = simplify_eigenvalue(cos_theta - im * sin_theta)  # e^{-iθ}
+    lambda3 = simplify_eigenvalue(cos_theta + im * sin_theta)  # e^{iθ}
+    vals = [lambda1, lambda2, lambda3]
+    
+    # Get eigenvectors for this axis type
+    vecs = _SO3_axis_eigenvectors(axis_type)
+    isnothing(vecs) && return nothing
+    
+    # Return as vector of (eigenvalue, [eigenvector]) tuples
+    return [(vals[1], [vecs[1]]), (vals[2], [vecs[2]]), (vals[3], [vecs[3]])]
+end
+
+# ============================================================================
 # Kronecker Products - Detection
 # ============================================================================
 

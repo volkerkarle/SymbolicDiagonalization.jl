@@ -379,6 +379,29 @@ function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure
     if !isnothing(complexity_threshold)
         _check_complexity(mat; threshold = complexity_threshold)
     end
+    
+    # =========================================================================
+    # LIE GROUP EIGENPAIRS - Fast path for known closed-form eigenvectors
+    # Check this early for symbolic matrices before expensive computations
+    # =========================================================================
+    if compute_vectors && (eltype(mat) <: Num || eltype(mat) <: Complex{Num})
+        lie_pairs = _lie_group_eigenpairs(mat)
+        if !isnothing(lie_pairs)
+            # Build characteristic polynomial from eigenvalues
+            vals = [p[1] for p in lie_pairs]
+            poly = expand ? Symbolics.expand(prod(λ .- vals)) : prod(λ .- vals)
+            return lie_pairs, poly, λ
+        end
+        
+        # Also check for SO(2) Kronecker products
+        kron_pairs = _SO2_kron_eigenpairs(mat)
+        if !isnothing(kron_pairs)
+            vals = [p[1] for p in kron_pairs]
+            poly = expand ? Symbolics.expand(prod(λ .- vals)) : prod(λ .- vals)
+            return kron_pairs, poly, λ
+        end
+    end
+    
     split = _block_split(mat)
     if !isnothing(split)
         left = mat[1:split, 1:split]

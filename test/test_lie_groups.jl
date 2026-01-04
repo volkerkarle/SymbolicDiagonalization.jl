@@ -798,3 +798,272 @@ end
         @test !isnothing(_detect_SO3_kronecker_product(K_so3))  # SO(3) detection should work
     end
 end
+
+# ============================================================================
+# Lie Group Eigenvector Tests
+# Tests for closed-form eigenvector computation
+# ============================================================================
+
+@testset "Lie Group Eigenvectors" begin
+    
+    @testset "SO(2) eigenvectors" begin
+        @variables θ
+        R = SO2_rotation(θ)
+        
+        # Get eigenpairs using the fast path
+        pairs = SymbolicDiagonalization._SO2_eigenpairs(R)
+        @test !isnothing(pairs)
+        @test length(pairs) == 2
+        
+        # Check eigenvector structure: [1, i] and [1, -i]
+        v1 = pairs[1][2][1]  # First eigenvector
+        v2 = pairs[2][2][1]  # Second eigenvector
+        
+        @test v1 == [1, im]
+        @test v2 == [1, -im]
+        
+        # Eigenvalue should be cos(θ) + im*sin(θ) for first eigenpair
+        λ1 = pairs[1][1]
+        @test isequal(real(λ1), cos(θ))
+        @test isequal(imag(λ1), sin(θ))
+        
+        # Test through symbolic_eigenpairs interface
+        full_pairs, poly, λ = symbolic_eigenpairs(R)
+        @test length(full_pairs) == 2
+        @test length(full_pairs[1][2]) == 1  # One eigenvector per eigenvalue
+    end
+    
+    @testset "SO(3) axis-aligned eigenvectors" begin
+        @variables θ
+        
+        # Test Rz
+        Rz = SO3_Rz(θ)
+        pairs = SymbolicDiagonalization._SO3_eigenpairs(Rz)
+        @test !isnothing(pairs)
+        @test length(pairs) == 3
+        
+        # First eigenvalue should be 1 with eigenvector [0,0,1]
+        @test isequal(pairs[1][1], 1)
+        @test pairs[1][2][1] == [0, 0, 1]
+        
+        # Other eigenvectors should be [1,i,0] and [1,-i,0]
+        @test pairs[2][2][1] == [1, im, 0]
+        @test pairs[3][2][1] == [1, -im, 0]
+        
+        # Test Rx
+        Rx = SO3_Rx(θ)
+        pairs = SymbolicDiagonalization._SO3_eigenpairs(Rx)
+        @test !isnothing(pairs)
+        @test length(pairs) == 3
+        @test pairs[1][2][1] == [1, 0, 0]
+        
+        # Test Ry
+        Ry = SO3_Ry(θ)
+        pairs = SymbolicDiagonalization._SO3_eigenpairs(Ry)
+        @test !isnothing(pairs)
+        @test length(pairs) == 3
+        @test pairs[1][2][1] == [0, 1, 0]
+        
+        # Test through symbolic_eigenpairs
+        full_pairs, _, _ = symbolic_eigenpairs(Rz)
+        @test length(full_pairs) == 3
+    end
+    
+    @testset "SO(3) general rotation - falls back to nullspace" begin
+        @variables α β γ
+        
+        # Euler rotation is NOT axis-aligned
+        R_euler = SO3_Rx(α) * SO3_Rz(β) * SO3_Rx(γ)
+        
+        # Direct eigenpairs function should return nothing (requires nullspace)
+        pairs = SymbolicDiagonalization._SO3_eigenpairs(R_euler)
+        @test isnothing(pairs)
+        
+        # But symbolic_eigenpairs should still work (using nullspace fallback)
+        full_pairs, _, _ = symbolic_eigenpairs(R_euler)
+        @test length(full_pairs) == 3
+    end
+    
+    @testset "SU(2) diagonal eigenvectors" begin
+        @variables θ
+        
+        # Test Uz (diagonal)
+        Uz = SU2_Uz(θ)
+        pairs = SymbolicDiagonalization._SU2_eigenpairs(Uz)
+        @test !isnothing(pairs)
+        @test length(pairs) == 2
+        
+        # Eigenvectors should be standard basis [1,0] and [0,1]
+        @test pairs[1][2][1] == [1, 0]
+        @test pairs[2][2][1] == [0, 1]
+        
+        # Eigenvalues should be e^{±iθ/2}
+        λ1 = pairs[1][1]
+        λ2 = pairs[2][1]
+        @test isequal(real(λ1), cos(θ/2))
+        @test isequal(imag(λ1), -sin(θ/2))
+        @test isequal(real(λ2), cos(θ/2))
+        @test isequal(imag(λ2), sin(θ/2))
+        
+        # Test through symbolic_eigenpairs
+        full_pairs, _, _ = symbolic_eigenpairs(Uz)
+        @test length(full_pairs) == 2
+    end
+    
+    @testset "SU(2) Ux eigenvectors" begin
+        @variables θ
+        
+        # Test Ux
+        Ux = SU2_Ux(θ)
+        pairs = SymbolicDiagonalization._SU2_eigenpairs(Ux)
+        @test !isnothing(pairs)
+        @test length(pairs) == 2
+        
+        # Eigenvectors should be [1,1] and [1,-1]
+        @test pairs[1][2][1] == [1, 1]
+        @test pairs[2][2][1] == [1, -1]
+    end
+    
+    @testset "SU(2) Uy eigenvectors" begin
+        @variables θ
+        
+        # Test Uy
+        Uy = SU2_Uy(θ)
+        pairs = SymbolicDiagonalization._SU2_eigenpairs(Uy)
+        @test !isnothing(pairs)
+        @test length(pairs) == 2
+        
+        # Eigenvectors should be [1,i] and [1,-i]
+        @test pairs[1][2][1] == [1, im]
+        @test pairs[2][2][1] == [1, -im]
+    end
+    
+    @testset "SU(3) diagonal eigenvectors" begin
+        @variables θ₁ θ₂
+        
+        U = SU3_diagonal_trig(θ₁, θ₂)
+        U_mat = Matrix(U)
+        pairs = SymbolicDiagonalization._SU3_eigenpairs(U_mat)
+        @test !isnothing(pairs)
+        @test length(pairs) == 3
+        
+        # Eigenvectors should be standard basis
+        @test pairs[1][2][1] == [1, 0, 0]
+        @test pairs[2][2][1] == [0, 1, 0]
+        @test pairs[3][2][1] == [0, 0, 1]
+        
+        # Eigenvalues should be e^{iθ₁}, e^{iθ₂}, e^{-i(θ₁+θ₂)}
+        λ1 = pairs[1][1]
+        @test isequal(real(λ1), cos(θ₁))
+        @test isequal(imag(λ1), sin(θ₁))
+        
+        # Test through symbolic_eigenpairs
+        full_pairs, _, _ = symbolic_eigenpairs(U_mat)
+        @test length(full_pairs) == 3
+    end
+    
+    @testset "SO(2) Kronecker eigenvectors" begin
+        @variables α β
+        
+        K = SO2_kron([α, β])
+        pairs = SymbolicDiagonalization._SO2_kron_eigenpairs(K)
+        @test !isnothing(pairs)
+        @test length(pairs) == 4
+        
+        # Eigenvectors should be tensor products of [1,i] and [1,-i]
+        # First eigenvector for signs (-1,-1): [1,-i] ⊗ [1,-i] = [1,-i,-i,-1]
+        v1 = pairs[1][2][1]
+        @test length(v1) == 4
+        @test v1 == [1, -im, -im, -1]
+        
+        # Test through symbolic_eigenpairs
+        full_pairs, _, _ = symbolic_eigenpairs(K)
+        @test length(full_pairs) == 4
+    end
+    
+    @testset "Eigenvector numerical verification" begin
+        # Verify that eigenvectors actually satisfy A*v = λ*v when substituted
+        @variables θ
+        
+        # SO(2)
+        R = SO2_rotation(θ)
+        pairs, _, _ = symbolic_eigenpairs(R)
+        
+        θ_val = 0.7
+        subs = Dict(θ => θ_val)
+        
+        for (λ, vecs) in pairs
+            for v in vecs
+                # Substitute
+                λ_num = _eval_complex(λ, subs)
+                v_num = [_eval_complex(vi, subs) for vi in v]
+                R_num = [_eval_complex(Rij, subs) for Rij in R]
+                
+                # Check A*v ≈ λ*v
+                Av = R_num * v_num
+                λv = λ_num .* v_num
+                @test isapprox(Av, λv, atol=1e-10)
+            end
+        end
+        
+        # SO(3) Rz
+        Rz = SO3_Rz(θ)
+        pairs, _, _ = symbolic_eigenpairs(Rz)
+        
+        for (λ, vecs) in pairs
+            for v in vecs
+                λ_num = _eval_complex(λ, subs)
+                v_num = [_eval_complex(vi, subs) for vi in v]
+                R_num = [_eval_complex(Rij, subs) for Rij in Rz]
+                
+                Av = R_num * v_num
+                λv = λ_num .* v_num
+                @test isapprox(Av, λv, atol=1e-10)
+            end
+        end
+        
+        # SU(2) Uz
+        Uz = SU2_Uz(θ)
+        pairs, _, _ = symbolic_eigenpairs(Uz)
+        
+        for (λ, vecs) in pairs
+            for v in vecs
+                λ_num = _eval_complex(λ, subs)
+                v_num = [_eval_complex(vi, subs) for vi in v]
+                U_num = [_eval_complex(Uij, subs) for Uij in Uz]
+                
+                Uv = U_num * v_num
+                λv = λ_num .* v_num
+                @test isapprox(Uv, λv, atol=1e-10)
+            end
+        end
+    end
+    
+    @testset "Diagonalization with Lie group eigenvectors" begin
+        @variables θ
+        
+        # SO(2) should be diagonalizable
+        R = SO2_rotation(θ)
+        P, D, pairs = symbolic_diagonalize(R)
+        
+        @test size(P) == (2, 2)
+        @test size(D) == (2, 2)
+        @test length(pairs) == 2
+        
+        # SO(3) Rz should be diagonalizable
+        Rz = SO3_Rz(θ)
+        P, D, pairs = symbolic_diagonalize(Rz)
+        
+        @test size(P) == (3, 3)
+        @test size(D) == (3, 3)
+        @test length(pairs) == 3
+        
+        # SU(2) Uz should be diagonalizable
+        Uz = SU2_Uz(θ)
+        P, D, pairs = symbolic_diagonalize(Uz)
+        
+        @test size(P) == (2, 2)
+        @test size(D) == (2, 2)
+        @test length(pairs) == 2
+    end
+end

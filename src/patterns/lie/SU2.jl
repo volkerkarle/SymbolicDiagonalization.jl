@@ -188,6 +188,143 @@ function _SU2_trace(A)
 end
 
 # ============================================================================
+# Eigenvectors
+# ============================================================================
+
+"""
+    _SU2_rotation_type(A)
+
+Detect if A is a rotation around a principal axis (x, y, or z).
+
+Returns:
+- :Uz if diagonal (rotation around z-axis): [e^{-iθ/2} 0; 0 e^{iθ/2}]
+- :Uy if real (rotation around y-axis): [c -s; s c] (like SO(2) but half-angle)
+- :Ux if anti-diagonal imaginary: [c -is; -is c]
+- nothing otherwise (general SU(2) rotation)
+
+For axis-aligned rotations, we have closed-form eigenvectors.
+"""
+function _SU2_rotation_type(A)
+    size(A) == (2, 2) || return nothing
+    
+    # Check for Uz: diagonal matrix [e^{-iθ/2} 0; 0 e^{iθ/2}]
+    if _issymzero(A[1, 2]) && _issymzero(A[2, 1])
+        return :Uz
+    end
+    
+    # Check for Uy: real matrix [c -s; s c] 
+    # (same structure as SO(2), but with half-angle)
+    if _issymzero(imag(A[1, 1])) && _issymzero(imag(A[1, 2])) &&
+       _issymzero(imag(A[2, 1])) && _issymzero(imag(A[2, 2]))
+        # Check SO(2) structure: A[1,1] = A[2,2], A[1,2] = -A[2,1]
+        if _issymzero(A[1, 1] - A[2, 2]) && _issymzero(A[1, 2] + A[2, 1])
+            return :Uy
+        end
+    end
+    
+    # Check for Ux: [c -is; -is c] structure
+    # A[1,1] = A[2,2] = c (real)
+    # A[1,2] = A[2,1] = -is (purely imaginary)
+    if _issymzero(A[1, 1] - A[2, 2]) && _issymzero(A[1, 2] - A[2, 1])
+        if _issymzero(imag(A[1, 1])) && _issymzero(real(A[1, 2]))
+            return :Ux
+        end
+    end
+    
+    return nothing
+end
+
+"""
+    _SU2_axis_eigenvectors(axis_type)
+
+Return the eigenvectors for an axis-aligned SU(2) rotation.
+
+For eigenvalues {e^{iθ/2}, e^{-iθ/2}}:
+
+Uz (diagonal):
+  - λ=e^{-iθ/2}: [1, 0] (standard basis)
+  - λ=e^{iθ/2}: [0, 1] (standard basis)
+
+Ux (rotation around x):
+  - λ=e^{iθ/2}: [1, 1]/√2
+  - λ=e^{-iθ/2}: [1, -1]/√2
+
+Uy (rotation around y):
+  - λ=e^{iθ/2}: [1, i]/√2
+  - λ=e^{-iθ/2}: [1, -i]/√2
+
+Note: Returns unnormalized eigenvectors.
+"""
+function _SU2_axis_eigenvectors(axis_type)
+    if axis_type == :Uz
+        # Diagonal case: standard basis
+        return [[1, 0], [0, 1]]
+    elseif axis_type == :Ux
+        # Ux eigenvectors
+        return [[1, 1], [1, -1]]
+    elseif axis_type == :Uy
+        # Uy eigenvectors (same as SO(2))
+        return [[1, im], [1, -im]]
+    end
+    return nothing
+end
+
+"""
+    _SU2_eigenpairs(A)
+
+Compute eigenvalue-eigenvector pairs for an SU(2) matrix.
+
+For axis-aligned rotations (Ux, Uy, Uz), returns closed-form eigenpairs.
+For general rotations, returns nothing (requires nullspace computation).
+
+Returns Vector{Tuple{eigenvalue, Vector{eigenvector}}} or nothing.
+
+# Example
+```julia
+@variables θ
+U = SU2_Uz(θ)
+pairs = _SU2_eigenpairs(U)
+# For Uz diagonal: eigenvectors are [1,0] and [0,1]
+```
+"""
+function _SU2_eigenpairs(A)
+    size(A) == (2, 2) || return nothing
+    
+    # First check axis type - this is fast and doesn't require full SU(2) verification
+    axis_type = _SU2_rotation_type(A)
+    
+    # For general SU(2) rotations, we need nullspace computation
+    isnothing(axis_type) && return nothing
+    
+    # Verify it's actually SU(2) using trig-aware check
+    # (The standard _is_SU2 may fail on trig expressions)
+    _is_SU2(A) || _is_SU2_trig(A) || return nothing
+    
+    # Get eigenvectors for this axis type
+    vecs = _SU2_axis_eigenvectors(axis_type)
+    isnothing(vecs) && return nothing
+    
+    # For Uz (diagonal), eigenvalues are directly on the diagonal
+    if axis_type == :Uz
+        λ1 = A[1, 1]  # e^{-iθ/2}
+        λ2 = A[2, 2]  # e^{iθ/2}
+        return [(λ1, [vecs[1]]), (λ2, [vecs[2]])]
+    end
+    
+    # For Ux and Uy, compute eigenvalues from trace
+    # Use trace-based formula which is more robust
+    tr_A = tr(A)
+    cos_theta = real(tr_A) / 2
+    sin_theta = aggressive_simplify(sqrt(1 - cos_theta^2))
+    
+    λ1 = simplify_eigenvalue(cos_theta + im * sin_theta)
+    λ2 = simplify_eigenvalue(cos_theta - im * sin_theta)
+    
+    # Return as vector of (eigenvalue, [eigenvector]) tuples
+    return [(λ1, [vecs[1]]), (λ2, [vecs[2]])]
+end
+
+# ============================================================================
 # Kronecker Products - Constructors
 # ============================================================================
 

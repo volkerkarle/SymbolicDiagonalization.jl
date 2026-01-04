@@ -300,3 +300,44 @@ function _lie_group_eigenvalues(A)
     
     return nothing
 end
+
+# ============================================================================
+# Master Lie Group Eigenpairs Dispatcher
+# ============================================================================
+
+"""
+    _lie_group_eigenpairs(A)
+
+Compute eigenvalue-eigenvector pairs using Lie group structure if detected.
+
+Returns a vector of (eigenvalue, [eigenvectors]) tuples if A belongs to a 
+supported Lie group with closed-form eigenvectors, nothing otherwise.
+
+Currently supported:
+- SO(2): Fixed eigenvectors [1, ±i] for all rotation angles
+- SO(3): Axis-aligned rotations (Rx, Ry, Rz) have known eigenvectors
+- SU(2): Diagonal case (Uz) has standard basis eigenvectors
+- SU(3): Diagonal case has standard basis eigenvectors
+
+For complex cases (general SO(3) rotations, non-diagonal SU(2), etc.),
+returns nothing and falls back to nullspace computation.
+"""
+function _lie_group_eigenpairs(A)
+    group, params = _detect_lie_group(A)
+    
+    isnothing(group) && return nothing
+    
+    if group == :SO2
+        return _SO2_eigenpairs(A)
+    elseif group == :SO3
+        return _SO3_eigenpairs(A)
+    elseif group == :SU2
+        return _SU2_eigenpairs(A)
+    elseif group == :SU3
+        return _SU3_eigenpairs(A)
+    # SO(4), Sp(2), Sp(4) eigenvectors are more complex
+    # TODO: Add these when closed-form eigenvector formulas are derived
+    end
+    
+    return nothing
+end
