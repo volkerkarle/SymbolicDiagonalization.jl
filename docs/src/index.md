@@ -65,13 +65,14 @@ automatically simplified to clean trigonometric form:
 
 ```julia
 @variables θ φ
-R(x) = [cos(x) -sin(x); sin(x) cos(x)]
+R_θ = SO2_rotation(θ)
+R_φ = SO2_rotation(φ)
 
-eigvals(kron(R(θ), R(φ)))
+eigvals(kron(R_θ, R_φ))
 # [cos(θ+φ) + im*sin(θ+φ), cos(θ-φ) + im*sin(θ-φ),
 #  cos(θ-φ) - im*sin(θ-φ), cos(θ+φ) - im*sin(θ+φ)]
 
-eigvals(kron(R(θ), R(θ)))  # Same-angle case
+eigvals(kron(SO2_rotation(θ), SO2_rotation(θ)))  # Same-angle case
 # [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
 ```
 

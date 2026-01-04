@@ -293,11 +293,10 @@ roots = symbolic_roots(poly, λ)
 
 Convenience constructors for rotation matrices with clean symbolic eigenvalues.
 
-#### `R2`
+#### `SO2_rotation`
 
 ```julia
-R2(θ) → Matrix{Num}
-rotation_matrix(θ) → Matrix{Num}
+SO2_rotation(θ) → Matrix{Num}
 ```
 
 Construct a 2×2 rotation matrix (SO(2)).
@@ -310,18 +309,18 @@ Construct a 2×2 rotation matrix (SO(2)).
 **Example**:
 ```julia
 @variables θ
-R = R2(θ)
+R = SO2_rotation(θ)
 eigvals(R)  # [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
 ```
 
 ---
 
-#### `Rx`, `Ry`, `Rz`
+#### `SO3_Rx`, `SO3_Ry`, `SO3_Rz`
 
 ```julia
-Rx(θ) → Matrix{Num}  # Rotation around x-axis
-Ry(θ) → Matrix{Num}  # Rotation around y-axis
-Rz(θ) → Matrix{Num}  # Rotation around z-axis
+SO3_Rx(θ) → Matrix{Num}  # Rotation around x-axis
+SO3_Ry(θ) → Matrix{Num}  # Rotation around y-axis
+SO3_Rz(θ) → Matrix{Num}  # Rotation around z-axis
 ```
 
 Construct 3×3 elementary rotation matrices in SO(3).
@@ -334,17 +333,17 @@ Construct 3×3 elementary rotation matrices in SO(3).
 **Example**:
 ```julia
 @variables θ
-eigvals(Rx(θ))  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
-eigvals(Ry(θ))  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
-eigvals(Rz(θ))  # [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ), 1]
+eigvals(SO3_Rx(θ))  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+eigvals(SO3_Ry(θ))  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+eigvals(SO3_Rz(θ))  # [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ), 1]
 ```
 
 ---
 
-#### `so2_kron`
+#### `SO2_kron`
 
 ```julia
-so2_kron(angles::Vector) → Matrix{Num}
+SO2_kron(angles::Vector) → Matrix{Num}
 ```
 
 Construct the Kronecker product of SO(2) rotation matrices.
@@ -352,21 +351,21 @@ Construct the Kronecker product of SO(2) rotation matrices.
 **Arguments**:
 - `angles` - Vector of rotation angles `[θ₁, θ₂, ..., θₖ]`
 
-**Returns**: 2ᵏ × 2ᵏ matrix `R2(θ₁) ⊗ R2(θ₂) ⊗ ... ⊗ R2(θₖ)`
+**Returns**: 2ᵏ × 2ᵏ matrix `SO2_rotation(θ₁) ⊗ SO2_rotation(θ₂) ⊗ ... ⊗ SO2_rotation(θₖ)`
 
 **Example**:
 ```julia
 @variables α β γ
-K = so2_kron([α, β, γ])  # 8×8 matrix
+K = SO2_kron([α, β, γ])  # 8×8 matrix
 size(K)  # (8, 8)
 ```
 
 ---
 
-#### `so2_kron_eigenvalues`
+#### `SO2_kron_eigenvalues`
 
 ```julia
-so2_kron_eigenvalues(angles::Vector) → Vector
+SO2_kron_eigenvalues(angles::Vector) → Vector
 ```
 
 Compute eigenvalues of SO(2) Kronecker products directly in clean trigonometric form.
@@ -379,7 +378,7 @@ Compute eigenvalues of SO(2) Kronecker products directly in clean trigonometric 
 **Example**:
 ```julia
 @variables α β
-vals = so2_kron_eigenvalues([α, β])
+vals = SO2_kron_eigenvalues([α, β])
 # [cos(-α-β) + im*sin(-α-β),
 #  cos(α-β) + im*sin(α-β),
 #  cos(-α+β) + im*sin(-α+β),
@@ -389,7 +388,189 @@ vals = so2_kron_eigenvalues([α, β])
 **Notes**:
 - Faster than building the matrix and computing eigenvalues
 - Always produces clean form without messy symbolic expressions
-- The same clean form is automatically detected when using `eigvals(so2_kron(angles))`
+- The same clean form is automatically detected when using `eigvals(SO2_kron(angles))`
+
+---
+
+### SU(2) Constructors
+
+#### `pauli_x`, `pauli_y`, `pauli_z`
+
+```julia
+pauli_x() → Matrix{Complex{Int}}  # Pauli σx matrix
+pauli_y() → Matrix{Complex{Int}}  # Pauli σy matrix
+pauli_z() → Matrix{Int}           # Pauli σz matrix
+```
+
+Return the three Pauli matrices.
+
+**Example**:
+```julia
+σx = pauli_x()  # [0 1; 1 0]
+σy = pauli_y()  # [0 -im; im 0]
+σz = pauli_z()  # [1 0; 0 -1]
+```
+
+---
+
+#### `SU2_Ux`, `SU2_Uy`, `SU2_Uz`
+
+```julia
+SU2_Ux(θ) → Matrix{Complex{Num}}  # exp(-i θ σx/2)
+SU2_Uy(θ) → Matrix{Num}           # exp(-i θ σy/2)
+SU2_Uz(θ) → Matrix{Complex{Num}}  # exp(-i θ σz/2)
+```
+
+Construct SU(2) rotation matrices (spin-1/2 representation).
+
+**Arguments**:
+- `θ` - Rotation angle (symbolic or numeric)
+
+**Example**:
+```julia
+@variables θ
+U = SU2_Uz(θ)  # diagonal: [exp(-iθ/2), exp(iθ/2)]
+```
+
+---
+
+#### `SU2_kron`
+
+```julia
+SU2_kron(angles::Vector) → Matrix{Complex{Num}}
+```
+
+Construct the Kronecker product of SU(2) rotation matrices.
+
+**Arguments**:
+- `angles` - Vector of rotation angles `[α, β, ...]`
+
+**Returns**: 2ᵏ × 2ᵏ matrix `SU2_Uz(α) ⊗ SU2_Uz(β) ⊗ ...`
+
+**Example**:
+```julia
+@variables α β
+K = SU2_kron([α, β])  # 4×4 matrix
+```
+
+---
+
+#### `SU2_kron_eigenvalues`
+
+```julia
+SU2_kron_eigenvalues(angles::Vector) → Vector
+```
+
+Compute eigenvalues of SU(2) Kronecker products directly.
+
+**Returns**: Eigenvalues with half-angle formulas: `cos((±α±β±...)/2) + i·sin((±α±β±...)/2)`
+
+---
+
+### SU(3) Constructors
+
+#### `gellmann_1` through `gellmann_8`
+
+```julia
+gellmann_1() → Matrix  # First Gell-Mann matrix
+...
+gellmann_8() → Matrix  # Eighth Gell-Mann matrix
+```
+
+Return the eight Gell-Mann matrices (generators of SU(3)).
+
+---
+
+#### `gellmann_matrices`
+
+```julia
+gellmann_matrices() → Vector{Matrix}
+```
+
+Return all eight Gell-Mann matrices as a vector.
+
+---
+
+#### `SU3_diagonal_trig`
+
+```julia
+SU3_diagonal_trig(α₁, α₂) → Matrix{Complex{Num}}
+```
+
+Construct a diagonal SU(3) matrix (Cartan subalgebra element).
+
+**Returns**: `diag(exp(iα₁), exp(iα₂), exp(-i(α₁+α₂)))`
+
+---
+
+#### `SU3_kron`
+
+```julia
+SU3_kron((α₁, α₂), (β₁, β₂)) → Matrix{Complex{Num}}
+```
+
+Construct the Kronecker product of two diagonal SU(3) matrices.
+
+**Returns**: 9×9 diagonal matrix
+
+---
+
+#### `SU3_kron_eigenvalues`
+
+```julia
+SU3_kron_eigenvalues((α₁, α₂), (β₁, β₂)) → Vector
+```
+
+Compute eigenvalues of SU(3) Kronecker products directly.
+
+**Returns**: 9 eigenvalues of the form `cos(θ) + i·sin(θ)` where θ is a phase sum.
+
+---
+
+### Lie Algebra Generators
+
+#### `spin_j_generators`
+
+```julia
+spin_j_generators(j) → (Jx, Jy, Jz)
+```
+
+Construct the standard spin-j generators for the (2j+1)-dimensional irreducible representation of su(2)/so(3).
+
+**Arguments**:
+- `j` - Spin value (half-integer: 1//2, 1, 3//2, etc.)
+
+**Returns**: Tuple of three matrices (Jx, Jy, Jz)
+
+**Example**:
+```julia
+Jx, Jy, Jz = spin_j_generators(1//2)  # 2×2 matrices
+Jx, Jy, Jz = spin_j_generators(1)      # 3×3 matrices
+```
+
+---
+
+#### `so3_generators`
+
+```julia
+so3_generators() → (Lx, Ly, Lz)
+```
+
+Return the three so(3) generators (3×3 skew-symmetric matrices).
+
+These satisfy `[Lᵢ, Lⱼ] = εᵢⱼₖ Lₖ`.
+
+---
+
+#### `su2_generators`
+
+```julia
+su2_generators() → (τ1, τ2, τ3)
+```
+
+Return the three su(2) generators: `τₖ = i·σₖ/2`.
+
+These are skew-Hermitian and satisfy `[τᵢ, τⱼ] = εᵢⱼₖ τₖ`.
 
 ---
 

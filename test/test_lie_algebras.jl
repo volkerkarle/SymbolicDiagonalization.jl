@@ -190,7 +190,9 @@ using LinearAlgebra
     
     @testset "Standard Generators" begin
         @testset "Pauli matrices" begin
-            σ₁, σ₂, σ₃ = SymbolicDiagonalization._pauli_matrices()
+            σ₁ = pauli_x()
+            σ₂ = pauli_y()
+            σ₃ = pauli_z()
             
             # Check properties
             @test size(σ₁) == (2, 2)
@@ -205,7 +207,7 @@ using LinearAlgebra
         end
         
         @testset "su(2) generators" begin
-            τ₁, τ₂, τ₃ = SymbolicDiagonalization._su2_generators()
+            τ₁, τ₂, τ₃ = su2_generators()
             
             # Should be skew-Hermitian
             @test isapprox(τ₁ + τ₁', zeros(2,2), atol=1e-10)
@@ -214,7 +216,7 @@ using LinearAlgebra
         end
         
         @testset "so(3) generators" begin
-            Lx, Ly, Lz = SymbolicDiagonalization._so3_generators()
+            Lx, Ly, Lz = so3_generators()
             
             # Should be skew-symmetric
             @test isapprox(Lx + Lx', zeros(3,3), atol=1e-10)
@@ -227,17 +229,17 @@ using LinearAlgebra
         
         @testset "Spin-j generators" begin
             # Test spin-1/2
-            Jx, Jy, Jz = SymbolicDiagonalization._spin_j_generators(1//2)
+            Jx, Jy, Jz = spin_j_generators(1//2)
             @test size(Jz) == (2, 2)
             @test isapprox(Jz, diagm([0.5, -0.5]), atol=1e-10)
             
             # Test spin-1
-            Jx, Jy, Jz = SymbolicDiagonalization._spin_j_generators(1)
+            Jx, Jy, Jz = spin_j_generators(1)
             @test size(Jz) == (3, 3)
             @test isapprox(Jz, diagm([1.0, 0.0, -1.0]), atol=1e-10)
             
             # Test spin-3/2
-            Jx, Jy, Jz = SymbolicDiagonalization._spin_j_generators(3//2)
+            Jx, Jy, Jz = spin_j_generators(3//2)
             @test size(Jz) == (4, 4)
             @test isapprox(Jz, diagm([1.5, 0.5, -0.5, -1.5]), atol=1e-10)
         end

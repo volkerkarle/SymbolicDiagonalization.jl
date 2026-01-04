@@ -66,13 +66,23 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
     end
 
     # =========================================================================
+    # FAST PATHS: Diagonal and Triangular matrices
+    # Check these first before any pattern detection
+    # =========================================================================
+    
+    if _is_diagonal(mat) || _is_triangular(mat)
+        vals = diag(mat)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+
+    # =========================================================================
     # SPECIAL KRONECKER STRUCTURES (check BEFORE block-diagonal decomposition)
     # These produce cleaner eigenvalues than block decomposition for diagonal cases
     # =========================================================================
     
     # Check for Kronecker product of SU(3) matrices (SU(3)^⊗k)
     # For 9×9 matrices - complex unitary Kronecker products
-    su3_kron_result = _detect_su3_kronecker_product(mat)
+    su3_kron_result = _detect_SU3_kronecker_product(mat)
     if !isnothing(su3_kron_result)
         vals = su3_kron_result
         return _build_eigenvalue_result(vals, λ, expand)
@@ -80,7 +90,7 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
     
     # Check for Kronecker product of SU(2) matrices (SU(2)^⊗k)
     # For 4×4, 8×8, etc. matrices that are products of spin-1/2 rotations
-    su2_kron_result = _detect_su2_kronecker_product(mat)
+    su2_kron_result = _detect_SU2_kronecker_product(mat)
     if !isnothing(su2_kron_result)
         vals = su2_kron_result
         return _build_eigenvalue_result(vals, λ, expand)
@@ -88,7 +98,7 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
     
     # Check for Kronecker product of rotation matrices (SO(2)^⊗k)
     # This gives clean eigenvalues e^{i(±θ₁±θ₂±...)} without messy factorization
-    rotation_kron_result = _detect_rotation_kronecker_product(mat)
+    rotation_kron_result = _detect_SO2_kronecker_product(mat)
     if !isnothing(rotation_kron_result)
         vals = rotation_kron_result
         return _build_eigenvalue_result(vals, λ, expand)
@@ -96,7 +106,7 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
     
     # Check for Kronecker product of SO(3) rotation matrices (SO(3)^⊗k)
     # For 9×9, 27×27, etc. matrices that are products of 3D rotations
-    so3_kron_result = _detect_so3_kronecker_product(mat)
+    so3_kron_result = _detect_SO3_kronecker_product(mat)
     if !isnothing(so3_kron_result)
         vals = so3_kron_result
         return _build_eigenvalue_result(vals, λ, expand)
@@ -294,11 +304,6 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         vals = vcat(vals_left, vals_right)
         poly = expand ? Symbolics.expand(poly_left * poly_right) : poly_left * poly_right
         return vals, poly, λ
-    end
-    if _is_diagonal(mat) || _is_triangular(mat)
-        # Shortcut avoids the quartic solver for common structured inputs.
-        vals = diag(mat)
-        return _build_eigenvalue_result(vals, λ, expand)
     end
     
     # Before attempting quartic solver, check if matrix is too large

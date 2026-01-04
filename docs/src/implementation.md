@@ -23,6 +23,7 @@ src/
 ├── charpoly.jl                 # Characteristic polynomial (Bareiss)
 ├── roots.jl                    # Root solvers (degrees 1-4)
 ├── rref.jl                     # RREF, nullspace
+├── simplify.jl                 # Trigonometric simplification
 ├── structure.jl                # Structure detection, utilities
 ├── diagonalize.jl              # Public API
 └── patterns/
@@ -30,7 +31,16 @@ src/
     ├── graphs.jl               # Hypercube, strongly regular
     ├── kronecker.jl            # Kronecker products
     ├── permutation.jl          # Permutation matrices
-    └── tridiagonal.jl          # Toeplitz tridiagonal, special 5×5
+    ├── tridiagonal.jl          # Toeplitz tridiagonal, special 5×5
+    └── lie/                    # Lie group/algebra patterns
+        ├── common.jl           # Shared detection utilities
+        ├── algebras.jl         # Lie algebra generators, spin-j
+        ├── SO2.jl              # SO(2) rotations, Kronecker products
+        ├── SO3.jl              # SO(3) rotations (Rx, Ry, Rz)
+        ├── SO4.jl              # SO(4) detection
+        ├── SU2.jl              # SU(2), Pauli matrices
+        ├── SU3.jl              # SU(3), Gell-Mann matrices
+        └── Sp.jl               # Symplectic groups Sp(2n)
 ```
 
 ## Key Algorithms

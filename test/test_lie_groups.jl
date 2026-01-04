@@ -108,7 +108,7 @@ end
         # SO(3) detection
         Rz = [cos(θ) -sin(θ) 0; sin(θ) cos(θ) 0; 0 0 1]
         @test SymbolicDiagonalization._is_orthogonal(Rz)
-        @test SymbolicDiagonalization._is_so3(Rz)
+        @test SymbolicDiagonalization._is_SO3(Rz)
         
         # SO(4) detection
         R4 = [cos(θ) -sin(θ) 0 0;
@@ -116,7 +116,7 @@ end
               0 0 cos(φ) -sin(φ);
               0 0 sin(φ)  cos(φ)]
         @test SymbolicDiagonalization._is_orthogonal(R4)
-        @test SymbolicDiagonalization._is_so4(R4)
+        @test SymbolicDiagonalization._is_SO4(R4)
     end
     
     @testset "Master Detection Function" begin
@@ -195,7 +195,7 @@ end
         group, _ = SymbolicDiagonalization._detect_lie_group(Sp2)
         @test group == :Sp2
         
-        vals = SymbolicDiagonalization._sp2_eigenvalues(Sp2)
+        vals = SymbolicDiagonalization._Sp2_eigenvalues(Sp2)
         @test length(vals) == 2
         @test isapprox(sort(real.(vals)), [0.5, 2.0], atol=1e-10)
     end
@@ -215,9 +215,9 @@ end
     @testset "Rotation Matrix Constructors" begin
         @variables θ α β γ
         
-        # Test R2 constructor
-        @testset "R2 - 2D rotation" begin
-            R = R2(θ)
+        # Test SO2_rotation constructor
+        @testset "SO2_rotation - 2D rotation" begin
+            R = SO2_rotation(θ)
             @test size(R) == (2, 2)
             @test isequal(R[1,1], cos(θ))
             @test isequal(R[2,1], sin(θ))
@@ -231,9 +231,9 @@ end
             @test any(v -> occursin("cos(θ) - im*sin(θ)", string(v)), string.(vals))
         end
         
-        # Test Rx, Ry, Rz constructors
-        @testset "Rx - rotation around x-axis" begin
-            R = Rx(θ)
+        # Test SO3_Rx, SO3_Ry, SO3_Rz constructors
+        @testset "SO3_Rx - rotation around x-axis" begin
+            R = SO3_Rx(θ)
             @test size(R) == (3, 3)
             @test isequal(R[1,1], 1)
             @test isequal(R[2,2], cos(θ))
@@ -245,8 +245,8 @@ end
             @test any(v -> isequal(v, 1) || isequal(Symbolics.simplify(v - 1), 0), vals)
         end
         
-        @testset "Ry - rotation around y-axis" begin
-            R = Ry(θ)
+        @testset "SO3_Ry - rotation around y-axis" begin
+            R = SO3_Ry(θ)
             @test size(R) == (3, 3)
             @test isequal(R[2,2], 1)
             @test isequal(R[1,1], cos(θ))
@@ -256,8 +256,8 @@ end
             @test length(vals) == 3
         end
         
-        @testset "Rz - rotation around z-axis" begin
-            R = Rz(θ)
+        @testset "SO3_Rz - rotation around z-axis" begin
+            R = SO3_Rz(θ)
             @test size(R) == (3, 3)
             @test isequal(R[3,3], 1)
             @test isequal(R[1,1], cos(θ))
@@ -272,7 +272,7 @@ end
         @variables α β γ
         
         @testset "2-fold SO(2) Kronecker" begin
-            K = so2_kron([α, β])
+            K = SO2_kron([α, β])
             @test size(K) == (4, 4)
             
             vals = eigvals(K)
@@ -292,7 +292,7 @@ end
         end
         
         @testset "3-fold SO(2) Kronecker" begin
-            K = so2_kron([α, β, γ])
+            K = SO2_kron([α, β, γ])
             @test size(K) == (8, 8)
             
             vals = eigvals(K)
@@ -311,9 +311,9 @@ end
             @test occursin("α", vals_str) && occursin("β", vals_str) && occursin("γ", vals_str)
         end
         
-        @testset "so2_kron_eigenvalues direct computation" begin
+        @testset "SO2_kron_eigenvalues direct computation" begin
             # Direct computation should match eigvals
-            direct_vals = so2_kron_eigenvalues([α, β])
+            direct_vals = SO2_kron_eigenvalues([α, β])
             @test length(direct_vals) == 4
             
             # All should be clean
@@ -323,13 +323,13 @@ end
             end
             
             # 3-fold direct computation
-            direct_vals_3 = so2_kron_eigenvalues([α, β, γ])
+            direct_vals_3 = SO2_kron_eigenvalues([α, β, γ])
             @test length(direct_vals_3) == 8
         end
         
         @testset "Same-angle case" begin
             # R(θ) ⊗ R(θ) should give eigenvalues with 2θ
-            K = so2_kron([α, α])
+            K = SO2_kron([α, α])
             vals = eigvals(K)
             @test length(vals) == 4
             
@@ -344,14 +344,14 @@ end
         @variables α β γ
         
         @testset "Euler rotation detection (XZX)" begin
-            # Euler angles: Rx(α) * Rz(β) * Rx(γ)
-            R_euler = Rx(α) * Rz(β) * Rx(γ)
+            # Euler angles: SO3_Rx(α) * SO3_Rz(β) * SO3_Rx(γ)
+            R_euler = SO3_Rx(α) * SO3_Rz(β) * SO3_Rx(γ)
             
             # Should be detected as orthogonal
             @test SymbolicDiagonalization._is_orthogonal(R_euler)
             
             # Should be detected as SO(3)
-            @test SymbolicDiagonalization._is_so3(R_euler)
+            @test SymbolicDiagonalization._is_SO3(R_euler)
             
             # Eigenvalues should compute successfully
             vals = eigvals(R_euler)
@@ -374,27 +374,27 @@ end
             # Test that all common Euler conventions are detected as SO(3)
             
             # Proper Euler angles (same first and last axis)
-            @test SymbolicDiagonalization._is_so3(Rz(α) * Rx(β) * Rz(γ))  # ZXZ
-            @test SymbolicDiagonalization._is_so3(Rz(α) * Ry(β) * Rz(γ))  # ZYZ
-            @test SymbolicDiagonalization._is_so3(Ry(α) * Rx(β) * Ry(γ))  # YXY
-            @test SymbolicDiagonalization._is_so3(Ry(α) * Rz(β) * Ry(γ))  # YZY
-            @test SymbolicDiagonalization._is_so3(Rx(α) * Ry(β) * Rx(γ))  # XYX
-            @test SymbolicDiagonalization._is_so3(Rx(α) * Rz(β) * Rx(γ))  # XZX
+            @test SymbolicDiagonalization._is_SO3(SO3_Rz(α) * SO3_Rx(β) * SO3_Rz(γ))  # ZXZ
+            @test SymbolicDiagonalization._is_SO3(SO3_Rz(α) * SO3_Ry(β) * SO3_Rz(γ))  # ZYZ
+            @test SymbolicDiagonalization._is_SO3(SO3_Ry(α) * SO3_Rx(β) * SO3_Ry(γ))  # YXY
+            @test SymbolicDiagonalization._is_SO3(SO3_Ry(α) * SO3_Rz(β) * SO3_Ry(γ))  # YZY
+            @test SymbolicDiagonalization._is_SO3(SO3_Rx(α) * SO3_Ry(β) * SO3_Rx(γ))  # XYX
+            @test SymbolicDiagonalization._is_SO3(SO3_Rx(α) * SO3_Rz(β) * SO3_Rx(γ))  # XZX
             
             # Tait-Bryan angles (three different axes)
-            @test SymbolicDiagonalization._is_so3(Rx(α) * Ry(β) * Rz(γ))  # XYZ
-            @test SymbolicDiagonalization._is_so3(Rx(α) * Rz(β) * Ry(γ))  # XZY
-            @test SymbolicDiagonalization._is_so3(Ry(α) * Rx(β) * Rz(γ))  # YXZ
-            @test SymbolicDiagonalization._is_so3(Ry(α) * Rz(β) * Rx(γ))  # YZX
-            @test SymbolicDiagonalization._is_so3(Rz(α) * Rx(β) * Ry(γ))  # ZXY
-            @test SymbolicDiagonalization._is_so3(Rz(α) * Ry(β) * Rx(γ))  # ZYX
+            @test SymbolicDiagonalization._is_SO3(SO3_Rx(α) * SO3_Ry(β) * SO3_Rz(γ))  # XYZ
+            @test SymbolicDiagonalization._is_SO3(SO3_Rx(α) * SO3_Rz(β) * SO3_Ry(γ))  # XZY
+            @test SymbolicDiagonalization._is_SO3(SO3_Ry(α) * SO3_Rx(β) * SO3_Rz(γ))  # YXZ
+            @test SymbolicDiagonalization._is_SO3(SO3_Ry(α) * SO3_Rz(β) * SO3_Rx(γ))  # YZX
+            @test SymbolicDiagonalization._is_SO3(SO3_Rz(α) * SO3_Rx(β) * SO3_Ry(γ))  # ZXY
+            @test SymbolicDiagonalization._is_SO3(SO3_Rz(α) * SO3_Ry(β) * SO3_Rx(γ))  # ZYX
         end
         
         @testset "Single axis rotations" begin
             @variables θ
             
             # Single axis rotations should have clean eigenvalues
-            for R in [Rx(θ), Ry(θ), Rz(θ)]
+            for R in [SO3_Rx(θ), SO3_Ry(θ), SO3_Rz(θ)]
                 vals = eigvals(R)
                 @test length(vals) == 3
                 
@@ -436,13 +436,13 @@ end
         @variables θ φ
         
         @testset "SO(3) ⊗ SO(3) detection and eigenvalues" begin
-            # Test Rz ⊗ Rz
-            K = kron(Rz(θ), Rz(φ))
+            # Test SO3_Rz ⊗ SO3_Rz
+            K = kron(SO3_Rz(θ), SO3_Rz(φ))
             @test size(K) == (9, 9)
             @test SymbolicDiagonalization._is_orthogonal(K)
             
             # Should be detected as SO(3) Kronecker product
-            result = SymbolicDiagonalization._detect_so3_kronecker_product(K)
+            result = SymbolicDiagonalization._detect_SO3_kronecker_product(K)
             @test !isnothing(result)
             @test length(result) == 9
             
@@ -467,23 +467,23 @@ end
         end
         
         @testset "Different axis combinations" begin
-            # Rz ⊗ Rx
-            K = kron(Rz(θ), Rx(φ))
+            # SO3_Rz ⊗ SO3_Rx
+            K = kron(SO3_Rz(θ), SO3_Rx(φ))
             vals = eigvals(K)
             @test length(vals) == 9
             # Should be clean (no sqrt)
             has_sqrt = any(v -> occursin("sqrt", string(v)), string.(vals))
             @test !has_sqrt
             
-            # Rx ⊗ Ry
-            K = kron(Rx(θ), Ry(φ))
+            # SO3_Rx ⊗ SO3_Ry
+            K = kron(SO3_Rx(θ), SO3_Ry(φ))
             vals = eigvals(K)
             @test length(vals) == 9
             has_sqrt = any(v -> occursin("sqrt", string(v)), string.(vals))
             @test !has_sqrt
             
-            # Ry ⊗ Rz
-            K = kron(Ry(θ), Rz(φ))
+            # SO3_Ry ⊗ SO3_Rz
+            K = kron(SO3_Ry(θ), SO3_Rz(φ))
             vals = eigvals(K)
             @test length(vals) == 9
             has_sqrt = any(v -> occursin("sqrt", string(v)), string.(vals))
@@ -491,8 +491,8 @@ end
         end
         
         @testset "Same angle case" begin
-            # Rz(θ) ⊗ Rz(θ) should have eigenvalues including e^{±2iθ}
-            K = kron(Rz(θ), Rz(θ))
+            # SO3_Rz(θ) ⊗ SO3_Rz(θ) should have eigenvalues including e^{±2iθ}
+            K = kron(SO3_Rz(θ), SO3_Rz(θ))
             vals = eigvals(K)
             @test length(vals) == 9
             
@@ -508,8 +508,8 @@ end
             @variables α β γ δ ε ζ
             
             # XZX Euler ⊗ YZY Euler
-            R1 = Rx(α) * Rz(β) * Rx(γ)
-            R2 = Ry(δ) * Rz(ε) * Ry(ζ)
+            R1 = SO3_Rx(α) * SO3_Rz(β) * SO3_Rx(γ)
+            R2 = SO3_Ry(δ) * SO3_Rz(ε) * SO3_Ry(ζ)
             K = kron(R1, R2)
             
             # eigvals should automatically detect and compute eigenvalues
@@ -534,14 +534,14 @@ end
         
         @testset "Pauli matrices" begin
             # Test Pauli matrix structure
-            @test σx() == [0 1; 1 0]
-            @test σy() == [0 -im; im 0]
-            @test σz() == [1 0; 0 -1]
+            @test pauli_x() == [0 1; 1 0]
+            @test pauli_y() == [0 -im; im 0]
+            @test pauli_z() == [1 0; 0 -1]
         end
         
         @testset "SU(2) rotation constructors" begin
-            # Ux should be exp(-i θ σx/2)
-            U = Ux(θ)
+            # SU2_Ux should be exp(-i θ σx/2)
+            U = SU2_Ux(θ)
             @test size(U) == (2, 2)
             # U[1,1] is Complex{Num} due to matrix type, but real part should be cos(θ/2)
             @test isequal(real(U[1,1]), cos(θ/2))
@@ -553,16 +553,16 @@ end
             @test isequal(real(U[2,1]), 0) || isequal(Symbolics.simplify(real(U[2,1])), 0)
             @test isequal(imag(U[2,1]), -sin(θ/2))
             
-            # Uy should be exp(-i θ σy/2) - same form as SO(2) but with half-angle
-            U = Uy(θ)
+            # SU2_Uy should be exp(-i θ σy/2) - same form as SO(2) but with half-angle
+            U = SU2_Uy(θ)
             @test size(U) == (2, 2)
             @test isequal(U[1,1], cos(θ/2))
             @test isequal(U[2,2], cos(θ/2))
             @test isequal(U[1,2], -sin(θ/2))
             @test isequal(U[2,1], sin(θ/2))
             
-            # Uz should be diagonal with e^{±iθ/2}
-            U = Uz(θ)
+            # SU2_Uz should be diagonal with e^{±iθ/2}
+            U = SU2_Uz(θ)
             @test size(U) == (2, 2)
             # Check it's diagonal
             @test isequal(U[1,2], 0)
@@ -576,7 +576,7 @@ end
         
         @testset "SU(2) eigenvalues" begin
             # Single SU(2) rotation eigenvalues
-            for (name, Ufn) in [("Ux", Ux), ("Uy", Uy), ("Uz", Uz)]
+            for (name, Ufn) in [("SU2_Ux", SU2_Ux), ("SU2_Uy", SU2_Uy), ("SU2_Uz", SU2_Uz)]
                 U = Ufn(θ)
                 vals = eigvals(U)
                 @test length(vals) == 2
@@ -591,8 +591,8 @@ end
         end
         
         @testset "SU(2) ⊗ SU(2) detection - basic" begin
-            # Test Uz ⊗ Uz (diagonal case - easiest)
-            K = kron(Uz(α), Uz(β))
+            # Test SU2_Uz ⊗ SU2_Uz (diagonal case - easiest)
+            K = kron(SU2_Uz(α), SU2_Uz(β))
             @test size(K) == (4, 4)
             
             vals = eigvals(K)
@@ -611,8 +611,8 @@ end
         end
         
         @testset "SU(2) ⊗ SU(2) detection - mixed axes" begin
-            # Test Ux ⊗ Uz
-            K = kron(Ux(α), Uz(β))
+            # Test SU2_Ux ⊗ SU2_Uz
+            K = kron(SU2_Ux(α), SU2_Uz(β))
             vals = eigvals(K)
             @test length(vals) == 4
             
@@ -622,8 +622,8 @@ end
                 @test !occursin("sqrt", v_str)
             end
             
-            # Test Uy ⊗ Ux
-            K = kron(Uy(α), Ux(β))
+            # Test SU2_Uy ⊗ SU2_Ux
+            K = kron(SU2_Uy(α), SU2_Ux(β))
             vals = eigvals(K)
             @test length(vals) == 4
             
@@ -633,13 +633,13 @@ end
             end
         end
         
-        @testset "su2_kron and su2_kron_eigenvalues" begin
+        @testset "SU2_kron and SU2_kron_eigenvalues" begin
             # Direct construction
-            K = su2_kron([α, β])
+            K = SU2_kron([α, β])
             @test size(K) == (4, 4)
             
             # Direct eigenvalue computation
-            direct_vals = su2_kron_eigenvalues([α, β])
+            direct_vals = SU2_kron_eigenvalues([α, β])
             @test length(direct_vals) == 4
             
             # All should be clean
@@ -652,7 +652,7 @@ end
             end
             
             # 3-fold direct computation
-            direct_vals_3 = su2_kron_eigenvalues([α, β, γ])
+            direct_vals_3 = SU2_kron_eigenvalues([α, β, γ])
             @test length(direct_vals_3) == 8
         end
         
@@ -663,7 +663,7 @@ end
             
             # Step 1: Create SYMBOLIC SU(2) Kronecker product
             @variables θ_sym φ_sym
-            K_sym = kron(Uz(θ_sym), Uz(φ_sym))
+            K_sym = kron(SU2_Uz(θ_sym), SU2_Uz(φ_sym))
             
             # Step 2: Get symbolic eigenvalues using our detection
             sym_vals, _, _ = symbolic_eigenvalues(K_sym; expand=false)
@@ -698,21 +698,21 @@ end
         end
         
         # Test Hermiticity
-        @test λ1() == λ1()'
-        @test λ2() == λ2()'
-        @test λ3() == λ3()'
-        @test λ4() == λ4()'
-        @test λ5() == λ5()'
-        @test λ6() == λ6()'
-        @test λ7() == λ7()'
-        @test isapprox(λ8(), λ8()', atol=1e-10)  # λ8 has floats
+        @test gellmann_1() == gellmann_1()'
+        @test gellmann_2() == gellmann_2()'
+        @test gellmann_3() == gellmann_3()'
+        @test gellmann_4() == gellmann_4()'
+        @test gellmann_5() == gellmann_5()'
+        @test gellmann_6() == gellmann_6()'
+        @test gellmann_7() == gellmann_7()'
+        @test isapprox(gellmann_8(), gellmann_8()', atol=1e-10)  # gellmann_8 has floats
     end
     
     @testset "SU(3) diagonal constructors" begin
         @variables θ₁ θ₂
         
-        # Test su3_diagonal_trig
-        U = su3_diagonal_trig(θ₁, θ₂)
+        # Test SU3_diagonal_trig
+        U = SU3_diagonal_trig(θ₁, θ₂)
         @test size(U) == (3, 3)
         @test U isa Diagonal
         
@@ -727,7 +727,7 @@ end
     @testset "SU(3) Kronecker eigenvalues - direct formula" begin
         @variables α₁ α₂ β₁ β₂
         
-        vals = su3_kron_eigenvalues((α₁, α₂), (β₁, β₂))
+        vals = SU3_kron_eigenvalues((α₁, α₂), (β₁, β₂))
         @test length(vals) == 9
         
         # First eigenvalue should be e^{i(α₁+β₁)}
@@ -738,7 +738,7 @@ end
     @testset "SU(3) Kronecker detection - diagonal symbolic" begin
         @variables α₁ α₂ β₁ β₂
         
-        K = su3_kron((α₁, α₂), (β₁, β₂))
+        K = SU3_kron((α₁, α₂), (β₁, β₂))
         @test size(K) == (9, 9)
         
         # Test symbolic_eigenvalues returns 9 eigenvalues
@@ -757,7 +757,7 @@ end
         
         # Step 1: Create SYMBOLIC SU(3) Kronecker product
         @variables θ1_sym θ2_sym φ1_sym φ2_sym
-        K_sym = su3_kron((θ1_sym, θ2_sym), (φ1_sym, φ2_sym))
+        K_sym = SU3_kron((θ1_sym, θ2_sym), (φ1_sym, φ2_sym))
         @test size(K_sym) == (9, 9)
         
         # Step 2: Get symbolic eigenvalues using our detection
@@ -780,21 +780,21 @@ end
     @testset "SU(3)⊗SU(3) vs SO(3)⊗SO(3) disambiguation" begin
         # SU(3)⊗SU(3) has complex entries
         @variables α₁ α₂ β₁ β₂
-        K_su3 = su3_kron((α₁, α₂), (β₁, β₂))
+        K_su3 = SU3_kron((α₁, α₂), (β₁, β₂))
         
-        using SymbolicDiagonalization: _has_complex_entries, _detect_su3_kronecker_product, _detect_so3_kronecker_product
+        using SymbolicDiagonalization: _has_complex_entries, _detect_SU3_kronecker_product, _detect_SO3_kronecker_product
         
         @test _has_complex_entries(K_su3) == true
-        @test !isnothing(_detect_su3_kronecker_product(K_su3))
+        @test !isnothing(_detect_SU3_kronecker_product(K_su3))
         
         # SO(3)⊗SO(3) is real
         @variables θ φ
-        R1 = Rz(θ)
-        R2 = Rz(φ)
+        R1 = SO3_Rz(θ)
+        R2 = SO3_Rz(φ)
         K_so3 = kron(R1, R2)
         
         @test _has_complex_entries(K_so3) == false
-        @test isnothing(_detect_su3_kronecker_product(K_so3))  # SU(3) detection should reject
-        @test !isnothing(_detect_so3_kronecker_product(K_so3))  # SO(3) detection should work
+        @test isnothing(_detect_SU3_kronecker_product(K_so3))  # SU(3) detection should reject
+        @test !isnothing(_detect_SO3_kronecker_product(K_so3))  # SO(3) detection should work
     end
 end

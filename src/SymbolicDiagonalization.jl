@@ -46,13 +46,23 @@ include("structure.jl")   # Structure detection, matrix properties, adjugate
 
 include("patterns/graphs.jl")       # Hypercube and strongly regular graphs
 include("patterns/circulant.jl")    # Circulant and block circulant matrices
-include("patterns/kronecker.jl")    # Kronecker product detection (matrix structure)
+include("patterns/kronecker.jl")    # Kronecker product detection (generic)
 
 include("patterns/tridiagonal.jl")  # Toeplitz tridiagonal, special 5×5, anti-diagonal
 include("patterns/permutation.jl")  # Permutation matrices
-include("patterns/lie_groups.jl")   # SO(n), SU(n), Sp(2n), Lorentz groups
-include("patterns/lie_algebras.jl") # Lie algebra representations (spin-j, etc.)
-include("patterns/rotations.jl")    # Rotation matrix constructors and SO(2) Kronecker products
+
+# ============================================================================
+# Lie Groups and Algebras (modular organization)
+# ============================================================================
+
+include("patterns/lie/common.jl")   # Shared detection helpers
+include("patterns/lie/SO2.jl")      # SO(2) rotations and Kronecker products
+include("patterns/lie/SO3.jl")      # SO(3) rotations and Kronecker products
+include("patterns/lie/SO4.jl")      # SO(4) detection and eigenvalues
+include("patterns/lie/SU2.jl")      # SU(2), Pauli matrices, Kronecker products
+include("patterns/lie/SU3.jl")      # SU(3), Gell-Mann matrices, Kronecker products
+include("patterns/lie/Sp.jl")       # Sp(2), Sp(4) symplectic groups
+include("patterns/lie/algebras.jl") # Lie algebra representations (spin-j, etc.)
 
 # ============================================================================
 # Public API
@@ -69,17 +79,27 @@ export trig_simplify, aggressive_simplify, simplify_eigenvalue, simplify_eigenva
 # Export exception types for error handling
 export ExpressionComplexityError, ComputationTimeoutError
 
-# Export rotation matrix constructors
-export R2, Rx, Ry, Rz, rotation_matrix, so2_kron, so2_kron_eigenvalues
+# ============================================================================
+# Lie Group Exports
+# ============================================================================
 
-# Export SU(2) constructors and Kronecker products
-export σx, σy, σz, Ux, Uy, Uz, su2_kron, su2_kron_eigenvalues
+# SO(2) - 2D Rotations
+export SO2_rotation, SO2_kron, SO2_kron_eigenvalues
 
-# Export SU(3) constructors and Kronecker products
-export λ1, λ2, λ3, λ4, λ5, λ6, λ7, λ8, gellmann_matrices
-export su3_diagonal, su3_diagonal_trig, su3_kron, su3_kron_eigenvalues
+# SO(3) - 3D Rotations
+export SO3_Rx, SO3_Ry, SO3_Rz
 
+# SU(2) - Special Unitary 2D
+export pauli_x, pauli_y, pauli_z
+export SU2_Ux, SU2_Uy, SU2_Uz, SU2_kron, SU2_kron_eigenvalues
 
+# SU(3) - Special Unitary 3D
+export gellmann_matrices, gellmann_1, gellmann_2, gellmann_3, gellmann_4
+export gellmann_5, gellmann_6, gellmann_7, gellmann_8
+export SU3_diagonal, SU3_diagonal_trig, SU3_kron, SU3_kron_eigenvalues
+
+# Lie Algebra Generators
+export spin_j_generators, so3_generators, su2_generators
 
 # LinearAlgebra.eigen and LinearAlgebra.eigvals are automatically available when LinearAlgebra is imported
 

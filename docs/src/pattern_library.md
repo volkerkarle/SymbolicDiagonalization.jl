@@ -192,32 +192,32 @@ The four eigenvalues are:
 - $\cos(\theta - \phi) + i\sin(\theta - \phi)$
 - $\cos(\theta - \phi) - i\sin(\theta - \phi)$
 
-**Convenience constructors**: Use `R2(θ)` to create rotation matrices and `so2_kron(angles)` for Kronecker products:
+**Convenience constructors**: Use `SO2_rotation(θ)` to create rotation matrices and `SO2_kron(angles)` for Kronecker products:
 
 ```julia
 @variables α β γ
 
 # 2-fold: 4×4 matrix
-K2 = so2_kron([α, β])
+K2 = SO2_kron([α, β])
 eigvals(K2)
 # [cos(-α - β) + im*sin(-α - β), cos(α - β) + im*sin(α - β),
 #  cos(-α + β) + im*sin(-α + β), cos(α + β) + im*sin(α + β)]
 
 # 3-fold: 8×8 matrix with 8 clean eigenvalues
-K3 = so2_kron([α, β, γ])
+K3 = SO2_kron([α, β, γ])
 eigvals(K3)  # cos(±α ± β ± γ) + i·sin(±α ± β ± γ) for all 8 sign combinations
 ```
 
 **Direct eigenvalue computation**: For faster computation without building the matrix:
 
 ```julia
-so2_kron_eigenvalues([α, β, γ])  # Returns 8 eigenvalues directly
+SO2_kron_eigenvalues([α, β, γ])  # Returns 8 eigenvalues directly
 ```
 
-**Same-angle case**: $R(\theta) \otimes R(\theta)$ uses double-angle formulas:
+**Same-angle case**: `SO2_rotation(θ) ⊗ SO2_rotation(θ)` uses double-angle formulas:
 
 ```julia
-eigvals(kron(R2(θ), R2(θ)))
+eigvals(kron(SO2_rotation(θ), SO2_rotation(θ)))
 # [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
 ```
 
@@ -287,10 +287,10 @@ $$\lambda = e^{\pm i(\alpha \pm \beta)/2} = \cos\left(\frac{\alpha \pm \beta}{2}
 @variables α β
 
 # SU(2) rotation constructors
-Uz(α)  # diagonal SU(2) rotation
+SU2_Uz(α)  # diagonal SU(2) rotation
 
 # 2-fold Kronecker product
-K = su2_kron([α, β])
+K = SU2_kron([α, β])
 eigvals(K)
 # [cos((α+β)/2) + im*sin((α+β)/2),
 #  cos((α-β)/2) + im*sin((α-β)/2),
@@ -300,7 +300,7 @@ eigvals(K)
 
 **Direct eigenvalue computation**:
 ```julia
-su2_kron_eigenvalues([α, β])  # Returns 4 eigenvalues directly
+SU2_kron_eigenvalues([α, β])  # Returns 4 eigenvalues directly
 ```
 
 ### SU(3) Kronecker Products
@@ -317,10 +317,10 @@ All combinations of phase sums from the diagonal elements.
 @variables α₁ α₂ β₁ β₂
 
 # SU(3) diagonal constructor
-U = su3_diagonal_trig(α₁, α₂)
+U = SU3_diagonal_trig(α₁, α₂)
 
 # 9×9 Kronecker product
-K = su3_kron((α₁, α₂), (β₁, β₂))
+K = SU3_kron((α₁, α₂), (β₁, β₂))
 eigvals(K)
 # [cos(α₁ + β₁) + im*sin(α₁ + β₁),
 #  cos(α₁ + β₂) + im*sin(α₁ + β₂),
@@ -329,7 +329,7 @@ eigvals(K)
 
 **Direct eigenvalue computation**:
 ```julia
-su3_kron_eigenvalues((α₁, α₂), (β₁, β₂))  # Returns 9 eigenvalues directly
+SU3_kron_eigenvalues((α₁, α₂), (β₁, β₂))  # Returns 9 eigenvalues directly
 ```
 
 ---

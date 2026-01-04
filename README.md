@@ -92,15 +92,17 @@ eigvals(M)  # {ac, ad, bc, bd}
 
 ```julia
 @variables θ φ
-R(x) = [cos(x) -sin(x); sin(x) cos(x)]  # SO(2) rotation matrix
+# Use SO2_rotation for clean 2×2 rotation matrices
+R_θ = SO2_rotation(θ)
+R_φ = SO2_rotation(φ)
 
 # Kronecker product of rotations → clean trig eigenvalues
-eigvals(kron(R(θ), R(φ)))
+eigvals(kron(R_θ, R_φ))
 # [cos(θ+φ) + im*sin(θ+φ), cos(θ-φ) + im*sin(θ-φ), 
 #  cos(θ-φ) - im*sin(θ-φ), cos(θ+φ) - im*sin(θ+φ)]
 
 # Same-angle case automatically simplifies
-eigvals(kron(R(θ), R(θ)))
+eigvals(kron(SO2_rotation(θ), SO2_rotation(θ)))
 # [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
 ```
 
@@ -109,7 +111,7 @@ eigvals(kron(R(θ), R(θ)))
 ```julia
 @variables α β
 # SU(2) rotations use half-angles for spin-1/2 representation
-K = su2_kron([α, β])  # 4×4 matrix
+K = SU2_kron([α, β])  # 4×4 matrix
 eigvals(K)
 # [cos((α+β)/2) + im*sin((α+β)/2), cos((α-β)/2) + im*sin((α-β)/2),
 #  cos((α-β)/2) - im*sin((α-β)/2), cos((α+β)/2) - im*sin((α+β)/2)]
@@ -120,7 +122,7 @@ eigvals(K)
 ```julia
 @variables α₁ α₂ β₁ β₂
 # SU(3) diagonal matrices (Cartan subalgebra)
-K = su3_kron((α₁, α₂), (β₁, β₂))  # 9×9 matrix
+K = SU3_kron((α₁, α₂), (β₁, β₂))  # 9×9 matrix
 eigvals(K)
 # 9 eigenvalues of the form cos(θ) + im*sin(θ) where θ is an angle sum
 ```

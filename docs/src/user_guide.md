@@ -108,9 +108,10 @@ clean trigonometric eigenvalues using angle addition formulas:
 
 ```julia
 @variables θ φ
-R(x) = [cos(x) -sin(x); sin(x) cos(x)]  # SO(2) rotation matrix
+R_θ = SO2_rotation(θ)
+R_φ = SO2_rotation(φ)
 
-K = kron(R(θ), R(φ))
+K = kron(R_θ, R_φ)
 eigvals(K)
 # [cos(θ + φ) + im*sin(θ + φ),   # e^{i(θ+φ)}
 #  cos(θ - φ) + im*sin(θ - φ),   # e^{i(θ-φ)}
@@ -118,10 +119,10 @@ eigvals(K)
 #  cos(θ + φ) - im*sin(θ + φ)]   # e^{-i(θ+φ)}
 ```
 
-The same-angle case `R(θ) ⊗ R(θ)` automatically simplifies using double-angle formulas:
+The same-angle case `SO2_rotation(θ) ⊗ SO2_rotation(θ)` automatically simplifies using double-angle formulas:
 
 ```julia
-eigvals(kron(R(θ), R(θ)))
+eigvals(kron(SO2_rotation(θ), SO2_rotation(θ)))
 # [cos(2θ) + im*sin(2θ),   # e^{2iθ}
 #  1,                       # θ - θ = 0
 #  1,                       # -(θ - θ) = 0
@@ -138,17 +139,17 @@ SU(2) is the group of 2×2 unitary matrices with determinant 1. In quantum mecha
 @variables α β
 
 # Pauli matrices
-σx()  # [0 1; 1 0]
-σy()  # [0 -im; im 0]
-σz()  # [1 0; 0 -1]
+pauli_x()  # [0 1; 1 0]
+pauli_y()  # [0 -im; im 0]
+pauli_z()  # [1 0; 0 -1]
 
 # SU(2) rotation matrices (spin-1/2 representation)
-Ux(θ)  # exp(-i θ σx/2)
-Uy(θ)  # exp(-i θ σy/2) - same form as SO(2) but with half-angle
-Uz(θ)  # diagonal: [e^{-iθ/2}, e^{iθ/2}]
+SU2_Ux(θ)  # exp(-i θ σx/2)
+SU2_Uy(θ)  # exp(-i θ σy/2) - same form as SO(2) but with half-angle
+SU2_Uz(θ)  # diagonal: [e^{-iθ/2}, e^{iθ/2}]
 
 # SU(2) ⊗ SU(2) Kronecker product
-K = su2_kron([α, β])  # 4×4 matrix
+K = SU2_kron([α, β])  # 4×4 matrix
 eigvals(K)
 # [cos((α+β)/2) + im*sin((α+β)/2),   # e^{i(α+β)/2}
 #  cos((α-β)/2) + im*sin((α-β)/2),   # e^{i(α-β)/2}
@@ -170,10 +171,10 @@ gellmann_matrices()  # Returns [λ1, λ2, ..., λ8]
 
 # Diagonal SU(3) matrix (Cartan subalgebra)
 # U = diag(e^{iα₁}, e^{iα₂}, e^{-i(α₁+α₂)})  # det = 1
-U = su3_diagonal_trig(α₁, α₂)
+U = SU3_diagonal_trig(α₁, α₂)
 
 # SU(3) ⊗ SU(3) Kronecker product (9×9 diagonal matrix)
-K = su3_kron((α₁, α₂), (β₁, β₂))
+K = SU3_kron((α₁, α₂), (β₁, β₂))
 eigvals(K)
 # 9 eigenvalues of the form cos(θ) + im*sin(θ) where θ is:
 # α₁+β₁, α₁+β₂, α₁-(β₁+β₂), α₂+β₁, α₂+β₂, α₂-(β₁+β₂),
@@ -183,7 +184,7 @@ eigvals(K)
 Direct eigenvalue computation without building the matrix:
 
 ```julia
-su3_kron_eigenvalues((α₁, α₂), (β₁, β₂))  # Returns 9 eigenvalues directly
+SU3_kron_eigenvalues((α₁, α₂), (β₁, β₂))  # Returns 9 eigenvalues directly
 ```
 
 ### Simplifying Eigenvalue Expressions
