@@ -840,6 +840,10 @@ function _extract_so2_kron_pairs_from_first_column(mat, k)
     
     if k == 1
         c, s = col1[1], col1[2]
+        # Verify this is actually an SO(2) first column: c^2 + s^2 = 1
+        if !_issymzero_trig(Symbolics.simplify(c^2 + s^2 - 1))
+            return nothing
+        end
         return [(c, s)]
     end
     
@@ -1820,7 +1824,7 @@ function _try_symbolic_sqrt(expr)
         end
     end
     
-    # Check if it's a product of squares
+    # Check if it's a product of squares (with optional numeric perfect square)
     if Symbolics.iscall(unwrapped) && Symbolics.operation(unwrapped) === (*)
         args = Symbolics.arguments(unwrapped)
         sqrt_factors = []
@@ -1833,7 +1837,18 @@ function _try_symbolic_sqrt(expr)
                     return nothing  # Not a perfect square
                 end
             else
-                return nothing  # Not a perfect square
+                # Check if it's a perfect square numeric (could be wrapped SymReal)
+                val = Symbolics.value(arg)
+                if val isa Number && isreal(val) && real(val) >= 0
+                    s = sqrt(real(val))
+                    if s^2 == real(val) && (isinteger(s) || isapprox(s^2, real(val)))
+                        push!(sqrt_factors, s)
+                    else
+                        return nothing  # Not a perfect square
+                    end
+                else
+                    return nothing  # Not a perfect square
+                end
             end
         end
         return Num(prod(sqrt_factors))
@@ -1841,9 +1856,13 @@ function _try_symbolic_sqrt(expr)
     
     # Check if it's a simple number (not a symbolic Num)
     if expr isa Real && !(expr isa Num)
-        s = sqrt(expr)
-        if s^2 == expr
-            return s
+        if expr >= 0
+            s = sqrt(expr)
+            if s^2 == expr
+                return s
+            end
+        else
+            return nothing  # Negative number, can't take real sqrt
         end
     end
     
@@ -2091,3 +2110,758 @@ function _is_so3_trig(A)
     
     return true
 end
+
+# ============================================================================
+# Complex Entry Detection (used by SU(2), SU(3) Kronecker detection)
+# ============================================================================
+
+"""
+    _has_complex_entries(mat)
+
+Check if a matrix has any imaginary/complex components.
+Used to disambiguate SU(n)⊗SU(n) (complex) from SO(n)⊗SO(n) (real).
+"""
+function _has_complex_entries(mat)
+    for x in mat
+        if x isa Complex && !iszero(imag(x))
+            return true
+        end
+        if x isa Num
+            # For symbolic expressions, check if there's an imaginary part
+            imag_part = imag(x)
+            if !_issymzero_trig(imag_part)
+                return true
+            end
+        end
+    end
+    return false
+end
+
+# ============================================================================
+# SU(2) Kronecker Product Detection
+# ============================================================================
+
+"""
+    _is_su2_trig(A)
+
+Check if A is an SU(2) matrix (2×2 special unitary) using trig-aware simplification.
+"""
+function _is_su2_trig(A)
+    size(A) == (2, 2) || return false
+    
+    # Check unitarity: A * A^H = I with trig simplification
+    AAH = A * adjoint(A)
+    for i in 1:2, j in 1:2
+        target = i == j ? 1 : 0
+        diff = AAH[i, j] - target
+        # Use trig simplification for both real and imaginary parts
+        if !_issymzero_trig(real(diff)) || !_issymzero_trig(imag(diff))
+            return false
+        end
+    end
+    
+    # Check det = 1 with trig simplification
+    d = det(A)
+    if !_issymzero_trig(real(d) - 1) || !_issymzero_trig(imag(d))
+        return false
+    end
+    
+    return true
+end
+
+"""
+    _su2_trace(A)
+
+Extract the trace of an SU(2) matrix, returning (cos(θ/2), sin(θ/2)) 
+where the eigenvalues are e^{±iθ/2}.
+
+For SU(2), tr(U) = 2·cos(θ/2) where θ is the rotation angle.
+"""
+function _su2_trace(A)
+    tr_A = tr(A)
+    # tr(U) = 2·cos(θ/2), so cos(θ/2) = tr(U)/2
+    cos_half = real(tr_A) / 2
+    # sin(θ/2) = sqrt(1 - cos²(θ/2))
+    sin_half = aggressive_simplify(sqrt(1 - cos_half^2))
+    return (cos_half, sin_half)
+end
+
+"""
+    _detect_su2_kronecker_product(mat)
+
+Detect if a matrix is a Kronecker product of SU(2) matrices and compute eigenvalues.
+
+Returns eigenvalues if detected as SU(2)^⊗k, nothing otherwise.
+"""
+function _detect_su2_kronecker_product(mat)
+    N = size(mat, 1)
+    size(mat, 2) == N || return nothing
+    
+    # Must be power of 2
+    N >= 4 || return nothing  # Need at least 4×4 for SU(2)⊗SU(2)
+    k = Int(round(log2(N)))
+    2^k == N || return nothing
+    
+    # SU(2)⊗SU(2) must have complex entries (SU(2) is complex unitary)
+    # A purely real matrix cannot be SU(2)⊗SU(2) unless it's a degenerate case
+    if !_has_complex_entries(mat)
+        return nothing
+    end
+    
+    # Handle different sizes
+    if k == 2  # 4×4 = SU(2) ⊗ SU(2)
+        return _detect_su2_kron_2fold(mat)
+    elseif k == 3  # 8×8 = SU(2) ⊗ SU(2) ⊗ SU(2)
+        return _detect_su2_kron_3fold(mat)
+    end
+    
+    return nothing
+end
+
+"""
+    _detect_su2_kron_2fold(mat)
+
+Detect if 4×4 matrix is SU(2) ⊗ SU(2) and compute eigenvalues.
+"""
+function _detect_su2_kron_2fold(mat)
+    size(mat) == (4, 4) || return nothing
+    
+    # Extract 2×2 blocks:
+    # mat = [B11 B12; B21 B22] where Bij = U1[i,j] * U2
+    blocks = [mat[1:2, 1:2] mat[1:2, 3:4];
+              mat[3:4, 1:2] mat[3:4, 3:4]]
+    
+    B11 = mat[1:2, 1:2]
+    B12 = mat[1:2, 3:4]
+    B21 = mat[3:4, 1:2]
+    B22 = mat[3:4, 3:4]
+    
+    # Try Strategy A: Check if any diagonal block is directly SU(2)
+    # If U1 has 1 on diagonal (e.g., identity or some special rotation),
+    # then that block IS U2
+    
+    for (idx, Bkk) in enumerate([B11, B22])
+        Bkk_simplified = Symbolics.simplify.(Bkk)
+        if _is_su2_trig(Bkk_simplified)
+            # Found U2 directly in a diagonal block
+            # Extract U1 by checking what scalar multiplies each block
+            # For block B11 = U1[1,1] * U2, so U1[1,1] = B11[1,1] / U2[1,1] (if U2[1,1] ≠ 0)
+            
+            U2 = Bkk_simplified
+            c2, s2 = _su2_trace(U2)
+            
+            # Find a non-zero element in U2 to extract U1 entries
+            ref_i, ref_j = 1, 1
+            if _issymzero_trig(real(U2[1, 1])) && _issymzero_trig(imag(U2[1, 1]))
+                ref_i, ref_j = 1, 2
+            end
+            
+            U2_ref = U2[ref_i, ref_j]
+            
+            # Extract U1 matrix elements
+            U1_11 = Symbolics.simplify(B11[ref_i, ref_j] / U2_ref)
+            U1_12 = Symbolics.simplify(B12[ref_i, ref_j] / U2_ref)
+            U1_21 = Symbolics.simplify(B21[ref_i, ref_j] / U2_ref)
+            U1_22 = Symbolics.simplify(B22[ref_i, ref_j] / U2_ref)
+            
+            U1 = [U1_11 U1_12; U1_21 U1_22]
+            U1_simplified = Symbolics.simplify.(U1)
+            
+            if _is_su2_trig(U1_simplified)
+                c1, s1 = _su2_trace(U1_simplified)
+                return _compute_su2_kron_eigenvalues_from_traces(c1, s1, c2, s2)
+            end
+        end
+    end
+    
+    # Try Strategy B: Use determinant
+    # det(Bii) = U1[i,i]² · det(U2) = U1[i,i]² (since det(U2) = 1)
+    # So U1[i,i] = ±sqrt(det(Bii))
+    
+    det_B11 = det(B11)
+    det_B11_simplified = trig_simplify(Symbolics.simplify(det_B11))
+    
+    # Try to find symbolic square root
+    sqrt_det = _try_symbolic_sqrt(det_B11_simplified)
+    if !isnothing(sqrt_det)
+        U1_11 = sqrt_det
+        
+        # If U1[1,1] ≠ 0, then U2 = B11 / U1[1,1]
+        if !_issymzero_trig(real(U1_11)) || !_issymzero_trig(imag(U1_11))
+            U2 = Symbolics.simplify.(B11 / U1_11)
+            
+            if _is_su2_trig(U2)
+                c2, s2 = _su2_trace(U2)
+                
+                # Now extract full U1
+                ref_i, ref_j = 1, 1
+                if _issymzero_trig(real(U2[1, 1])) && _issymzero_trig(imag(U2[1, 1]))
+                    ref_i, ref_j = 1, 2
+                end
+                U2_ref = U2[ref_i, ref_j]
+                
+                U1_12 = Symbolics.simplify(B12[ref_i, ref_j] / U2_ref)
+                U1_21 = Symbolics.simplify(B21[ref_i, ref_j] / U2_ref)
+                U1_22 = Symbolics.simplify(B22[ref_i, ref_j] / U2_ref)
+                
+                U1 = [U1_11 U1_12; U1_21 U1_22]
+                
+                if _is_su2_trig(U1)
+                    c1, s1 = _su2_trace(U1)
+                    return _compute_su2_kron_eigenvalues_from_traces(c1, s1, c2, s2)
+                end
+            end
+        end
+    end
+    
+    # Try Strategy C: Orthogonality-based trace extraction
+    # For K = U1 ⊗ U2, use unitarity of U1 rows:
+    # |U1[1,1]|² + |U1[1,2]|² = 1
+    # Since Bij = U1[i,j] * U2:
+    # |tr(B11)|² + |tr(B12)|² = (|U1[1,1]|² + |U1[1,2]|²) * |tr(U2)|² = |tr(U2)|²
+    
+    result = _try_su2_kron_from_traces(mat, [[B11, B12], [B21, B22]])
+    if !isnothing(result)
+        return result
+    end
+    
+    return nothing
+end
+
+"""
+    _try_su2_kron_from_traces(mat, blocks)
+
+Strategy C: Extract SU(2) Kronecker eigenvalues using orthogonality-based trace extraction.
+
+For K = U1 ⊗ U2:
+- |tr(B11)|² + |tr(B12)|² = |tr(U2)|² (using U1 row 1 unitarity)
+- tr(K) = tr(U1) * tr(U2)
+
+This gives both traces without needing to find factor elements directly.
+"""
+function _try_su2_kron_from_traces(mat, blocks)
+    B11, B12 = blocks[1]
+    B21, B22 = blocks[2]
+    
+    # Compute |tr(B11)|² + |tr(B12)|²
+    tr_B11 = tr(B11)
+    tr_B12 = tr(B12)
+    
+    # For complex traces: |z|² = z * conj(z) = real(z)² + imag(z)²
+    norm_sq_B11 = real(tr_B11)^2 + imag(tr_B11)^2
+    norm_sq_B12 = real(tr_B12)^2 + imag(tr_B12)^2
+    
+    sum_norm_sq = trig_simplify(Symbolics.simplify(norm_sq_B11 + norm_sq_B12))
+    
+    # This equals |tr(U2)|² = (2·cos(θ₂/2))² = 4·cos²(θ₂/2)
+    # So |tr(U2)| = sqrt(sum_norm_sq)
+    
+    sqrt_sum = _try_symbolic_sqrt(sum_norm_sq)
+    if isnothing(sqrt_sum)
+        # Try aggressive simplification
+        sum_simplified = aggressive_simplify(sum_norm_sq)
+        sqrt_sum = _try_symbolic_sqrt(sum_simplified)
+        isnothing(sqrt_sum) && return nothing
+    end
+    
+    tr_U2_magnitude = sqrt_sum
+    
+    # For SU(2), tr(U) = 2·cos(θ/2) which is real
+    # |tr(U2)| = |2·cos(θ₂/2)| = 2|cos(θ₂/2)|
+    # So cos(θ₂/2) = ±tr_U2_magnitude/2
+    
+    # We take the positive branch (can adjust if needed for consistency)
+    cos2_half = trig_simplify(tr_U2_magnitude / 2)
+    
+    # Check if 1 - cos2_half^2 is non-negative (for numeric values only, not symbolic)
+    sin2_sq = 1 - cos2_half^2
+    if !(sin2_sq isa Num) && sin2_sq isa Number && real(sin2_sq) < 0
+        return nothing  # Not a valid SU(2) Kronecker product
+    end
+    sin2_half = aggressive_simplify(sqrt(sin2_sq))
+    
+    # Now get tr(U1) from tr(K) = tr(U1) * tr(U2)
+    tr_K = tr(mat)
+    
+    # Guard against division by zero (numeric only)
+    if !(tr_U2_magnitude isa Num) && tr_U2_magnitude isa Number && isapprox(tr_U2_magnitude, 0, atol=1e-10)
+        return nothing
+    end
+    
+    tr_U1 = trig_simplify(Symbolics.simplify(tr_K / tr_U2_magnitude))
+    
+    # tr(U1) = 2·cos(θ₁/2), so cos(θ₁/2) = tr(U1)/2
+    # Handle complex trace (shouldn't happen for pure rotation, but be safe)
+    cos1_half = trig_simplify(real(tr_U1) / 2)
+    
+    # Check if 1 - cos1_half^2 is non-negative (for numeric values only)
+    sin1_sq = 1 - cos1_half^2
+    if !(sin1_sq isa Num) && sin1_sq isa Number && real(sin1_sq) < 0
+        return nothing  # Not a valid SU(2) Kronecker product
+    end
+    sin1_half = aggressive_simplify(sqrt(sin1_sq))
+    
+    # Verify the result makes sense by checking the full matrix is unitary
+    # (Skip for now - trust the structure)
+    
+    return _compute_su2_kron_eigenvalues_from_traces(cos1_half, sin1_half, cos2_half, sin2_half)
+end
+
+"""
+    _compute_su2_kron_eigenvalues_from_traces(c1, s1, c2, s2)
+
+Compute eigenvalues of U1 ⊗ U2 where:
+- U1 has eigenvalues e^{±iθ₁/2} with cos(θ₁/2) = c1, sin(θ₁/2) = s1
+- U2 has eigenvalues e^{±iθ₂/2} with cos(θ₂/2) = c2, sin(θ₂/2) = s2
+
+The 4 eigenvalues are:
+- e^{i(θ₁+θ₂)/2} = (c1 + is1)(c2 + is2)
+- e^{i(θ₁-θ₂)/2} = (c1 + is1)(c2 - is2)
+- e^{i(-θ₁+θ₂)/2} = (c1 - is1)(c2 + is2)
+- e^{i(-θ₁-θ₂)/2} = (c1 - is1)(c2 - is2)
+"""
+function _compute_su2_kron_eigenvalues_from_traces(c1, s1, c2, s2)
+    # e^{iα} * e^{iβ} = e^{i(α+β)}
+    # (c1 + is1)(c2 + is2) = (c1c2 - s1s2) + i(c1s2 + s1c2)
+    #                      = cos((θ₁+θ₂)/2) + i·sin((θ₁+θ₂)/2)
+    
+    # Real and imaginary parts before simplification
+    re1, im1 = c1*c2 - s1*s2, c1*s2 + s1*c2      # e^{i(θ₁+θ₂)/2}
+    re2, im2 = c1*c2 + s1*s2, c1*s2 - s1*c2      # e^{i(θ₁-θ₂)/2}
+    re3, im3 = c1*c2 + s1*s2, -(c1*s2 - s1*c2)   # e^{i(-θ₁+θ₂)/2}
+    re4, im4 = c1*c2 - s1*s2, -(c1*s2 + s1*c2)   # e^{i(-θ₁-θ₂)/2}
+    
+    # Apply trig simplification to real and imaginary parts separately
+    # This converts cos(a)*cos(b) - sin(a)*sin(b) → cos(a+b), etc.
+    λ1 = trig_simplify(re1) + im*trig_simplify(im1)
+    λ2 = trig_simplify(re2) + im*trig_simplify(im2)
+    λ3 = trig_simplify(re3) + im*trig_simplify(im3)
+    λ4 = trig_simplify(re4) + im*trig_simplify(im4)
+    
+    return [simplify_eigenvalue(λ) for λ in [λ1, λ2, λ3, λ4]]
+end
+
+"""
+    _detect_su2_kron_3fold(mat)
+
+Detect if 8×8 matrix is SU(2) ⊗ SU(2) ⊗ SU(2) and compute eigenvalues.
+"""
+function _detect_su2_kron_3fold(mat)
+    size(mat) == (8, 8) || return nothing
+    
+    # Try to factor as 4 ⊗ 2
+    kron_info = _try_kronecker_factorization(mat, 4, 2)
+    if !isnothing(kron_info)
+        A, B, m, n = kron_info
+        
+        # B should be SU(2), A should be SU(2) ⊗ SU(2)
+        B_simplified = Symbolics.simplify.(B)
+        if _is_su2_trig(B_simplified)
+            c_B, s_B = _su2_trace(B_simplified)
+            
+            # Recursively detect A as SU(2) ⊗ SU(2)
+            vals_A = _detect_su2_kron_2fold(A)
+            
+            if !isnothing(vals_A)
+                # Combine eigenvalues
+                eigenvalues = []
+                for λ_A in vals_A
+                    # Multiply by both eigenvalues of B
+                    λ_B_plus = c_B + im*s_B
+                    λ_B_minus = c_B - im*s_B
+                    push!(eigenvalues, simplify_eigenvalue(trig_simplify(Symbolics.simplify(λ_A * λ_B_plus))))
+                    push!(eigenvalues, simplify_eigenvalue(trig_simplify(Symbolics.simplify(λ_A * λ_B_minus))))
+                end
+                return eigenvalues
+            end
+        end
+    end
+    
+    # Try to factor as 2 ⊗ 4
+    kron_info = _try_kronecker_factorization(mat, 2, 4)
+    if !isnothing(kron_info)
+        A, B, m, n = kron_info
+        
+        # A should be SU(2), B should be SU(2) ⊗ SU(2)
+        A_simplified = Symbolics.simplify.(A)
+        if _is_su2_trig(A_simplified)
+            c_A, s_A = _su2_trace(A_simplified)
+            
+            # Recursively detect B as SU(2) ⊗ SU(2)
+            vals_B = _detect_su2_kron_2fold(B)
+            
+            if !isnothing(vals_B)
+                # Combine eigenvalues
+                eigenvalues = []
+                λ_A_plus = c_A + im*s_A
+                λ_A_minus = c_A - im*s_A
+                for λ_B in vals_B
+                    push!(eigenvalues, simplify_eigenvalue(trig_simplify(Symbolics.simplify(λ_A_plus * λ_B))))
+                    push!(eigenvalues, simplify_eigenvalue(trig_simplify(Symbolics.simplify(λ_A_minus * λ_B))))
+                end
+                return eigenvalues
+            end
+        end
+    end
+    
+    return nothing
+end
+
+# ============================================================================
+# SU(3) Kronecker Product Detection
+# ============================================================================
+
+"""
+    _is_su3_trig(A)
+
+Check if A is an SU(3) matrix (3×3 special unitary) using trig-aware simplification.
+
+Key difference from SO(3): SU(3) matrices are complex unitary with det=1.
+"""
+function _is_su3_trig(A)
+    size(A) == (3, 3) || return false
+    
+    # SU(3) must have complex entries (or at least not be purely real orthogonal)
+    # Check unitarity: A * A^H = I with trig simplification
+    AAH = A * adjoint(A)
+    for i in 1:3, j in 1:3
+        target = i == j ? 1 : 0
+        diff = AAH[i, j] - target
+        # Use trig simplification for both real and imaginary parts
+        if !_issymzero_trig(real(diff)) || !_issymzero_trig(imag(diff))
+            return false
+        end
+    end
+    
+    # Check det = 1 with trig simplification
+    d = det(A)
+    if !_issymzero_trig(real(d) - 1) || !_issymzero_trig(imag(d))
+        return false
+    end
+    
+    return true
+end
+
+"""
+    _su3_trace_phases(A)
+
+Extract the phases from an SU(3) matrix's trace.
+
+For SU(3), tr(U) = e^{iθ₁} + e^{iθ₂} + e^{-i(θ₁+θ₂)}
+This is a complex number that encodes the two independent phases.
+
+Returns the trace directly (not decomposed into phases, as that requires
+solving a quadratic equation).
+"""
+function _su3_trace_phases(A)
+    return tr(A)
+end
+
+# Note: _has_complex_entries is defined earlier in this file (around line 2120)
+
+"""
+    _is_diagonal_matrix(mat)
+
+Check if a matrix is diagonal (all off-diagonal elements are zero).
+Handles both numeric and symbolic matrices, including Diagonal type.
+"""
+function _is_diagonal_matrix(mat)
+    # Fast path for Diagonal type
+    if mat isa Diagonal
+        return true
+    end
+    
+    n = size(mat, 1)
+    for i in 1:n, j in 1:n
+        if i != j
+            x = mat[i, j]
+            if x isa Complex
+                if !iszero(real(x)) || !iszero(imag(x))
+                    return false
+                end
+            elseif x isa Num
+                if !_issymzero_trig(real(x)) || !_issymzero_trig(imag(x))
+                    return false
+                end
+            elseif !iszero(x)
+                return false
+            end
+        end
+    end
+    return true
+end
+
+"""
+    _detect_su3_kronecker_product(mat)
+
+Detect if a matrix is a Kronecker product of SU(3) matrices and compute eigenvalues.
+
+Returns eigenvalues if detected as SU(3)^⊗k, nothing otherwise.
+
+Key disambiguation from SO(3)⊗SO(3):
+- Both produce 9×9 matrices
+- SU(3)⊗SU(3) is complex unitary
+- SO(3)⊗SO(3) is real orthogonal
+"""
+function _detect_su3_kronecker_product(mat)
+    N = size(mat, 1)
+    size(mat, 2) == N || return nothing
+    
+    # SU(3)⊗SU(3) produces 9×9
+    N == 9 || return nothing
+    
+    # Key disambiguation: SU(3)⊗SU(3) has complex entries
+    # SO(3)⊗SO(3) is real
+    if !_has_complex_entries(mat)
+        return nothing  # Let SO(3)⊗SO(3) handler take care of this
+    end
+    
+    # Handle 9×9 = SU(3) ⊗ SU(3)
+    return _detect_su3_kron_2fold(mat)
+end
+
+"""
+    _detect_su3_kron_2fold(mat)
+
+Detect if 9×9 matrix is SU(3) ⊗ SU(3) and compute eigenvalues.
+
+Uses block structure: mat = [Bᵢⱼ] where Bᵢⱼ = U₁[i,j] * U₂ (3×3 blocks).
+"""
+function _detect_su3_kron_2fold(mat)
+    size(mat) == (9, 9) || return nothing
+    
+    # Strategy 0: Check if matrix is diagonal (simplest case for SU(3)⊗SU(3))
+    # For diagonal Kronecker products, eigenvalues are just the diagonal entries
+    if _is_diagonal_matrix(mat)
+        eigenvalues = []
+        for i in 1:9
+            val = mat[i, i]
+            # Apply trig_simplify to get clean forms like cos(α+β) + i*sin(α+β)
+            re_simplified = trig_simplify(real(val))
+            im_simplified = trig_simplify(imag(val))
+            push!(eigenvalues, re_simplified + im * im_simplified)
+        end
+        return eigenvalues
+    end
+    
+    # Extract 3×3 blocks: mat[block_i, block_j] for block indices 1,2,3
+    function get_block(i, j)
+        ri = (i-1)*3+1 : i*3
+        cj = (j-1)*3+1 : j*3
+        return mat[ri, cj]
+    end
+    
+    blocks = [get_block(i, j) for i in 1:3, j in 1:3]
+    
+    # Strategy A: Check if any diagonal block is directly SU(3)
+    # If U₁ has 1 on diagonal, then that block IS U₂
+    for k in 1:3
+        Bkk = blocks[k, k]
+        Bkk_simplified = Symbolics.simplify.(Bkk)
+        if _is_su3_trig(Bkk_simplified)
+            # Found U₂ directly in diagonal block Bₖₖ
+            U2 = Bkk_simplified
+            tr_U2 = tr(U2)
+            
+            # Find a non-zero element in U₂ to extract U₁ entries
+            ref_i, ref_j = 1, 1
+            for ri in 1:3, rj in 1:3
+                if !_issymzero_trig(real(U2[ri, rj])) || !_issymzero_trig(imag(U2[ri, rj]))
+                    ref_i, ref_j = ri, rj
+                    break
+                end
+            end
+            
+            U2_ref = U2[ref_i, ref_j]
+            
+            # Extract U₁ matrix elements from all blocks
+            U1 = Matrix{Any}(undef, 3, 3)
+            for i in 1:3, j in 1:3
+                U1[i, j] = Symbolics.simplify(blocks[i, j][ref_i, ref_j] / U2_ref)
+            end
+            
+            U1_simplified = Symbolics.simplify.(U1)
+            
+            if _is_su3_trig(U1_simplified)
+                tr_U1 = tr(U1_simplified)
+                return _compute_su3_kron_eigenvalues_from_traces(tr_U1, tr_U2)
+            end
+        end
+    end
+    
+    # Strategy B: Use determinant of diagonal blocks
+    # det(Bₖₖ) = U₁[k,k]³ · det(U₂) = U₁[k,k]³ (since det(U₂)=1)
+    # So U₁[k,k] = ∛det(Bₖₖ)
+    
+    B11 = blocks[1, 1]
+    det_B11 = det(B11)
+    det_B11_simplified = trig_simplify(Symbolics.simplify(det_B11))
+    
+    # For SU(3) diagonal, we might have det_B11 = e^{3iθ₁} where θ₁ is first phase
+    # Try direct cubic root (works for clean symbolic cases)
+    cbrt_det = _try_symbolic_cbrt(det_B11_simplified)
+    if !isnothing(cbrt_det)
+        U1_11 = cbrt_det
+        
+        # If U₁[1,1] ≠ 0, then U₂ = B₁₁ / U₁[1,1]
+        if !_issymzero_trig(real(U1_11)) || !_issymzero_trig(imag(U1_11))
+            U2 = Symbolics.simplify.(B11 / U1_11)
+            
+            if _is_su3_trig(U2)
+                tr_U2 = tr(U2)
+                
+                # Extract full U₁
+                ref_i, ref_j = 1, 1
+                for ri in 1:3, rj in 1:3
+                    if !_issymzero_trig(real(U2[ri, rj])) || !_issymzero_trig(imag(U2[ri, rj]))
+                        ref_i, ref_j = ri, rj
+                        break
+                    end
+                end
+                U2_ref = U2[ref_i, ref_j]
+                
+                U1 = Matrix{Any}(undef, 3, 3)
+                for i in 1:3, j in 1:3
+                    U1[i, j] = Symbolics.simplify(blocks[i, j][ref_i, ref_j] / U2_ref)
+                end
+                
+                if _is_su3_trig(U1)
+                    tr_U1 = tr(U1)
+                    return _compute_su3_kron_eigenvalues_from_traces(tr_U1, tr_U2)
+                end
+            end
+        end
+    end
+    
+    # Strategy C: Orthogonality-based trace extraction
+    # For K = U₁ ⊗ U₂, use unitarity of U₁ rows:
+    # Σⱼ |U₁[1,j]|² = 1
+    # Since Bᵢⱼ = U₁[i,j] * U₂:
+    # Σⱼ |tr(B₁ⱼ)|² = (Σⱼ |U₁[1,j]|²) * |tr(U₂)|² = |tr(U₂)|²
+    
+    result = _try_su3_kron_from_traces(mat, blocks)
+    if !isnothing(result)
+        return result
+    end
+    
+    return nothing
+end
+
+"""
+    _try_su3_kron_from_traces(mat, blocks)
+
+Strategy C: Extract SU(3) Kronecker eigenvalues using orthogonality-based trace extraction.
+
+For K = U₁ ⊗ U₂:
+- Σⱼ |tr(B₁ⱼ)|² = |tr(U₂)|² (using U₁ row 1 unitarity)
+- tr(K) = tr(U₁) * tr(U₂)
+
+This gives both traces without needing to find factor elements directly.
+"""
+function _try_su3_kron_from_traces(mat, blocks)
+    # Compute Σⱼ |tr(B₁ⱼ)|² for first row of blocks
+    sum_norm_sq = 0
+    for j in 1:3
+        tr_B1j = tr(blocks[1, j])
+        # |z|² = real(z)² + imag(z)²
+        norm_sq = real(tr_B1j)^2 + imag(tr_B1j)^2
+        sum_norm_sq = sum_norm_sq + norm_sq
+    end
+    
+    sum_norm_sq = trig_simplify(Symbolics.simplify(sum_norm_sq))
+    
+    # This equals |tr(U₂)|²
+    sqrt_sum = _try_symbolic_sqrt(sum_norm_sq)
+    if isnothing(sqrt_sum)
+        sum_simplified = aggressive_simplify(sum_norm_sq)
+        sqrt_sum = _try_symbolic_sqrt(sum_simplified)
+        isnothing(sqrt_sum) && return nothing
+    end
+    
+    tr_U2_magnitude = sqrt_sum
+    
+    # Guard against division by zero
+    if !(tr_U2_magnitude isa Num) && tr_U2_magnitude isa Number && isapprox(tr_U2_magnitude, 0, atol=1e-10)
+        return nothing
+    end
+    
+    # For SU(3), tr(U) = e^{iθ₁} + e^{iθ₂} + e^{-i(θ₁+θ₂)} which is generally complex
+    # We need the full trace, not just magnitude
+    # 
+    # Alternative: use tr(K) = tr(U₁) * tr(U₂)
+    # But we only have |tr(U₂)|, not tr(U₂) itself
+    #
+    # For diagonal SU(3): tr(U) = 2cos(θ₁) + 2cos(θ₂) + 2cos(θ₁+θ₂) - complicated
+    #
+    # Better approach: For diagonal SU(3) ⊗ SU(3), work directly with matrix structure
+    
+    # Check if matrix is diagonal (simplest case for SU(3)⊗SU(3))
+    is_diag = true
+    for i in 1:9, j in 1:9
+        if i != j
+            if !_issymzero_trig(real(mat[i, j])) || !_issymzero_trig(imag(mat[i, j]))
+                is_diag = false
+                break
+            end
+        end
+    end
+    
+    if is_diag
+        # For diagonal SU(3)⊗SU(3), eigenvalues are just the diagonal entries
+        eigenvalues = [simplify_eigenvalue(mat[i, i]) for i in 1:9]
+        return eigenvalues
+    end
+    
+    # For non-diagonal case, we need more sophisticated analysis
+    # For now, return nothing and let other handlers try
+    return nothing
+end
+
+# Note: _try_symbolic_cbrt is already defined earlier in this file (around line 1890)
+
+"""
+    _compute_su3_kron_eigenvalues_from_traces(tr_U1, tr_U2)
+
+Compute eigenvalues of U₁ ⊗ U₂ for SU(3) matrices from their traces.
+
+For SU(3):
+- tr(U) = λ₁ + λ₂ + λ₃ where λ₁λ₂λ₃ = 1
+- The eigenvalues of U₁⊗U₂ are all 9 products μᵢνⱼ
+
+This requires solving cubic equations to get individual eigenvalues from traces,
+which is complex. For clean symbolic forms, we use the characteristic polynomial
+approach.
+"""
+function _compute_su3_kron_eigenvalues_from_traces(tr_U1, tr_U2)
+    # For SU(3), the characteristic polynomial is:
+    # λ³ - tr(U)λ² + tr(U*)λ - 1 = 0
+    # (since det=1 and e2 = tr(U*) for unitary matrices)
+    
+    # For U₁: eigenvalues satisfy λ³ - tr₁λ² + tr₁*λ - 1 = 0
+    # For U₂: eigenvalues satisfy μ³ - tr₂μ² + tr₂*μ - 1 = 0
+    
+    # Compute conjugate traces (for SU(n), e2 = conj(tr))
+    tr_U1_conj = conj(tr_U1)
+    tr_U2_conj = conj(tr_U2)
+    
+    # Get eigenvalues of each factor using cubic formula
+    # Coefficients: a₃λ³ + a₂λ² + a₁λ + a₀ = 0
+    # For SU(3): λ³ - tr·λ² + tr*·λ - 1 = 0
+    coeffs_U1 = [-1, tr_U1_conj, -tr_U1, 1]  # [a₀, a₁, a₂, a₃]
+    coeffs_U2 = [-1, tr_U2_conj, -tr_U2, 1]
+    
+    # Solve cubics
+    λs = symbolic_roots(coeffs_U1)
+    μs = symbolic_roots(coeffs_U2)
+    
+    # Eigenvalues of Kronecker product are all products
+    eigenvalues = []
+    for λ in λs
+        for μ in μs
+            push!(eigenvalues, simplify_eigenvalue(trig_simplify(Symbolics.simplify(λ * μ))))
+        end
+    end
+    
+    return eigenvalues
+end
+

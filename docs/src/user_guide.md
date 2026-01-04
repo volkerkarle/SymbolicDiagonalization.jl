@@ -130,6 +130,62 @@ eigvals(kron(R(θ), R(θ)))
 
 This works recursively for nested SO(2) Kronecker products.
 
+### SU(2) Kronecker Products
+
+SU(2) is the group of 2×2 unitary matrices with determinant 1. In quantum mechanics, SU(2) describes spin-1/2 systems. The package provides Pauli matrices and SU(2) rotation constructors:
+
+```julia
+@variables α β
+
+# Pauli matrices
+σx()  # [0 1; 1 0]
+σy()  # [0 -im; im 0]
+σz()  # [1 0; 0 -1]
+
+# SU(2) rotation matrices (spin-1/2 representation)
+Ux(θ)  # exp(-i θ σx/2)
+Uy(θ)  # exp(-i θ σy/2) - same form as SO(2) but with half-angle
+Uz(θ)  # diagonal: [e^{-iθ/2}, e^{iθ/2}]
+
+# SU(2) ⊗ SU(2) Kronecker product
+K = su2_kron([α, β])  # 4×4 matrix
+eigvals(K)
+# [cos((α+β)/2) + im*sin((α+β)/2),   # e^{i(α+β)/2}
+#  cos((α-β)/2) + im*sin((α-β)/2),   # e^{i(α-β)/2}
+#  cos((α-β)/2) - im*sin((α-β)/2),   # e^{-i(α-β)/2}
+#  cos((α+β)/2) - im*sin((α+β)/2)]   # e^{-i(α+β)/2}
+```
+
+The key difference from SO(2) is the half-angle: SU(2) uses `θ/2` instead of `θ`.
+
+### SU(3) Kronecker Products
+
+SU(3) is the group of 3×3 unitary matrices with determinant 1. It's fundamental in particle physics (color charge in QCD). The package provides Gell-Mann matrices and diagonal SU(3) constructors:
+
+```julia
+@variables α₁ α₂ β₁ β₂
+
+# Gell-Mann matrices (8 generators of SU(3))
+gellmann_matrices()  # Returns [λ1, λ2, ..., λ8]
+
+# Diagonal SU(3) matrix (Cartan subalgebra)
+# U = diag(e^{iα₁}, e^{iα₂}, e^{-i(α₁+α₂)})  # det = 1
+U = su3_diagonal_trig(α₁, α₂)
+
+# SU(3) ⊗ SU(3) Kronecker product (9×9 diagonal matrix)
+K = su3_kron((α₁, α₂), (β₁, β₂))
+eigvals(K)
+# 9 eigenvalues of the form cos(θ) + im*sin(θ) where θ is:
+# α₁+β₁, α₁+β₂, α₁-(β₁+β₂), α₂+β₁, α₂+β₂, α₂-(β₁+β₂),
+# -(α₁+α₂)+β₁, -(α₁+α₂)+β₂, -(α₁+α₂)-(β₁+β₂)
+```
+
+Direct eigenvalue computation without building the matrix:
+
+```julia
+su3_kron_eigenvalues((α₁, α₂), (β₁, β₂))  # Returns 9 eigenvalues directly
+```
+
 ### Simplifying Eigenvalue Expressions
 
 The package provides aggressive simplification functions for cleaning up symbolic eigenvalue expressions, particularly those involving trigonometric functions.

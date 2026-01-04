@@ -14,6 +14,8 @@ Catalog of matrix patterns with closed-form eigenvalue solutions.
 | Kronecker $A \otimes B$ | Products: $\lambda_i(A) \cdot \lambda_j(B)$ | $O(m+n)$ |
 | Nested Kronecker $A_1 \otimes \cdots \otimes A_k$ | Product of all factors | $O(\sum n_i)$ |
 | SO(2) Kronecker $R(\theta) \otimes R(\phi)$ | $e^{\pm i(\theta \pm \phi)}$ | $O(1)$ |
+| SU(2) Kronecker $U(\alpha) \otimes U(\beta)$ | $e^{\pm i(\alpha \pm \beta)/2}$ | $O(1)$ |
+| SU(3) Kronecker $U(\alpha_1,\alpha_2) \otimes U(\beta_1,\beta_2)$ | Phase sums | $O(1)$ |
 | SO(n) for n ≤ 4 | Trace-based symbolic formulas | $O(1)$ |
 | Permutation | Roots of unity from cycle structure | $O(n)$ |
 | Persymmetric | Half-size decomposition | $O(n/2)$ |
@@ -266,10 +268,69 @@ eigvals(R4)  # [cos(θ) + im*sin(θ), cos(θ) - im*sin(θ), cos(φ) + im*sin(φ)
 
 | Group | Dimension | Description | Eigenvalue Property |
 |-------|-----------|-------------|---------------------|
-| SU(2) | 2×2 | Special unitary | $e^{\pm i\theta}$ on unit circle |
-| SU(3) | 3×3 | Special unitary | Product = 1 |
+| SU(2) | 2×2 | Special unitary | $e^{\pm i\theta/2}$ with half-angles |
+| SU(3) | 3×3 | Special unitary | Product = 1, 2 independent angles |
 | Sp(2) | 2×2 | Symplectic (≅ SL(2)) | Reciprocal pairs |
 | Sp(4) | 4×4 | Symplectic | Reciprocal pairs |
+
+### SU(2) Kronecker Products
+
+**Definition**: Kronecker product of SU(2) rotation matrices (spin-1/2)
+
+SU(2) rotations are parameterized by half-angles due to the spin-1/2 representation:
+$$U_z(\theta) = \begin{pmatrix} e^{-i\theta/2} & 0 \\ 0 & e^{i\theta/2} \end{pmatrix}$$
+
+**Eigenvalues** for $U_z(\alpha) \otimes U_z(\beta)$:
+$$\lambda = e^{\pm i(\alpha \pm \beta)/2} = \cos\left(\frac{\alpha \pm \beta}{2}\right) \pm i \sin\left(\frac{\alpha \pm \beta}{2}\right)$$
+
+```julia
+@variables α β
+
+# SU(2) rotation constructors
+Uz(α)  # diagonal SU(2) rotation
+
+# 2-fold Kronecker product
+K = su2_kron([α, β])
+eigvals(K)
+# [cos((α+β)/2) + im*sin((α+β)/2),
+#  cos((α-β)/2) + im*sin((α-β)/2),
+#  cos((α-β)/2) - im*sin((α-β)/2),
+#  cos((α+β)/2) - im*sin((α+β)/2)]
+```
+
+**Direct eigenvalue computation**:
+```julia
+su2_kron_eigenvalues([α, β])  # Returns 4 eigenvalues directly
+```
+
+### SU(3) Kronecker Products
+
+**Definition**: Kronecker product of diagonal SU(3) matrices (Cartan subalgebra)
+
+Diagonal SU(3) matrices have 2 independent angles (constraint: det = 1):
+$$U(\alpha_1, \alpha_2) = \begin{pmatrix} e^{i\alpha_1} & 0 & 0 \\ 0 & e^{i\alpha_2} & 0 \\ 0 & 0 & e^{-i(\alpha_1+\alpha_2)} \end{pmatrix}$$
+
+**Eigenvalues** for $U(\alpha_1, \alpha_2) \otimes U(\beta_1, \beta_2)$ (9 total):
+All combinations of phase sums from the diagonal elements.
+
+```julia
+@variables α₁ α₂ β₁ β₂
+
+# SU(3) diagonal constructor
+U = su3_diagonal_trig(α₁, α₂)
+
+# 9×9 Kronecker product
+K = su3_kron((α₁, α₂), (β₁, β₂))
+eigvals(K)
+# [cos(α₁ + β₁) + im*sin(α₁ + β₁),
+#  cos(α₁ + β₂) + im*sin(α₁ + β₂),
+#  ... 9 eigenvalues total]
+```
+
+**Direct eigenvalue computation**:
+```julia
+su3_kron_eigenvalues((α₁, α₂), (β₁, β₂))  # Returns 9 eigenvalues directly
+```
 
 ---
 

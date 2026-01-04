@@ -72,6 +72,13 @@ export ExpressionComplexityError, ComputationTimeoutError
 # Export rotation matrix constructors
 export R2, Rx, Ry, Rz, rotation_matrix, so2_kron, so2_kron_eigenvalues
 
+# Export SU(2) constructors and Kronecker products
+export σx, σy, σz, Ux, Uy, Uz, su2_kron, su2_kron_eigenvalues
+
+# Export SU(3) constructors and Kronecker products
+export λ1, λ2, λ3, λ4, λ5, λ6, λ7, λ8, gellmann_matrices
+export su3_diagonal, su3_diagonal_trig, su3_kron, su3_kron_eigenvalues
+
 
 
 # LinearAlgebra.eigen and LinearAlgebra.eigvals are automatically available when LinearAlgebra is imported

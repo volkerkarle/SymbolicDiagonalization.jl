@@ -8,6 +8,40 @@ using SymbolicDiagonalization
 using Symbolics
 using LinearAlgebra
 
+# Helper function to evaluate substituted symbolic expression to Complex{Float64}
+function _eval_complex(v, subs_dict)
+    substituted = Symbolics.substitute(v, subs_dict)
+    if substituted isa Complex
+        re_sub = Symbolics.substitute(real(v), subs_dict)
+        im_sub = Symbolics.substitute(imag(v), subs_dict)
+        if re_sub isa Symbolics.Num
+            re = Float64(eval(Symbolics.toexpr(re_sub)))
+        else
+            re = Float64(re_sub)
+        end
+        if im_sub isa Symbolics.Num
+            im_part = Float64(eval(Symbolics.toexpr(im_sub)))
+        else
+            im_part = Float64(im_sub)
+        end
+        return Complex{Float64}(re, im_part)
+    elseif substituted isa Symbolics.Num
+        expr = Symbolics.toexpr(substituted)
+        result = eval(expr)
+        if result isa Complex
+            return Complex{Float64}(result)
+        else
+            return Complex{Float64}(Float64(result), 0.0)
+        end
+    else
+        if substituted isa Complex
+            return Complex{Float64}(substituted)
+        else
+            return Complex{Float64}(Float64(substituted), 0.0)
+        end
+    end
+end
+
 @testset "Lie Group Patterns" begin
     
     @testset "SO(2) - 2D Rotations (Symbolic)" begin
@@ -493,5 +527,274 @@ using LinearAlgebra
             end
             @test has_one
         end
+    end
+    
+    @testset "SU(2) Constructors and Kronecker Products" begin
+        @variables θ α β γ
+        
+        @testset "Pauli matrices" begin
+            # Test Pauli matrix structure
+            @test σx() == [0 1; 1 0]
+            @test σy() == [0 -im; im 0]
+            @test σz() == [1 0; 0 -1]
+        end
+        
+        @testset "SU(2) rotation constructors" begin
+            # Ux should be exp(-i θ σx/2)
+            U = Ux(θ)
+            @test size(U) == (2, 2)
+            # U[1,1] is Complex{Num} due to matrix type, but real part should be cos(θ/2)
+            @test isequal(real(U[1,1]), cos(θ/2))
+            @test isequal(imag(U[1,1]), 0) || isequal(Symbolics.simplify(imag(U[1,1])), 0)
+            @test isequal(real(U[2,2]), cos(θ/2))
+            # Off-diagonal elements should be -i*sin(θ/2)
+            @test isequal(real(U[1,2]), 0) || isequal(Symbolics.simplify(real(U[1,2])), 0)
+            @test isequal(imag(U[1,2]), -sin(θ/2))
+            @test isequal(real(U[2,1]), 0) || isequal(Symbolics.simplify(real(U[2,1])), 0)
+            @test isequal(imag(U[2,1]), -sin(θ/2))
+            
+            # Uy should be exp(-i θ σy/2) - same form as SO(2) but with half-angle
+            U = Uy(θ)
+            @test size(U) == (2, 2)
+            @test isequal(U[1,1], cos(θ/2))
+            @test isequal(U[2,2], cos(θ/2))
+            @test isequal(U[1,2], -sin(θ/2))
+            @test isequal(U[2,1], sin(θ/2))
+            
+            # Uz should be diagonal with e^{±iθ/2}
+            U = Uz(θ)
+            @test size(U) == (2, 2)
+            # Check it's diagonal
+            @test isequal(U[1,2], 0)
+            @test isequal(U[2,1], 0)
+            # Diagonal elements should be e^{-iθ/2} and e^{iθ/2}
+            @test isequal(real(U[1,1]), cos(θ/2))
+            @test isequal(imag(U[1,1]), -sin(θ/2))
+            @test isequal(real(U[2,2]), cos(θ/2))
+            @test isequal(imag(U[2,2]), sin(θ/2))
+        end
+        
+        @testset "SU(2) eigenvalues" begin
+            # Single SU(2) rotation eigenvalues
+            for (name, Ufn) in [("Ux", Ux), ("Uy", Uy), ("Uz", Uz)]
+                U = Ufn(θ)
+                vals = eigvals(U)
+                @test length(vals) == 2
+                
+                # Eigenvalues should be e^{±iθ/2} = cos(θ/2) ± i sin(θ/2)
+                # Check they are clean (no sqrt)
+                for v in vals
+                    v_str = string(v)
+                    @test !occursin("sqrt", v_str)
+                end
+            end
+        end
+        
+        @testset "SU(2) ⊗ SU(2) detection - basic" begin
+            # Test Uz ⊗ Uz (diagonal case - easiest)
+            K = kron(Uz(α), Uz(β))
+            @test size(K) == (4, 4)
+            
+            vals = eigvals(K)
+            @test length(vals) == 4
+            
+            # Eigenvalues should be clean (no sqrt)
+            for v in vals
+                v_str = string(v)
+                @test !occursin("sqrt", v_str)
+            end
+            
+            # Check that eigenvalues contain half-angles
+            vals_str = join(string.(vals), " ")
+            # Should have α/2 and β/2 terms
+            @test occursin("α", vals_str) && occursin("β", vals_str)
+        end
+        
+        @testset "SU(2) ⊗ SU(2) detection - mixed axes" begin
+            # Test Ux ⊗ Uz
+            K = kron(Ux(α), Uz(β))
+            vals = eigvals(K)
+            @test length(vals) == 4
+            
+            # Eigenvalues should be clean
+            for v in vals
+                v_str = string(v)
+                @test !occursin("sqrt", v_str)
+            end
+            
+            # Test Uy ⊗ Ux
+            K = kron(Uy(α), Ux(β))
+            vals = eigvals(K)
+            @test length(vals) == 4
+            
+            for v in vals
+                v_str = string(v)
+                @test !occursin("sqrt", v_str)
+            end
+        end
+        
+        @testset "su2_kron and su2_kron_eigenvalues" begin
+            # Direct construction
+            K = su2_kron([α, β])
+            @test size(K) == (4, 4)
+            
+            # Direct eigenvalue computation
+            direct_vals = su2_kron_eigenvalues([α, β])
+            @test length(direct_vals) == 4
+            
+            # All should be clean
+            for v in direct_vals
+                v_str = string(v)
+                @test occursin("cos", v_str) && occursin("sin", v_str)
+                # Should have half-angle structure (divided by 2)
+                # The output can be "/ 2" (with space) or "(1/2)" or "(1//2)" etc.
+                @test occursin(r"/ *2|1/2|1//2|\*0\.5", v_str)
+            end
+            
+            # 3-fold direct computation
+            direct_vals_3 = su2_kron_eigenvalues([α, β, γ])
+            @test length(direct_vals_3) == 8
+        end
+        
+        @testset "Numerical verification" begin
+            # Verify symbolic eigenvalues match numeric eigenvalues when substituted
+            θ_val = 0.7
+            φ_val = 1.3
+            
+            # Step 1: Create SYMBOLIC SU(2) Kronecker product
+            @variables θ_sym φ_sym
+            K_sym = kron(Uz(θ_sym), Uz(φ_sym))
+            
+            # Step 2: Get symbolic eigenvalues using our detection
+            sym_vals, _, _ = symbolic_eigenvalues(K_sym; expand=false)
+            @test length(sym_vals) == 4
+            
+            # Step 3: Substitute numeric values into symbolic eigenvalues
+            subs = Dict(θ_sym => θ_val, φ_sym => φ_val)
+            substituted_vals = [_eval_complex(v, subs) for v in sym_vals]
+            substituted_sorted = sort(substituted_vals, by=x->(real(x), imag(x)))
+            
+            # Step 4: Create numeric matrix with same values and compute eigenvalues directly
+            K_num = [_eval_complex(x, subs) for x in K_sym]
+            ref_vals = sort(eigvals(K_num), by=x->(real(x), imag(x)))
+            
+            # Step 5: Compare - this validates our symbolic detection is correct
+            @test isapprox(substituted_sorted, ref_vals, atol=1e-10)
+        end
+    end
+end
+
+# ============================================================================
+# SU(3) Kronecker Product Tests  
+# ============================================================================
+
+@testset "SU(3) Kronecker Products" begin
+    
+    @testset "Gell-Mann matrices" begin
+        # Test all 8 Gell-Mann matrices exist and are traceless
+        for (i, λ) in enumerate(gellmann_matrices())
+            @test size(λ) == (3, 3)
+            @test isapprox(tr(λ), 0, atol=1e-10)
+        end
+        
+        # Test Hermiticity
+        @test λ1() == λ1()'
+        @test λ2() == λ2()'
+        @test λ3() == λ3()'
+        @test λ4() == λ4()'
+        @test λ5() == λ5()'
+        @test λ6() == λ6()'
+        @test λ7() == λ7()'
+        @test isapprox(λ8(), λ8()', atol=1e-10)  # λ8 has floats
+    end
+    
+    @testset "SU(3) diagonal constructors" begin
+        @variables θ₁ θ₂
+        
+        # Test su3_diagonal_trig
+        U = su3_diagonal_trig(θ₁, θ₂)
+        @test size(U) == (3, 3)
+        @test U isa Diagonal
+        
+        # Test determinant = 1 symbolically
+        # det(U) = e^{iθ₁} * e^{iθ₂} * e^{-i(θ₁+θ₂)} = 1
+        det_U = det(U)
+        det_real = trig_simplify(real(det_U))
+        det_imag = trig_simplify(imag(det_U))
+        @test isequal(Symbolics.simplify(det_real), 1) || isequal(Symbolics.simplify(det_real - 1), 0)
+    end
+    
+    @testset "SU(3) Kronecker eigenvalues - direct formula" begin
+        @variables α₁ α₂ β₁ β₂
+        
+        vals = su3_kron_eigenvalues((α₁, α₂), (β₁, β₂))
+        @test length(vals) == 9
+        
+        # First eigenvalue should be e^{i(α₁+β₁)}
+        v1 = vals[1]
+        @test isequal(v1, cos(α₁ + β₁) + im*sin(α₁ + β₁))
+    end
+    
+    @testset "SU(3) Kronecker detection - diagonal symbolic" begin
+        @variables α₁ α₂ β₁ β₂
+        
+        K = su3_kron((α₁, α₂), (β₁, β₂))
+        @test size(K) == (9, 9)
+        
+        # Test symbolic_eigenvalues returns 9 eigenvalues
+        vals, poly, λ = symbolic_eigenvalues(K; expand=false)
+        @test length(vals) == 9
+        
+        # First eigenvalue should be cos(α₁+β₁) + i*sin(α₁+β₁)
+        v1 = vals[1]
+        @test isequal(v1, cos(α₁ + β₁) + im*sin(α₁ + β₁))
+    end
+    
+    @testset "SU(3) Kronecker detection - numerical verification" begin
+        # Verify symbolic eigenvalues match numeric eigenvalues when substituted
+        θ1_val, θ2_val = 0.3, 0.5
+        φ1_val, φ2_val = 0.2, 0.7
+        
+        # Step 1: Create SYMBOLIC SU(3) Kronecker product
+        @variables θ1_sym θ2_sym φ1_sym φ2_sym
+        K_sym = su3_kron((θ1_sym, θ2_sym), (φ1_sym, φ2_sym))
+        @test size(K_sym) == (9, 9)
+        
+        # Step 2: Get symbolic eigenvalues using our detection
+        sym_vals, _, _ = symbolic_eigenvalues(K_sym; expand=false)
+        @test length(sym_vals) == 9
+        
+        # Step 3: Substitute numeric values into symbolic eigenvalues
+        subs = Dict(θ1_sym => θ1_val, θ2_sym => θ2_val, φ1_sym => φ1_val, φ2_sym => φ2_val)
+        substituted_vals = [_eval_complex(v, subs) for v in sym_vals]
+        substituted_sorted = sort(substituted_vals, by=x->(real(x), imag(x)))
+        
+        # Step 4: Create numeric matrix with same values and compute eigenvalues directly
+        K_num = [_eval_complex(x, subs) for x in K_sym]
+        ref_vals = sort(eigvals(K_num), by=x->(real(x), imag(x)))
+        
+        # Step 5: Compare - this validates our symbolic detection is correct
+        @test isapprox(substituted_sorted, ref_vals, atol=1e-10)
+    end
+    
+    @testset "SU(3)⊗SU(3) vs SO(3)⊗SO(3) disambiguation" begin
+        # SU(3)⊗SU(3) has complex entries
+        @variables α₁ α₂ β₁ β₂
+        K_su3 = su3_kron((α₁, α₂), (β₁, β₂))
+        
+        using SymbolicDiagonalization: _has_complex_entries, _detect_su3_kronecker_product, _detect_so3_kronecker_product
+        
+        @test _has_complex_entries(K_su3) == true
+        @test !isnothing(_detect_su3_kronecker_product(K_su3))
+        
+        # SO(3)⊗SO(3) is real
+        @variables θ φ
+        R1 = Rz(θ)
+        R2 = Rz(φ)
+        K_so3 = kron(R1, R2)
+        
+        @test _has_complex_entries(K_so3) == false
+        @test isnothing(_detect_su3_kronecker_product(K_so3))  # SU(3) detection should reject
+        @test !isnothing(_detect_so3_kronecker_product(K_so3))  # SO(3) detection should work
     end
 end

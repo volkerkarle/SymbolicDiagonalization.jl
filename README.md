@@ -28,6 +28,8 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 - **16+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Toeplitz tridiagonal, permutation, etc.)
 - **Lie group detection** (SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4)) with symbolic eigenvalues
 - **SO(2) Kronecker products** with automatic trig simplification (e.g., `cos(θ+φ) + i·sin(θ+φ)`)
+- **SU(2) Kronecker products** with half-angle eigenvalues (e.g., `cos((α+β)/2) + i·sin((α+β)/2)`)
+- **SU(3) Kronecker products** for 9×9 diagonal matrices with angle-sum eigenvalues
 - **Diagonal shift optimization** for full 6-parameter 3×3 symmetric matrices
 - **Nested Kronecker products** (A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ) - solve 1024×1024 matrices with 30 parameters!
 - **Clean LinearAlgebra.jl interface** (`eigen()`, `eigvals()`)
@@ -102,6 +104,27 @@ eigvals(kron(R(θ), R(θ)))
 # [cos(2θ) + im*sin(2θ), 1, 1, cos(2θ) - im*sin(2θ)]
 ```
 
+### SU(2) Kronecker Products
+
+```julia
+@variables α β
+# SU(2) rotations use half-angles for spin-1/2 representation
+K = su2_kron([α, β])  # 4×4 matrix
+eigvals(K)
+# [cos((α+β)/2) + im*sin((α+β)/2), cos((α-β)/2) + im*sin((α-β)/2),
+#  cos((α-β)/2) - im*sin((α-β)/2), cos((α+β)/2) - im*sin((α+β)/2)]
+```
+
+### SU(3) Kronecker Products
+
+```julia
+@variables α₁ α₂ β₁ β₂
+# SU(3) diagonal matrices (Cartan subalgebra)
+K = su3_kron((α₁, α₂), (β₁, β₂))  # 9×9 matrix
+eigvals(K)
+# 9 eigenvalues of the form cos(θ) + im*sin(θ) where θ is an angle sum
+```
+
 ### Aggressive Symbolic Simplification
 
 Clean eigenvalue expressions via automatic trigonometric simplification:
@@ -162,6 +185,8 @@ eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
 | 16+ pattern solvers | Circulant, Kronecker, tridiagonal, permutation, etc. |
 | Lie group detection | SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4) with symbolic eigenvalues |
 | SO(2) Kronecker products | `cos(θ±φ) + i·sin(θ±φ)` form via trig simplification |
+| SU(2) Kronecker products | `cos((α±β)/2) + i·sin((α±β)/2)` with half-angle formulas |
+| SU(3) Kronecker products | 9×9 diagonal matrices with angle-sum eigenvalues |
 | Nested Kronecker A₁⊗A₂⊗...⊗Aₙ | Scales to 1024×1024 with 30 parameters |
 | 382 passing tests | Comprehensive test coverage |
 

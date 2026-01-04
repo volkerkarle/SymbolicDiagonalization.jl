@@ -65,8 +65,48 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         _check_complexity(mat; threshold = complexity_threshold)
     end
 
-    # For symbolic matrices, check block-diagonal structure FIRST
-    # This produces the cleanest eigenvalues by solving each block independently
+    # =========================================================================
+    # SPECIAL KRONECKER STRUCTURES (check BEFORE block-diagonal decomposition)
+    # These produce cleaner eigenvalues than block decomposition for diagonal cases
+    # =========================================================================
+    
+    # Check for Kronecker product of SU(3) matrices (SU(3)^⊗k)
+    # For 9×9 matrices - complex unitary Kronecker products
+    su3_kron_result = _detect_su3_kronecker_product(mat)
+    if !isnothing(su3_kron_result)
+        vals = su3_kron_result
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for Kronecker product of SU(2) matrices (SU(2)^⊗k)
+    # For 4×4, 8×8, etc. matrices that are products of spin-1/2 rotations
+    su2_kron_result = _detect_su2_kronecker_product(mat)
+    if !isnothing(su2_kron_result)
+        vals = su2_kron_result
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for Kronecker product of rotation matrices (SO(2)^⊗k)
+    # This gives clean eigenvalues e^{i(±θ₁±θ₂±...)} without messy factorization
+    rotation_kron_result = _detect_rotation_kronecker_product(mat)
+    if !isnothing(rotation_kron_result)
+        vals = rotation_kron_result
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for Kronecker product of SO(3) rotation matrices (SO(3)^⊗k)
+    # For 9×9, 27×27, etc. matrices that are products of 3D rotations
+    so3_kron_result = _detect_so3_kronecker_product(mat)
+    if !isnothing(so3_kron_result)
+        vals = so3_kron_result
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+
+    # =========================================================================
+    # BLOCK-DIAGONAL DECOMPOSITION
+    # For symbolic matrices, decompose into independent blocks
+    # =========================================================================
+    
     if eltype(mat) <: Num || eltype(mat) <: Complex{Num}
         multiple_blocks = _detect_multiple_blocks(mat)
         if !isnothing(multiple_blocks) && length(multiple_blocks) > 1
@@ -88,6 +128,10 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
             end
         end
     end
+
+    # =========================================================================
+    # LIE GROUP AND ALGEBRA STRUCTURE
+    # =========================================================================
 
     # Check for Lie group structure (SO(n), SU(n), Sp(2n), etc.)
     # These have exact closed-form eigenvalue formulas.
@@ -164,22 +208,6 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
     # Check for permutation matrix (any size n)
     if _is_permutation_matrix(mat)
         vals = _compute_permutation_eigenvalues(mat)
-        return _build_eigenvalue_result(vals, λ, expand)
-    end
-    
-    # Check for Kronecker product of rotation matrices (SO(2)^⊗k)
-    # This gives clean eigenvalues e^{i(±θ₁±θ₂±...)} without messy factorization
-    rotation_kron_result = _detect_rotation_kronecker_product(mat)
-    if !isnothing(rotation_kron_result)
-        vals = rotation_kron_result
-        return _build_eigenvalue_result(vals, λ, expand)
-    end
-    
-    # Check for Kronecker product of SO(3) rotation matrices (SO(3)^⊗k)
-    # For 9×9, 27×27, etc. matrices that are products of 3D rotations
-    so3_kron_result = _detect_so3_kronecker_product(mat)
-    if !isnothing(so3_kron_result)
-        vals = so3_kron_result
         return _build_eigenvalue_result(vals, λ, expand)
     end
     

@@ -6,6 +6,119 @@
 using Symbolics
 
 # ============================================================================
+# Pauli Matrices (for SU(2))
+# ============================================================================
+
+"""
+    σx() -> Matrix{Complex{Int}}
+
+Pauli X matrix:
+    [0  1]
+    [1  0]
+"""
+σx() = [0 1; 1 0]
+
+"""
+    σy() -> Matrix{Complex{Int}}
+
+Pauli Y matrix:
+    [0  -i]
+    [i   0]
+"""
+σy() = [0 -im; im 0]
+
+"""
+    σz() -> Matrix{Complex{Int}}
+
+Pauli Z matrix:
+    [1   0]
+    [0  -1]
+"""
+σz() = [1 0; 0 -1]
+
+# ============================================================================
+# SU(2) Rotation Matrix Constructors
+# ============================================================================
+
+"""
+    Ux(θ) -> Matrix{Num}
+
+Construct SU(2) rotation matrix around x-axis (spin-1/2):
+
+    U_x(θ) = exp(-i θ σx/2) = cos(θ/2)I - i sin(θ/2)σx
+
+    [cos(θ/2)      -i·sin(θ/2)]
+    [-i·sin(θ/2)    cos(θ/2)  ]
+
+Eigenvalues are `e^{±iθ/2}`.
+
+# Example
+```julia
+@variables θ
+U = Ux(θ)
+eigvals(U)  # [cos(θ/2) + im*sin(θ/2), cos(θ/2) - im*sin(θ/2)]
+```
+"""
+function Ux(θ)
+    c, s = cos(θ/2), sin(θ/2)
+    return [c -im*s; -im*s c]
+end
+
+"""
+    Uy(θ) -> Matrix{Num}
+
+Construct SU(2) rotation matrix around y-axis (spin-1/2):
+
+    U_y(θ) = exp(-i θ σy/2) = cos(θ/2)I - i sin(θ/2)σy
+
+    [cos(θ/2)   -sin(θ/2)]
+    [sin(θ/2)    cos(θ/2)]
+
+Eigenvalues are `e^{±iθ/2}`.
+
+Note: This is the same form as SO(2), but with half-angles.
+
+# Example
+```julia
+@variables θ
+U = Uy(θ)
+eigvals(U)  # [cos(θ/2) + im*sin(θ/2), cos(θ/2) - im*sin(θ/2)]
+```
+"""
+function Uy(θ)
+    c, s = cos(θ/2), sin(θ/2)
+    return [c -s; s c]
+end
+
+"""
+    Uz(θ) -> Matrix{Num}
+
+Construct SU(2) rotation matrix around z-axis (spin-1/2):
+
+    U_z(θ) = exp(-i θ σz/2) = cos(θ/2)I - i sin(θ/2)σz
+
+    [e^{-iθ/2}     0    ]
+    [   0       e^{iθ/2}]
+
+Equivalently:
+    [cos(θ/2) - i·sin(θ/2)          0            ]
+    [       0                cos(θ/2) + i·sin(θ/2)]
+
+Eigenvalues are `e^{±iθ/2}`.
+
+# Example
+```julia
+@variables θ
+U = Uz(θ)
+eigvals(U)  # [cos(θ/2) - im*sin(θ/2), cos(θ/2) + im*sin(θ/2)]
+```
+"""
+function Uz(θ)
+    c, s = cos(θ/2), sin(θ/2)
+    return [c - im*s 0; 0 c + im*s]
+end
+
+# ============================================================================
 # SO(2) Rotation Matrix Constructor
 # ============================================================================
 
@@ -343,4 +456,265 @@ function _so2_kron_eigenvalues_from_pairs(pairs)
     return [trig_simplify(λ) for λ in eigenvalues]
 end
 
+# ============================================================================
+# SU(2) Kronecker Product Eigenvalues (Clean Form)
+# ============================================================================
+
+"""
+    su2_kron_eigenvalues(angles::Vector) -> Vector
+
+Compute eigenvalues of Ux/Uy/Uz(θ₁) ⊗ Ux/Uy/Uz(θ₂) ⊗ ... ⊗ Ux/Uy/Uz(θₖ) in clean form.
+
+For SU(2) matrices, eigenvalues are `e^{±iθⱼ/2}` (half-angle compared to SO(3)).
+The Kronecker product eigenvalues are products of individual eigenvalues:
+    `e^{i(±θ₁±θ₂±...±θₖ)/2}` for all 2^k sign combinations.
+
+This gives:
+    cos((±θ₁±θ₂±...±θₖ)/2) + i·sin((±θ₁±θ₂±...±θₖ)/2)
+
+# Example
+```julia
+@variables α β
+vals = su2_kron_eigenvalues([α, β])
+# 4 eigenvalues: cos((±α±β)/2) + i·sin((±α±β)/2)
+```
+"""
+function su2_kron_eigenvalues(angles::Vector)
+    k = length(angles)
+    k >= 1 || error("Need at least one angle")
+    
+    # Generate all 2^k sign combinations
+    eigenvalues = []
+    for signs in Iterators.product(fill([-1, 1], k)...)
+        # Compute the sum ±θ₁ ± θ₂ ± ... ± θₖ
+        angle_sum = sum(s * θ for (s, θ) in zip(signs, angles))
+        # SU(2) eigenvalues use half-angles
+        half_angle = angle_sum / 2
+        # Clean eigenvalue: cos(sum/2) + i·sin(sum/2)
+        push!(eigenvalues, cos(half_angle) + im * sin(half_angle))
+    end
+    
+    return eigenvalues
+end
+
+"""
+    su2_kron(angles::Vector; axis=:z) -> Matrix
+
+Construct the Kronecker product U_axis(θ₁) ⊗ U_axis(θ₂) ⊗ ... ⊗ U_axis(θₖ).
+
+The `axis` parameter can be `:x`, `:y`, or `:z` (default).
+
+# Example
+```julia
+@variables α β
+K = su2_kron([α, β])  # 4×4 matrix using Uz
+K = su2_kron([α, β]; axis=:x)  # 4×4 matrix using Ux
+eigvals(K)  # [cos((α+β)/2) + i·sin((α+β)/2), ...]
+```
+"""
+function su2_kron(angles::Vector; axis=:z)
+    length(angles) >= 1 || error("Need at least one angle")
+    U = axis == :x ? Ux : axis == :y ? Uy : Uz
+    return reduce(kron, [U(θ) for θ in angles])
+end
+
+# ============================================================================
+# Gell-Mann Matrices (for SU(3))
+# ============================================================================
+
+"""
+    λ1() -> Matrix{Int}
+
+Gell-Mann matrix λ₁:
+    [0 1 0]
+    [1 0 0]
+    [0 0 0]
+"""
+λ1() = [0 1 0; 1 0 0; 0 0 0]
+
+"""
+    λ2() -> Matrix{Complex{Int}}
+
+Gell-Mann matrix λ₂:
+    [0 -i 0]
+    [i  0 0]
+    [0  0 0]
+"""
+λ2() = [0 -im 0; im 0 0; 0 0 0]
+
+"""
+    λ3() -> Matrix{Int}
+
+Gell-Mann matrix λ₃:
+    [1  0 0]
+    [0 -1 0]
+    [0  0 0]
+"""
+λ3() = [1 0 0; 0 -1 0; 0 0 0]
+
+"""
+    λ4() -> Matrix{Int}
+
+Gell-Mann matrix λ₄:
+    [0 0 1]
+    [0 0 0]
+    [1 0 0]
+"""
+λ4() = [0 0 1; 0 0 0; 1 0 0]
+
+"""
+    λ5() -> Matrix{Complex{Int}}
+
+Gell-Mann matrix λ₅:
+    [0 0 -i]
+    [0 0  0]
+    [i 0  0]
+"""
+λ5() = [0 0 -im; 0 0 0; im 0 0]
+
+"""
+    λ6() -> Matrix{Int}
+
+Gell-Mann matrix λ₆:
+    [0 0 0]
+    [0 0 1]
+    [0 1 0]
+"""
+λ6() = [0 0 0; 0 0 1; 0 1 0]
+
+"""
+    λ7() -> Matrix{Complex{Int}}
+
+Gell-Mann matrix λ₇:
+    [0 0  0]
+    [0 0 -i]
+    [0 i  0]
+"""
+λ7() = [0 0 0; 0 0 -im; 0 im 0]
+
+"""
+    λ8() -> Matrix{Float64}
+
+Gell-Mann matrix λ₈:
+    [1/√3   0     0   ]
+    [  0  1/√3    0   ]
+    [  0    0  -2/√3  ]
+"""
+λ8() = [1/sqrt(3) 0 0; 0 1/sqrt(3) 0; 0 0 -2/sqrt(3)]
+
+"""
+    gellmann_matrices() -> Vector{Matrix}
+
+Return all 8 Gell-Mann matrices [λ₁, λ₂, ..., λ₈].
+"""
+gellmann_matrices() = [λ1(), λ2(), λ3(), λ4(), λ5(), λ6(), λ7(), λ8()]
+
+# ============================================================================
+# SU(3) Matrix Constructors
+# ============================================================================
+
+"""
+    su3_diagonal(θ₁, θ₂) -> Matrix
+
+Construct a diagonal SU(3) matrix (maximal torus element):
+
+    [e^{iθ₁}      0            0       ]
+    [   0      e^{iθ₂}         0       ]
+    [   0         0      e^{-i(θ₁+θ₂)}]
+
+The constraint e^{i(θ₁+θ₂+θ₃)} = 1 (det=1) gives θ₃ = -(θ₁+θ₂).
+
+Eigenvalues are: `e^{iθ₁}, e^{iθ₂}, e^{-i(θ₁+θ₂)}`.
+
+# Example
+```julia
+@variables θ₁ θ₂
+U = su3_diagonal(θ₁, θ₂)
+eigvals(U)  # [e^{iθ₁}, e^{iθ₂}, e^{-i(θ₁+θ₂)}]
+```
+"""
+function su3_diagonal(θ₁, θ₂)
+    # Using exp form for cleaner expressions
+    return Diagonal([exp(im*θ₁), exp(im*θ₂), exp(-im*(θ₁ + θ₂))])
+end
+
+"""
+    su3_diagonal_trig(θ₁, θ₂) -> Matrix
+
+Construct a diagonal SU(3) matrix using trigonometric form:
+
+    [cos(θ₁)+i·sin(θ₁)         0                    0           ]
+    [       0          cos(θ₂)+i·sin(θ₂)            0           ]
+    [       0                  0          cos(θ₁+θ₂)-i·sin(θ₁+θ₂)]
+
+This form is better for symbolic manipulation and trig simplification.
+
+# Example
+```julia
+@variables θ₁ θ₂
+U = su3_diagonal_trig(θ₁, θ₂)
+tr(U)  # 2cos(θ₁)cos(θ₂) - 2sin(θ₁)sin(θ₂) + cos(θ₁+θ₂) + i·(...)
+```
+"""
+function su3_diagonal_trig(θ₁, θ₂)
+    c1, s1 = cos(θ₁), sin(θ₁)
+    c2, s2 = cos(θ₂), sin(θ₂)
+    # θ₃ = -(θ₁ + θ₂), so cos(θ₃) = cos(θ₁+θ₂), sin(θ₃) = -sin(θ₁+θ₂)
+    c12, s12 = cos(θ₁ + θ₂), sin(θ₁ + θ₂)
+    return Diagonal([c1 + im*s1, c2 + im*s2, c12 - im*s12])
+end
+
+"""
+    su3_kron_eigenvalues(angles1::Tuple, angles2::Tuple) -> Vector
+
+Compute eigenvalues of SU(3)⊗SU(3) for diagonal SU(3) matrices.
+
+For U₁ = diag(e^{iα₁}, e^{iα₂}, e^{-i(α₁+α₂)}) and 
+    U₂ = diag(e^{iβ₁}, e^{iβ₂}, e^{-i(β₁+β₂)}):
+
+The 9 eigenvalues of U₁⊗U₂ are all products of individual eigenvalues.
+
+# Example
+```julia
+@variables α₁ α₂ β₁ β₂
+vals = su3_kron_eigenvalues((α₁, α₂), (β₁, β₂))
+# 9 eigenvalues: all products e^{iαᵢ}·e^{iβⱼ}
+```
+"""
+function su3_kron_eigenvalues(angles1::Tuple, angles2::Tuple)
+    θ₁, θ₂ = angles1
+    φ₁, φ₂ = angles2
+    
+    # SU(3) eigenvalues
+    λ1_eigs = [θ₁, θ₂, -(θ₁ + θ₂)]  # phases of U1
+    λ2_eigs = [φ₁, φ₂, -(φ₁ + φ₂)]  # phases of U2
+    
+    eigenvalues = []
+    for α in λ1_eigs
+        for β in λ2_eigs
+            # e^{iα} * e^{iβ} = e^{i(α+β)} = cos(α+β) + i·sin(α+β)
+            combined_phase = α + β
+            push!(eigenvalues, cos(combined_phase) + im * sin(combined_phase))
+        end
+    end
+    
+    return eigenvalues
+end
+
+"""
+    su3_kron(angles1::Tuple, angles2::Tuple) -> Matrix
+
+Construct the Kronecker product of two diagonal SU(3) matrices.
+
+# Example
+```julia
+@variables α₁ α₂ β₁ β₂
+K = su3_kron((α₁, α₂), (β₁, β₂))  # 9×9 matrix
+```
+"""
+function su3_kron(angles1::Tuple, angles2::Tuple)
+    U1 = su3_diagonal_trig(angles1...)
+    U2 = su3_diagonal_trig(angles2...)
+    return kron(U1, U2)
+end
 
