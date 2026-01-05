@@ -15,8 +15,119 @@
 #   Matrices with anti-diagonal structure have eigenvalues in ±pairs due to
 #   the involutory nature of the flip transformation.
 #
+# Companion Matrices:
+#   The companion matrix of a polynomial p(x) = xⁿ + aₙ₋₁xⁿ⁻¹ + ... + a₀ has
+#   eigenvalues equal to the roots of p(x). This provides exact eigenvalues
+#   when the polynomial factors nicely.
+#
 # While not strictly group-theoretic, these patterns have solvable structure.
 # ============================================================================
+
+"""
+    _is_companion_matrix(mat)
+
+Check if a matrix is a companion matrix of a monic polynomial.
+
+A companion matrix has the form (Frobenius form):
+```
+[0  0  0  ... 0  -a₀  ]
+[1  0  0  ... 0  -a₁  ]
+[0  1  0  ... 0  -a₂  ]
+[.  .  .  ... .   .   ]
+[0  0  0  ... 1  -aₙ₋₁]
+```
+
+The characteristic polynomial is p(x) = xⁿ + aₙ₋₁xⁿ⁻¹ + ... + a₁x + a₀.
+
+Returns the coefficients [a₀, a₁, ..., aₙ₋₁] if companion matrix, nothing otherwise.
+"""
+function _is_companion_matrix(mat)
+    n = size(mat, 1)
+    n == size(mat, 2) || return nothing
+    n <= 1 && return nothing
+    
+    # Check structure:
+    # - Column n contains -[a₀, a₁, ..., aₙ₋₁]
+    # - Subdiagonal is all 1s
+    # - Everything else is 0
+    
+    for i in 1:n
+        for j in 1:n
+            if j == n
+                # Last column: no constraint (these are the coefficients)
+                continue
+            elseif i == j + 1
+                # Subdiagonal: should be 1
+                if !_issymzero(mat[i, j] - 1)
+                    return nothing
+                end
+            else
+                # Everything else: should be 0
+                if !_issymzero(mat[i, j])
+                    return nothing
+                end
+            end
+        end
+    end
+    
+    # Extract coefficients from last column (negated)
+    coeffs = [-mat[i, n] for i in 1:n]
+    return coeffs
+end
+
+"""
+    _companion_eigenvalues(coeffs; var=nothing)
+
+Compute eigenvalues of a companion matrix from its polynomial coefficients.
+
+The eigenvalues are the roots of p(x) = xⁿ + aₙ₋₁xⁿ⁻¹ + ... + a₁x + a₀.
+
+For n ≤ 4, uses closed-form root formulas.
+For n > 4, attempts factorization or returns the polynomial for numeric solving.
+"""
+function _companion_eigenvalues(coeffs; var=nothing)
+    n = length(coeffs)
+    
+    # Build the monic polynomial coefficients [a₀, a₁, ..., aₙ₋₁, 1]
+    poly_coeffs = vcat(coeffs, [1])
+    
+    # Use the polynomial root solver (symbolic_roots doesn't use var)
+    roots = symbolic_roots(poly_coeffs)
+    
+    return roots
+end
+
+"""
+    companion_matrix(coeffs)
+
+Construct a companion matrix for the monic polynomial with given coefficients.
+
+For polynomial p(x) = xⁿ + aₙ₋₁xⁿ⁻¹ + ... + a₁x + a₀, pass coeffs = [a₀, a₁, ..., aₙ₋₁].
+
+# Example
+```julia
+# Polynomial x³ - 6x² + 11x - 6 = (x-1)(x-2)(x-3)
+# Coefficients: a₀ = -6, a₁ = 11, a₂ = -6
+C = companion_matrix([-6, 11, -6])
+eigvals(C)  # Returns [1, 2, 3]
+```
+"""
+function companion_matrix(coeffs::AbstractVector)
+    n = length(coeffs)
+    C = zeros(eltype(coeffs), n, n)
+    
+    # Subdiagonal of 1s
+    for i in 2:n
+        C[i, i-1] = 1
+    end
+    
+    # Last column is negated coefficients
+    for i in 1:n
+        C[i, n] = -coeffs[i]
+    end
+    
+    return C
+end
 
 """
     _is_toeplitz_tridiagonal(mat)

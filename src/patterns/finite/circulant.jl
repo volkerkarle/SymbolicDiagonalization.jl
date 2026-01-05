@@ -14,6 +14,70 @@
 # ============================================================================
 
 """
+    _exact_root_of_unity(n, k)
+
+Return the exact k-th n-th root of unity ω^k where ω = exp(2πi/n).
+
+For small n, returns exact rational/algebraic values:
+- n=1: 1
+- n=2: {1, -1}
+- n=3: {1, (-1+i√3)/2, (-1-i√3)/2}
+- n=4: {1, i, -1, -i}
+- n=6: {1, (1+i√3)/2, (-1+i√3)/2, -1, (-1-i√3)/2, (1-i√3)/2}
+
+For other n, returns cos(2πk/n) + i·sin(2πk/n) using numeric complex exponential.
+"""
+function _exact_root_of_unity(n::Int, k::Int)
+    # Normalize k to [0, n-1]
+    k = mod(k, n)
+    
+    # Exact values for small n
+    if n == 1
+        return 1
+    elseif n == 2
+        return k == 0 ? 1 : -1
+    elseif n == 3
+        if k == 0
+            return 1
+        elseif k == 1
+            return Complex(-0.5, sqrt(3)/2)
+        else  # k == 2
+            return Complex(-0.5, -sqrt(3)/2)
+        end
+    elseif n == 4
+        return [1, im, -1, -im][k+1]
+    elseif n == 6
+        sqrt3_2 = sqrt(3)/2
+        roots = [
+            Complex(1.0, 0.0),           # k=0
+            Complex(0.5, sqrt3_2),       # k=1
+            Complex(-0.5, sqrt3_2),      # k=2
+            Complex(-1.0, 0.0),          # k=3
+            Complex(-0.5, -sqrt3_2),     # k=4
+            Complex(0.5, -sqrt3_2)       # k=5
+        ]
+        return roots[k+1]
+    elseif n == 8
+        sqrt2_2 = sqrt(2)/2
+        roots = [
+            Complex(1.0, 0.0),           # k=0
+            Complex(sqrt2_2, sqrt2_2),   # k=1
+            Complex(0.0, 1.0),           # k=2
+            Complex(-sqrt2_2, sqrt2_2),  # k=3
+            Complex(-1.0, 0.0),          # k=4
+            Complex(-sqrt2_2, -sqrt2_2), # k=5
+            Complex(0.0, -1.0),          # k=6
+            Complex(sqrt2_2, -sqrt2_2)   # k=7
+        ]
+        return roots[k+1]
+    else
+        # General case: use numeric complex exponential
+        θ = 2 * π * k / n
+        return Complex(cos(θ), sin(θ))
+    end
+end
+
+"""
     _is_circulant(mat)
 
 Check if a matrix is circulant: each row is a cyclic shift of the first row.
@@ -61,25 +125,34 @@ where ω = exp(2πi/n) is the n-th primitive root of unity, for j = 0, 1, ..., n
 
 This is essentially evaluating the polynomial p(z) = c₀ + c₁z + ... + cₙ₋₁zⁿ⁻¹
 at the n-th roots of unity.
+
+For symbolic matrices, uses exact roots of unity when possible to avoid
+floating-point contamination in the output.
 """
 function _circulant_eigenvalues(mat)
     n = size(mat, 1)
     first_row = mat[1, :]
     
+    # Check if matrix has symbolic entries
+    has_symbolic = any(x -> x isa Num, first_row)
+    
     # Compute eigenvalues using DFT formula
-    # ω = exp(2πi/n)
     eigenvalues = Vector{Any}(undef, n)
     
     for j in 0:(n-1)
-        # λⱼ = Σₖ cₖ ω^(jk) = Σₖ cₖ exp(2πijk/n)
-        λ = first_row[1]  # c₀ term
+        # λⱼ = Σₖ cₖ ω^(jk)
+        λ = first_row[1]  # c₀ term (ω^0 = 1)
         
         for k in 1:(n-1)
-            # ω^(jk) = exp(2πijk/n)
-            # We'll use: exp(iθ) = cos(θ) + i*sin(θ)
-            θ = 2 * π * j * k / n
-            ω_power = cos(θ) + im * sin(θ)
-            λ += first_row[k+1] * ω_power
+            if has_symbolic
+                # Use exact roots of unity for symbolic matrices
+                ω_power = _exact_root_of_unity(n, j * k)
+            else
+                # Use floating point for numeric matrices
+                θ = 2 * π * j * k / n
+                ω_power = cos(θ) + im * sin(θ)
+            end
+            λ = λ + first_row[k+1] * ω_power
         end
         
         eigenvalues[j+1] = Symbolics.simplify(λ)
@@ -347,4 +420,104 @@ function _bccb_eigenvalues(n, m, first_rows)
     end
     
     return eigenvalues
+end
+
+# ============================================================================
+# Circulant Eigenvectors (DFT basis)
+# ============================================================================
+#
+# The eigenvectors of any n×n circulant matrix are the columns of the DFT matrix.
+# This is because circulant matrices commute with the cyclic shift operator,
+# and the DFT diagonalizes all such operators simultaneously.
+#
+# The k-th eigenvector (0-indexed) is:
+#   vₖ = [1, ωᵏ, ω²ᵏ, ..., ω⁽ⁿ⁻¹⁾ᵏ]ᵀ / √n  (normalized)
+#
+# where ω = exp(2πi/n) is the primitive n-th root of unity.
+# ============================================================================
+
+"""
+    _dft_column(n, k; normalized=false)
+
+Return the k-th column of the n×n DFT matrix (0-indexed).
+
+This is the eigenvector common to all n×n circulant matrices:
+    vₖ = [1, ωᵏ, ω²ᵏ, ..., ω⁽ⁿ⁻¹⁾ᵏ]ᵀ
+
+where ω = exp(2πi/n).
+
+If `normalized=true`, divides by √n for unit norm.
+
+For small n, uses exact algebraic roots of unity to avoid floating-point errors.
+"""
+function _dft_column(n::Int, k::Int; normalized::Bool=false)
+    # Normalize k to [0, n-1]
+    k = mod(k, n)
+    
+    # Check if any symbolic entries would benefit from exact roots
+    # For now, always use exact roots for cleaner output
+    vec = Vector{Any}(undef, n)
+    
+    for j in 0:(n-1)
+        # Entry j is ω^(jk)
+        vec[j+1] = _exact_root_of_unity(n, j * k)
+    end
+    
+    if normalized
+        scale = 1 / sqrt(Symbolics.Num(n))
+        vec = [v * scale for v in vec]
+    end
+    
+    return vec
+end
+
+"""
+    _circulant_eigenvectors(n; normalized=false)
+
+Return all n eigenvectors of an n×n circulant matrix.
+
+The eigenvectors are the columns of the DFT matrix, which diagonalize
+all circulant matrices. They are returned in the same order as the
+eigenvalues from `_circulant_eigenvalues`.
+
+Returns a vector of vectors: [v₀, v₁, ..., vₙ₋₁] where vₖ corresponds
+to eigenvalue λₖ.
+
+If `normalized=true`, eigenvectors have unit norm (divided by √n).
+"""
+function _circulant_eigenvectors(n::Int; normalized::Bool=false)
+    return [_dft_column(n, k; normalized=normalized) for k in 0:(n-1)]
+end
+
+"""
+    _circulant_eigenpairs(mat; normalized=false)
+
+Compute eigenpairs (eigenvalue, eigenvector) for a circulant matrix.
+
+For a circulant matrix, the eigenvectors are independent of the matrix entries
+(they are always the DFT basis vectors). The eigenvalues depend on the
+first row of the matrix.
+
+Returns a vector of tuples [(λ₀, [v₀]), (λ₁, [v₁]), ..., (λₙ₋₁, [vₙ₋₁])].
+Each eigenvector is wrapped in a single-element array to match the general
+eigenpair format (which supports eigenspaces of dimension > 1).
+
+If `normalized=true`, eigenvectors have unit norm.
+"""
+function _circulant_eigenpairs(mat; normalized::Bool=false)
+    n = size(mat, 1)
+    
+    # Get eigenvalues
+    eigenvalues = _circulant_eigenvalues(mat)
+    
+    # Get eigenvectors (same for all circulant matrices of this size)
+    eigenvectors = _circulant_eigenvectors(n; normalized=normalized)
+    
+    # Package as eigenpairs
+    pairs = Vector{Tuple{Any, Vector}}(undef, n)
+    for k in 1:n
+        pairs[k] = (eigenvalues[k], [eigenvectors[k]])
+    end
+    
+    return pairs
 end

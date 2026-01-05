@@ -391,3 +391,21 @@ julia> dft_matrix(4)
 ```
 """
 dft_matrix(n::Int; normalized::Bool=false) = _dft_matrix(n, normalized=normalized)
+
+# ============================================================================
+# Hadamard Eigenvectors - NOTE
+# ============================================================================
+#
+# Hadamard matrices are symmetric, so they have an orthonormal eigenbasis.
+# However, the eigenvectors involve trigonometric values related to π/2^k,
+# not simple ±1 patterns as one might initially expect.
+#
+# For H₁ = [1 1; 1 -1], the eigenvectors are:
+#   λ = +√2: v ∝ [cos(π/8), -sin(π/8)] ≈ [0.924, -0.383]
+#   λ = -√2: v ∝ [sin(π/8), cos(π/8)] ≈ [0.383, 0.924]
+#
+# The exact symbolic form involves nested square roots (silver ratio).
+# For now, eigenvector computation falls back to the generic nullspace method.
+# This is an area for potential future improvement.
+#
+# ============================================================================

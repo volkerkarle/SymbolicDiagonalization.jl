@@ -119,9 +119,13 @@ include("patterns/tridiagonal.jl")
 # ============================================================================
 
 include("diagonalize.jl") # Main API: symbolic_eigenvalues, symbolic_eigenpairs, etc.
+include("latex.jl")       # LaTeX display wrapper for pretty output
 
 # Export original API for advanced use
 export characteristic_polynomial, symbolic_roots, symbolic_eigenvalues, symbolic_eigenpairs, symbolic_diagonalize
+
+# Export LaTeX display wrapper
+export LaTeX
 
 # Export simplification utilities
 export trig_simplify, aggressive_simplify, simplify_eigenvalue, simplify_eigenvalues
@@ -179,6 +183,9 @@ export anticirculant_matrix, kms_matrix
 
 # Q₈ group algebra matrices
 export Q8_invariant_matrix
+
+# Companion matrices (Frobenius form)
+export companion_matrix
 
 # LinearAlgebra.eigen and LinearAlgebra.eigvals are automatically available when LinearAlgebra is imported
 

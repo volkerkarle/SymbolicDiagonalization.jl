@@ -81,6 +81,112 @@ end
 end
 
 # ============================================================================
+# Circulant Eigenvectors (DFT Basis)
+# ============================================================================
+
+@testset "Circulant Eigenvectors" begin
+    @testset "Circulant 3×3 Eigenvectors" begin
+        C3 = [1 2 3; 3 1 2; 2 3 1]
+        pairs, poly, λ = symbolic_eigenpairs(C3)
+        
+        @test length(pairs) == 3
+        
+        # Verify each eigenpair: C * v = λ * v
+        for (val, vecs) in pairs
+            v = complex.(vecs[1])
+            Cv = C3 * v
+            λv = complex(val) * v
+            @test norm(Cv - λv) < 1e-10
+        end
+    end
+    
+    @testset "Circulant 4×4 Eigenvectors" begin
+        C4 = [1 2 3 4; 4 1 2 3; 3 4 1 2; 2 3 4 1]
+        pairs, poly, λ = symbolic_eigenpairs(C4)
+        
+        @test length(pairs) == 4
+        
+        # Verify eigenpairs
+        for (val, vecs) in pairs
+            v = complex.(vecs[1])
+            Cv = C4 * v
+            λv = complex(val) * v
+            @test norm(Cv - λv) < 1e-10
+        end
+        
+        # Eigenvectors should be DFT columns (orthogonal after normalization)
+        vecs = [complex.(pairs[k][2][1]) for k in 1:4]
+        for i in 1:4
+            for j in i+1:4
+                # DFT columns are orthogonal
+                inner = dot(vecs[i], vecs[j])
+                @test abs(inner) < 1e-10
+            end
+        end
+    end
+    
+    @testset "Circulant 6×6 Eigenvectors" begin
+        C6 = [1 2 3 4 5 6; 6 1 2 3 4 5; 5 6 1 2 3 4; 
+              4 5 6 1 2 3; 3 4 5 6 1 2; 2 3 4 5 6 1]
+        pairs, poly, λ = symbolic_eigenpairs(C6)
+        
+        @test length(pairs) == 6
+        
+        # Verify eigenpairs
+        for (val, vecs) in pairs
+            v = complex.(vecs[1])
+            Cv = C6 * v
+            λv = complex(val) * v
+            @test norm(Cv - λv) < 1e-10
+        end
+    end
+    
+    @testset "Circulant Eigenvector Orthogonality" begin
+        # For any size n, DFT columns should be orthogonal
+        for n in [3, 5, 7, 8]
+            # Build n×n circulant with first row [1, 2, ..., n]
+            first_row = collect(1:n)
+            C = zeros(Int, n, n)
+            for i in 1:n
+                for j in 1:n
+                    C[i, j] = first_row[mod1(j - i + 1, n)]
+                end
+            end
+            
+            pairs, _, _ = symbolic_eigenpairs(C)
+            @test length(pairs) == n
+            
+            # Verify orthogonality of eigenvectors
+            vecs = [complex.(pairs[k][2][1]) for k in 1:n]
+            for i in 1:n
+                for j in i+1:n
+                    inner = dot(vecs[i], vecs[j])
+                    @test abs(inner) < 1e-10
+                end
+            end
+        end
+    end
+    
+    @testset "DFT Basis Helper Functions" begin
+        # Test _dft_column directly
+        for n in [4, 5, 6]
+            for k in 0:n-1
+                col = SymbolicDiagonalization._dft_column(n, k)
+                @test length(col) == n
+                @test col[1] == 1  # First entry is always 1
+            end
+        end
+        
+        # Test _circulant_eigenvectors
+        for n in [3, 4, 5]
+            vecs = SymbolicDiagonalization._circulant_eigenvectors(n)
+            @test length(vecs) == n
+            @test all(length(v) == n for v in vecs)
+        end
+    end
+end
+
+# ============================================================================
 # Toeplitz Tridiagonal Matrices
 # ============================================================================
 
@@ -1735,6 +1841,134 @@ end
 # ============================================================================
 # Q₈ Regular Representation (Quaternion Group)
 # ============================================================================
+
+# ============================================================================
+# Companion Matrices (Frobenius form)
+# ============================================================================
+
+@testset "Companion Matrices" begin
+    @testset "Companion Matrix - Quadratic" begin
+        # p(x) = x² - 5x + 6 = (x-2)(x-3)
+        # Coefficients: a₀ = 6, a₁ = -5 (so [6, -5])
+        C = companion_matrix([6, -5])
+        @test size(C) == (2, 2)
+        
+        # Verify structure
+        coeffs = SymbolicDiagonalization._is_companion_matrix(C)
+        @test !isnothing(coeffs)
+        @test coeffs == [6, -5]
+        
+        vals, _, _ = symbolic_eigenvalues(C)
+        @test length(vals) == 2
+        
+        # Eigenvalues should be 2 and 3
+        vals_sorted = sort(Float64.(vals))
+        @test vals_sorted ≈ [2.0, 3.0] atol=1e-10
+    end
+    
+    @testset "Companion Matrix - Cubic" begin
+        # p(x) = x³ - 6x² + 11x - 6 = (x-1)(x-2)(x-3)
+        # Coefficients: [a₀, a₁, a₂] = [6, -11, 6] (negated from characteristic polynomial)
+        # Wait, let's be careful: companion matrix for x³ + a₂x² + a₁x + a₀
+        # has last column [-a₀, -a₁, -a₂]
+        # For (x-1)(x-2)(x-3) = x³ - 6x² + 11x - 6:
+        # a₂ = -6, a₁ = 11, a₀ = -6
+        # So coeffs = [-6, 11, -6]
+        C = companion_matrix([-6, 11, -6])
+        @test size(C) == (3, 3)
+        
+        coeffs = SymbolicDiagonalization._is_companion_matrix(C)
+        @test !isnothing(coeffs)
+        
+        vals, _, _ = symbolic_eigenvalues(C)
+        @test length(vals) == 3
+        
+        # Eigenvalues should be 1, 2, 3
+        vals_sorted = sort(Float64.(vals))
+        @test vals_sorted ≈ [1.0, 2.0, 3.0] atol=1e-10
+    end
+    
+    @testset "Companion Matrix - Quartic" begin
+        # p(x) = x⁴ - 10x³ + 35x² - 50x + 24 = (x-1)(x-2)(x-3)(x-4)
+        # Monic polynomial: x⁴ + a₃x³ + a₂x² + a₁x + a₀
+        # where a₃ = -10, a₂ = 35, a₁ = -50, a₀ = 24
+        # So coeffs = [a₀, a₁, a₂, a₃] = [24, -50, 35, -10]
+        C = companion_matrix([24, -50, 35, -10])
+        @test size(C) == (4, 4)
+        
+        coeffs = SymbolicDiagonalization._is_companion_matrix(C)
+        @test !isnothing(coeffs)
+        
+        vals, _, _ = symbolic_eigenvalues(C)
+        @test length(vals) == 4
+        
+        # Eigenvalues should be 1, 2, 3, 4
+        vals_sorted = sort(Float64.(vals))
+        @test vals_sorted ≈ [1.0, 2.0, 3.0, 4.0] atol=1e-10
+    end
+    
+    @testset "Companion Matrix - Symbolic" begin
+        @variables a b c
+        # Monic polynomial x³ + ax² + bx + c
+        C = companion_matrix([c, b, a])
+        @test size(C) == (3, 3)
+        
+        coeffs = SymbolicDiagonalization._is_companion_matrix(C)
+        @test !isnothing(coeffs)
+        @test isequal(coeffs[1], c)
+        @test isequal(coeffs[2], b)
+        @test isequal(coeffs[3], a)
+        
+        vals, _, _ = symbolic_eigenvalues(C)
+        @test length(vals) == 3
+        
+        # Numeric verification
+        a_val, b_val, c_val = -6.0, 11.0, -6.0  # (x-1)(x-2)(x-3)
+        C_num = companion_matrix([c_val, b_val, a_val])
+        vals_num, _, _ = symbolic_eigenvalues(C_num)
+        vals_sorted = sort(Float64.(vals_num))
+        @test vals_sorted ≈ [1.0, 2.0, 3.0] atol=1e-10
+    end
+    
+    @testset "Companion Matrix - Complex Roots" begin
+        # p(x) = x² + 1 has roots ±i
+        C = companion_matrix([1, 0])  # x² + 0x + 1
+        @test size(C) == (2, 2)
+        
+        vals, _, _ = symbolic_eigenvalues(C)
+        @test length(vals) == 2
+        
+        # Eigenvalues should be ±i
+        vals_complex = complex.(vals)
+        @test sort(imag.(vals_complex)) ≈ [-1.0, 1.0] atol=1e-10
+        @test all(abs.(real.(vals_complex)) .< 1e-10)
+    end
+    
+    @testset "Companion Matrix - Non-Example" begin
+        # Not a companion matrix (wrong structure)
+        @variables a b c d
+        M1 = [a b; c d]  # General 2×2
+        @test isnothing(SymbolicDiagonalization._is_companion_matrix(M1))
+        
+        # Wrong subdiagonal
+        M2 = [0 0 -1; 2 0 0; 0 1 0]  # subdiagonal not all 1s
+        @test isnothing(SymbolicDiagonalization._is_companion_matrix(M2))
+        
+        # Wrong zeros
+        M3 = [0 1 -1; 1 0 0; 0 1 0]  # non-zero in wrong place
+        @test isnothing(SymbolicDiagonalization._is_companion_matrix(M3))
+    end
+    
+    @testset "Companion Matrix - Edge Cases" begin
+        # 1×1 matrices are not companion matrices (need at least 2×2)
+        M1x1 = [5]
+        @test isnothing(SymbolicDiagonalization._is_companion_matrix(M1x1))
+        
+        # 2×2 identity-like structure
+        M2 = [0 1; 1 0]  # swap matrix, not companion
+        @test isnothing(SymbolicDiagonalization._is_companion_matrix(M2))
+    end
+end
 
 @testset "Q₈ Regular Representation" begin
     @testset "Q₈ constructor and detection" begin

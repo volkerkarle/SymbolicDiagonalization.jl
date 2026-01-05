@@ -314,6 +314,14 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         return _build_eigenvalue_result(vals, λ, expand)
     end
     
+    # Check for companion matrix (Frobenius form)
+    # Eigenvalues are roots of the characteristic polynomial directly
+    companion_coeffs = _is_companion_matrix(mat)
+    if !isnothing(companion_coeffs)
+        vals = _companion_eigenvalues(companion_coeffs; var=λ)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
     # Check for Kronecker product A ⊗ B (any size m*n)
     kron_info = _is_kronecker_product(mat)
     if !isnothing(kron_info)
@@ -495,6 +503,21 @@ function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure
         end
     end
     
+    # =========================================================================
+    # CIRCULANT EIGENPAIRS - DFT basis vectors
+    # Circulant matrices have universal eigenvectors (independent of entries)
+    # =========================================================================
+    if compute_vectors && _is_circulant(mat)
+        circ_pairs = _circulant_eigenpairs(mat)
+        vals = [p[1] for p in circ_pairs]
+        poly = expand ? Symbolics.expand(prod(λ .- vals)) : prod(λ .- vals)
+        return circ_pairs, poly, λ
+    end
+    
+    # Note: Hadamard matrices have complex eigenvectors involving sin/cos of π/2^k
+    # For now, we use the eigenvalue formula but let eigenvectors fall back to
+    # generic nullspace computation. This is an area for future improvement.
+    
     split = _block_split(mat)
     if !isnothing(split)
         left = mat[1:split, 1:split]
@@ -503,11 +526,21 @@ function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure
         pairs_right, poly_right, _ = symbolic_eigenpairs(right; var = λ, compute_vectors = compute_vectors, structure = struct_hint, expand = expand, complexity_threshold = complexity_threshold, timeout = timeout, max_terms = max_terms)
         pairs = Vector{Tuple{Any, Vector}}()
         for (val, vecs) in pairs_left
-            padded = compute_vectors ? [vcat(vec, zeros(eltype(vec), n - split)) for vec in vecs] : Vector{Any}()
+            # Use first element type or default to eltype of mat for zeros
+            T = isempty(vecs) || isempty(first(vecs)) ? eltype(mat) : typeof(first(first(vecs)))
+            # Handle Any type by using a concrete numeric type
+            if T == Any
+                T = eltype(mat) == Any ? Float64 : eltype(mat)
+            end
+            padded = compute_vectors ? [vcat(vec, zeros(T, n - split)) for vec in vecs] : Vector{Any}()
             push!(pairs, (val, padded))
         end
         for (val, vecs) in pairs_right
-            padded = compute_vectors ? [vcat(zeros(eltype(vec), split), vec) for vec in vecs] : Vector{Any}()
+            T = isempty(vecs) || isempty(first(vecs)) ? eltype(mat) : typeof(first(first(vecs)))
+            if T == Any
+                T = eltype(mat) == Any ? Float64 : eltype(mat)
+            end
+            padded = compute_vectors ? [vcat(zeros(T, split), vec) for vec in vecs] : Vector{Any}()
             push!(pairs, (val, padded))
         end
         poly = expand ? Symbolics.expand(poly_left * poly_right) : poly_left * poly_right

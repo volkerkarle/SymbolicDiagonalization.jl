@@ -152,6 +152,11 @@ function _symbolic_sqrt(x)
         return _symbolic_sqrt(Complex(x, zero(x)))
     end
     
+    # For negative real numbers (numeric), return complex result
+    if x isa Real && x < 0
+        return Complex(0.0, sqrt(-x))
+    end
+    
     # If x is not Complex{Num}, use regular sqrt
     if !(x isa Complex{<:Any})
         return sqrt(x)
