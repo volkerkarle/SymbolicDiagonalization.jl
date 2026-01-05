@@ -708,95 +708,10 @@ end
         @test isapprox(gellmann_8(), gellmann_8()', atol=1e-10)  # gellmann_8 has floats
     end
     
-    @testset "SU(3) diagonal constructors" begin
-        @variables θ₁ θ₂
-        
-        # Test SU3_diagonal_trig
-        U = SU3_diagonal_trig(θ₁, θ₂)
-        @test size(U) == (3, 3)
-        @test U isa Diagonal
-        
-        # Test determinant = 1 symbolically
-        # det(U) = e^{iθ₁} * e^{iθ₂} * e^{-i(θ₁+θ₂)} = 1
-        det_U = det(U)
-        det_real = trig_simplify(real(det_U))
-        det_imag = trig_simplify(imag(det_U))
-        @test isequal(Symbolics.simplify(det_real), 1) || isequal(Symbolics.simplify(det_real - 1), 0)
-    end
-    
-    @testset "SU(3) Kronecker eigenvalues - direct formula" begin
-        @variables α₁ α₂ β₁ β₂
-        
-        vals = SU3_kron_eigenvalues((α₁, α₂), (β₁, β₂))
-        @test length(vals) == 9
-        
-        # First eigenvalue should be e^{i(α₁+β₁)}
-        v1 = vals[1]
-        @test isequal(v1, cos(α₁ + β₁) + im*sin(α₁ + β₁))
-    end
-    
-    @testset "SU(3) Kronecker detection - diagonal symbolic" begin
-        @variables α₁ α₂ β₁ β₂
-        
-        K = SU3_kron((α₁, α₂), (β₁, β₂))
-        @test size(K) == (9, 9)
-        
-        # Test symbolic_eigenvalues returns 9 eigenvalues
-        vals, poly, λ = symbolic_eigenvalues(K; expand=false)
-        @test length(vals) == 9
-        
-        # First eigenvalue should be cos(α₁+β₁) + i*sin(α₁+β₁)
-        v1 = vals[1]
-        @test isequal(v1, cos(α₁ + β₁) + im*sin(α₁ + β₁))
-    end
-    
-    @testset "SU(3) Kronecker detection - numerical verification" begin
-        # Verify symbolic eigenvalues match numeric eigenvalues when substituted
-        θ1_val, θ2_val = 0.3, 0.5
-        φ1_val, φ2_val = 0.2, 0.7
-        
-        # Step 1: Create SYMBOLIC SU(3) Kronecker product
-        @variables θ1_sym θ2_sym φ1_sym φ2_sym
-        K_sym = SU3_kron((θ1_sym, θ2_sym), (φ1_sym, φ2_sym))
-        @test size(K_sym) == (9, 9)
-        
-        # Step 2: Get symbolic eigenvalues using our detection
-        sym_vals, _, _ = symbolic_eigenvalues(K_sym; expand=false)
-        @test length(sym_vals) == 9
-        
-        # Step 3: Substitute numeric values into symbolic eigenvalues
-        subs = Dict(θ1_sym => θ1_val, θ2_sym => θ2_val, φ1_sym => φ1_val, φ2_sym => φ2_val)
-        substituted_vals = [_eval_complex(v, subs) for v in sym_vals]
-        substituted_sorted = sort(substituted_vals, by=x->(real(x), imag(x)))
-        
-        # Step 4: Create numeric matrix with same values and compute eigenvalues directly
-        K_num = [_eval_complex(x, subs) for x in K_sym]
-        ref_vals = sort(eigvals(K_num), by=x->(real(x), imag(x)))
-        
-        # Step 5: Compare - this validates our symbolic detection is correct
-        @test isapprox(substituted_sorted, ref_vals, atol=1e-10)
-    end
-    
-    @testset "SU(3)⊗SU(3) vs SO(3)⊗SO(3) disambiguation" begin
-        # SU(3)⊗SU(3) has complex entries
-        @variables α₁ α₂ β₁ β₂
-        K_su3 = SU3_kron((α₁, α₂), (β₁, β₂))
-        
-        using SymbolicDiagonalization: _has_complex_entries, _detect_SU3_kronecker_product, _detect_SO3_kronecker_product
-        
-        @test _has_complex_entries(K_su3) == true
-        @test !isnothing(_detect_SU3_kronecker_product(K_su3))
-        
-        # SO(3)⊗SO(3) is real
-        @variables θ φ
-        R1 = SO3_Rz(θ)
-        R2 = SO3_Rz(φ)
-        K_so3 = kron(R1, R2)
-        
-        @test _has_complex_entries(K_so3) == false
-        @test isnothing(_detect_SU3_kronecker_product(K_so3))  # SU(3) detection should reject
-        @test !isnothing(_detect_SO3_kronecker_product(K_so3))  # SO(3) detection should work
-    end
+    # Note: SU(3) diagonal constructor tests removed - diagonal matrices have trivial
+    # eigenvectors (standard basis), so computing them provides no value.
+    # SU(3) Kronecker product functions were also removed for the same reason.
+    # Only Gell-Mann matrices (generators) are retained.
 end
 
 # ============================================================================
@@ -884,30 +799,17 @@ end
         @test length(full_pairs) == 3
     end
     
-    @testset "SU(2) diagonal eigenvectors" begin
+    @testset "SU(2) diagonal - skipped as trivial" begin
         @variables θ
         
-        # Test Uz (diagonal)
+        # Test Uz (diagonal) - should return nothing since trivial
         Uz = SU2_Uz(θ)
         pairs = SymbolicDiagonalization._SU2_eigenpairs(Uz)
-        @test !isnothing(pairs)
-        @test length(pairs) == 2
+        @test isnothing(pairs)  # Diagonal case is trivial, returns nothing
         
-        # Eigenvectors should be standard basis [1,0] and [0,1]
-        @test pairs[1][2][1] == [1, 0]
-        @test pairs[2][2][1] == [0, 1]
-        
-        # Eigenvalues should be e^{±iθ/2}
-        λ1 = pairs[1][1]
-        λ2 = pairs[2][1]
-        @test isequal(real(λ1), cos(θ/2))
-        @test isequal(imag(λ1), -sin(θ/2))
-        @test isequal(real(λ2), cos(θ/2))
-        @test isequal(imag(λ2), sin(θ/2))
-        
-        # Test through symbolic_eigenpairs
-        full_pairs, _, _ = symbolic_eigenpairs(Uz)
-        @test length(full_pairs) == 2
+        # Eigenvalues should still work (eigenvalues are always computed)
+        vals = eigvals(Uz)
+        @test length(vals) == 2
     end
     
     @testset "SU(2) Ux eigenvectors" begin
@@ -938,29 +840,9 @@ end
         @test pairs[2][2][1] == [1, -im]
     end
     
-    @testset "SU(3) diagonal eigenvectors" begin
-        @variables θ₁ θ₂
-        
-        U = SU3_diagonal_trig(θ₁, θ₂)
-        U_mat = Matrix(U)
-        pairs = SymbolicDiagonalization._SU3_eigenpairs(U_mat)
-        @test !isnothing(pairs)
-        @test length(pairs) == 3
-        
-        # Eigenvectors should be standard basis
-        @test pairs[1][2][1] == [1, 0, 0]
-        @test pairs[2][2][1] == [0, 1, 0]
-        @test pairs[3][2][1] == [0, 0, 1]
-        
-        # Eigenvalues should be e^{iθ₁}, e^{iθ₂}, e^{-i(θ₁+θ₂)}
-        λ1 = pairs[1][1]
-        @test isequal(real(λ1), cos(θ₁))
-        @test isequal(imag(λ1), sin(θ₁))
-        
-        # Test through symbolic_eigenpairs
-        full_pairs, _, _ = symbolic_eigenpairs(U_mat)
-        @test length(full_pairs) == 3
-    end
+    # Note: SU(3) diagonal eigenvector tests removed - diagonal SU(3) has trivial
+    # eigenvectors (standard basis vectors), so _SU3_eigenpairs was removed.
+    # The _SU3_eigenvalues function is retained for trace-based eigenvalue computation.
     
     @testset "SO(2) Kronecker eigenvectors" begin
         @variables α β
@@ -1039,6 +921,195 @@ end
         end
     end
     
+    @testset "SO(4) block-diagonal eigenvectors" begin
+        @variables θ φ
+        
+        # Block-diagonal SO(4) = [R(θ) 0; 0 R(φ)]
+        R = [cos(θ) -sin(θ) 0 0;
+             sin(θ)  cos(θ) 0 0;
+             0 0 cos(φ) -sin(φ);
+             0 0 sin(φ)  cos(φ)]
+        
+        pairs = SymbolicDiagonalization._SO4_eigenpairs(R)
+        @test !isnothing(pairs)
+        @test length(pairs) == 4
+        
+        # Eigenvectors should be padded [1, ±i, 0, 0] and [0, 0, 1, ±i]
+        v1 = pairs[1][2][1]
+        v2 = pairs[2][2][1]
+        v3 = pairs[3][2][1]
+        v4 = pairs[4][2][1]
+        
+        @test v1 == [1, im, 0, 0]
+        @test v2 == [1, -im, 0, 0]
+        @test v3 == [0, 0, 1, im]
+        @test v4 == [0, 0, 1, -im]
+        
+        # First eigenvalue should be e^{-iθ} = cos(θ) - i*sin(θ)
+        λ1 = pairs[1][1]
+        @test isequal(real(λ1), cos(θ))
+        @test isequal(imag(λ1), -sin(θ))
+        
+        # Test through symbolic_eigenpairs
+        full_pairs, _, _ = symbolic_eigenpairs(R)
+        @test length(full_pairs) == 4
+    end
+    
+    @testset "SO(4) eigenvector numerical verification" begin
+        @variables θ φ
+        
+        R = [cos(θ) -sin(θ) 0 0;
+             sin(θ)  cos(θ) 0 0;
+             0 0 cos(φ) -sin(φ);
+             0 0 sin(φ)  cos(φ)]
+        
+        pairs, _, _ = symbolic_eigenpairs(R)
+        
+        θ_val, φ_val = 0.7, 1.3
+        subs = Dict(θ => θ_val, φ => φ_val)
+        
+        for (λ, vecs) in pairs
+            for v in vecs
+                λ_num = _eval_complex(λ, subs)
+                v_num = [_eval_complex(vi, subs) for vi in v]
+                R_num = [_eval_complex(Rij, subs) for Rij in R]
+                
+                Rv = R_num * v_num
+                λv = λ_num .* v_num
+                @test isapprox(Rv, λv, atol=1e-10)
+            end
+        end
+    end
+    
+    @testset "SO(4) general eigenvectors (non-block-diagonal)" begin
+        # Test the general SO(4) eigenpair algorithm with random rotations
+        # Create a general SO(4) by conjugating block-diagonal form with random orthogonal Q
+        
+        for trial in 1:5
+            θ1 = rand() * π
+            θ2 = rand() * π
+            
+            # Block-diagonal form
+            A_block = [cos(θ1) -sin(θ1) 0 0;
+                       sin(θ1)  cos(θ1) 0 0;
+                       0 0 cos(θ2) -sin(θ2);
+                       0 0 sin(θ2)  cos(θ2)]
+            
+            # Random orthogonal matrix
+            Q = Matrix(qr(randn(4, 4)).Q)
+            A = Q * A_block * Q'
+            
+            # Get eigenpairs using general algorithm
+            pairs = SymbolicDiagonalization._SO4_eigenpairs_general(A)
+            @test !isnothing(pairs)
+            @test length(pairs) == 4
+            
+            # Verify each eigenpair: A*v = λ*v
+            for (λ, vecs) in pairs
+                for v in vecs
+                    Av = A * v
+                    λv = λ .* v
+                    @test isapprox(Av, λv, atol=1e-10)
+                end
+            end
+        end
+    end
+    
+    @testset "SO(4) general eigenpairs - symbolic (block-diagonal fallback)" begin
+        # With symbolic block-diagonal, should use the simpler block-diagonal path
+        @variables θ φ
+        
+        R = [cos(θ) -sin(θ) 0 0;
+             sin(θ)  cos(θ) 0 0;
+             0 0 cos(φ) -sin(φ);
+             0 0 sin(φ)  cos(φ)]
+        
+        # _SO4_eigenpairs should detect block structure and use simpler expressions
+        pairs = SymbolicDiagonalization._SO4_eigenpairs(R)
+        @test !isnothing(pairs)
+        @test length(pairs) == 4
+        
+        # Block-diagonal should give clean [1, ±im, 0, 0] eigenvectors
+        v1 = pairs[1][2][1]
+        @test v1 == [1, im, 0, 0]
+        
+        # Force general algorithm and verify it also works (expressions may be messier)
+        pairs_general = SymbolicDiagonalization._SO4_eigenpairs_general(R)
+        @test !isnothing(pairs_general)
+        @test length(pairs_general) == 4
+        
+        # Numerical verification of general algorithm on block-diagonal
+        θ_val, φ_val = 0.7, 1.3
+        subs = Dict(θ => θ_val, φ => φ_val)
+        
+        for (λ, vecs) in pairs_general
+            for v in vecs
+                λ_num = _eval_complex(λ, subs)
+                v_num = [_eval_complex(vi, subs) for vi in v]
+                R_num = [_eval_complex(Rij, subs) for Rij in R]
+                
+                Rv = R_num * v_num
+                λv = λ_num .* v_num
+                @test isapprox(Rv, λv, atol=1e-10)
+            end
+        end
+    end
+    
+    @testset "Sp(2) diagonal eigenvectors - skipped as trivial" begin
+        # Diagonal Sp(2): [a 0; 0 1/a] with det = 1
+        # This is a trivial case - eigenvalues are on diagonal, eigenvectors are standard basis
+        a_val = 2.0
+        A = [a_val 0; 0 1/a_val]
+        
+        pairs = SymbolicDiagonalization._Sp2_eigenpairs(A)
+        @test isnothing(pairs)  # Diagonal case is trivial, returns nothing
+        
+        # Eigenvalues should still work via _Sp2_eigenvalues
+        vals = SymbolicDiagonalization._Sp2_eigenvalues(A)
+        @test length(vals) == 2
+        @test isapprox(sort(real.(vals)), [0.5, 2.0], atol=1e-10)
+    end
+    
+    @testset "Sp(2) general eigenvectors" begin
+        # General Sp(2) (non-diagonal but det = 1)
+        # [a b; c d] with ad - bc = 1
+        A = [2.0 1.0; 1.0 1.0]  # det = 2*1 - 1*1 = 1
+        
+        pairs = SymbolicDiagonalization._Sp2_eigenpairs(A)
+        @test !isnothing(pairs)
+        @test length(pairs) == 2
+        
+        # Numerical verification: A*v = λ*v
+        for (λ, vecs) in pairs
+            for v in vecs
+                λ_num = Complex{Float64}(λ)
+                v_num = Complex{Float64}.(v)
+                Av = A * v_num
+                λv = λ_num .* v_num
+                @test isapprox(Av, λv, atol=1e-10)
+            end
+        end
+    end
+    
+    @testset "Sp(4) diagonal eigenvectors - skipped as trivial" begin
+        # Fully diagonal Sp(4): diag(a, b, 1/a, 1/b) with symplectic form J = [0 I; -I 0]
+        # This is a trivial case - eigenvalues are on diagonal, eigenvectors are standard basis
+        a_val, b_val = 2.0, 3.0
+        A = Diagonal([a_val, b_val, 1/a_val, 1/b_val])
+        
+        pairs = SymbolicDiagonalization._Sp4_eigenpairs(Matrix(A))
+        @test isnothing(pairs)  # Diagonal case is trivial, returns nothing
+        
+        # Eigenvalues should still work via _Sp4_eigenvalues
+        vals = SymbolicDiagonalization._Sp4_eigenvalues(Matrix(A))
+        @test length(vals) == 4
+        expected = sort([a_val, b_val, 1/a_val, 1/b_val])
+        @test isapprox(sort(real.(vals)), expected, atol=1e-10)
+    end
+    
+    # Note: Sp(4) numerical verification for diagonal case removed since
+    # _Sp4_eigenpairs now returns nothing for diagonal (trivial) matrices.
+    
     @testset "Diagonalization with Lie group eigenvectors" begin
         @variables θ
         
@@ -1065,5 +1136,17 @@ end
         @test size(P) == (2, 2)
         @test size(D) == (2, 2)
         @test length(pairs) == 2
+        
+        # SO(4) block-diagonal should be diagonalizable
+        @variables φ
+        R4 = [cos(θ) -sin(θ) 0 0;
+              sin(θ)  cos(θ) 0 0;
+              0 0 cos(φ) -sin(φ);
+              0 0 sin(φ)  cos(φ)]
+        P, D, pairs = symbolic_diagonalize(R4)
+        
+        @test size(P) == (4, 4)
+        @test size(D) == (4, 4)
+        @test length(pairs) == 4
     end
 end

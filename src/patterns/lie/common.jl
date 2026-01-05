@@ -1,5 +1,20 @@
 # ============================================================================
-# Common utilities for Lie group/algebra detection
+# Compact Lie Groups: Common Detection Utilities
+# ============================================================================
+#
+# This module provides shared infrastructure for detecting matrices belonging
+# to compact Lie groups:
+#
+#   SO(n) - Special orthogonal: AᵀA = I, det(A) = 1
+#   SU(n) - Special unitary: A†A = I, det(A) = 1  
+#   Sp(2n) - Symplectic: AᵀJA = J where J = [0 I; -I 0]
+#
+# Compact Lie groups have eigenvalues on the unit circle. Their structure
+# allows eigenvalue computation via trace invariants rather than polynomial
+# root-finding, bypassing the Abel-Ruffini theorem.
+#
+# Individual group implementations are in SO2.jl, SO3.jl, SO4.jl, SU2.jl,
+# SU3.jl, and Sp.jl.
 # ============================================================================
 
 using LinearAlgebra
@@ -313,14 +328,19 @@ Compute eigenvalue-eigenvector pairs using Lie group structure if detected.
 Returns a vector of (eigenvalue, [eigenvectors]) tuples if A belongs to a 
 supported Lie group with closed-form eigenvectors, nothing otherwise.
 
-Currently supported:
+Currently supported (non-trivial cases only):
 - SO(2): Fixed eigenvectors [1, ±i] for all rotation angles
 - SO(3): Axis-aligned rotations (Rx, Ry, Rz) have known eigenvectors
-- SU(2): Diagonal case (Uz) has standard basis eigenvectors
-- SU(3): Diagonal case has standard basis eigenvectors
+- SO(4): Block-diagonal case [R₁ 0; 0 R₂] has known eigenvectors
+- SU(2): Non-diagonal cases (Ux, Uy) have closed-form eigenvectors
+- Sp(2): General 2×2 cases have closed-form eigenvectors
+- Sp(4): Block-diagonal cases have known eigenvectors
 
-For complex cases (general SO(3) rotations, non-diagonal SU(2), etc.),
-returns nothing and falls back to nullspace computation.
+NOT supported (trivial or requires nullspace):
+- Diagonal matrices (eigenvalues/vectors are trivially on diagonal/standard basis)
+- General rotations that don't match axis-aligned patterns
+
+For complex cases, returns nothing and falls back to nullspace computation.
 """
 function _lie_group_eigenpairs(A)
     group, params = _detect_lie_group(A)
@@ -331,13 +351,16 @@ function _lie_group_eigenpairs(A)
         return _SO2_eigenpairs(A)
     elseif group == :SO3
         return _SO3_eigenpairs(A)
+    elseif group == :SO4
+        return _SO4_eigenpairs(A)
     elseif group == :SU2
         return _SU2_eigenpairs(A)
-    elseif group == :SU3
-        return _SU3_eigenpairs(A)
-    # SO(4), Sp(2), Sp(4) eigenvectors are more complex
-    # TODO: Add these when closed-form eigenvector formulas are derived
+    elseif group == :Sp2
+        return _Sp2_eigenpairs(A)
+    elseif group == :Sp4
+        return _Sp4_eigenpairs(A)
     end
+    # Note: SU3 eigenpairs not supported - diagonal is trivial, general needs nullspace
     
     return nothing
 end

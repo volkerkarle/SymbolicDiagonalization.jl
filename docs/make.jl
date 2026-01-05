@@ -1,23 +1,13 @@
 using Documenter
 
-# Make the package available when building docs without needing installation.
 push!(LOAD_PATH, "..")
 using SymbolicDiagonalization
 
 makedocs(;
     sitename = "SymbolicDiagonalization",
     modules = [SymbolicDiagonalization],
-    pages = [
-        "Home" => "index.md",
-        "User Guide" => "user_guide.md",
-        "API Reference" => "api_reference.md",
-        "Pattern Library" => "pattern_library.md",
-        "Group Theory Examples" => "group_theory_examples.md",
-        "Implementation Details" => "implementation.md",
-        "Mathematical Background" => "mathematical_background.md",
-        "Contributing" => "contributing.md",
-    ],
-    checkdocs = :none,  # Don't error on missing docstrings for internal functions
+    pages = ["Documentation" => "index.md"],
+    checkdocs = :none,
     repo = "https://github.com/volkerkarle/SymbolicDiagonalization.jl/blob/{commit}{path}#{line}",
     format = Documenter.HTML(;
         prettyurls = get(ENV, "CI", "false") == "true",
@@ -28,7 +18,6 @@ makedocs(;
     ),
 )
 
-# Deploy documentation to GitHub Pages
 deploydocs(;
     repo = "github.com/volkerkarle/SymbolicDiagonalization.jl",
     devbranch = "main",

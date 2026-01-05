@@ -31,7 +31,7 @@ const VALID_STRUCTURES = (:auto, :hermitian, :symmetric, :unitary, :general, :no
 include("rref.jl")        # RREF and _issymzero
 include("simplify.jl")    # Trigonometric and expression simplification rules
 include("charpoly.jl")    # Characteristic polynomial computation
-include("roots.jl")       # Polynomial root solvers
+include("roots.jl")       # Polynomial root solvers (degrees 1-4)
 
 # ============================================================================
 # Structure Detection and Matrix Analysis
@@ -40,29 +40,79 @@ include("roots.jl")       # Polynomial root solvers
 include("structure.jl")   # Structure detection, matrix properties, adjugate
 
 # ============================================================================
-# Pattern Detection Modules
-# Each module provides closed-form eigenvalue formulas for specific patterns
+# Finite Group Patterns
+# Patterns arising from matrices invariant under finite group actions.
+# These have closed-form eigenvalues due to solvable Galois groups.
 # ============================================================================
 
-include("patterns/graphs.jl")       # Hypercube and strongly regular graphs
-include("patterns/circulant.jl")    # Circulant and block circulant matrices
-include("patterns/kronecker.jl")    # Kronecker product detection (generic)
+# Cyclic group Zₙ: Circulant matrices (DFT diagonalizes)
+include("patterns/finite/circulant.jl")
 
-include("patterns/tridiagonal.jl")  # Toeplitz tridiagonal, special 5×5, anti-diagonal
-include("patterns/permutation.jl")  # Permutation matrices
+# Dihedral group Dₙ: Symmetric circulant matrices (real eigenvalues via cosine formula)
+include("patterns/finite/dihedral.jl")
+
+# Quaternion group Q₈: Quaternion-structured matrices (eigenvalues from norm)
+include("patterns/finite/quaternion.jl")
+
+# Symmetric group Sₙ: Permutation matrices (roots of unity from cycles)
+include("patterns/finite/permutation.jl")
+
+# (Z₂)ⁿ and strongly regular: Graph patterns with algebraic eigenvalues
+include("patterns/finite/graphs.jl")
+
+# Coxeter/Weyl groups: Reflection groups with root system eigenvalues
+include("patterns/finite/coxeter.jl")
+
+# Hadamard and DFT matrices: Orthogonal/unitary with closed-form eigenvalues
+include("patterns/finite/hadamard.jl")
+
+# Special Toeplitz: Anti-circulant, Kac-Murdock-Szegő
+include("patterns/finite/toeplitz_special.jl")
 
 # ============================================================================
-# Lie Groups and Algebras (modular organization)
+# Compact Lie Group Patterns
+# Patterns arising from continuous symmetry groups (rotations, unitaries).
+# Eigenvalues on unit circle, computed via trace invariants.
 # ============================================================================
 
-include("patterns/lie/common.jl")   # Shared detection helpers
-include("patterns/lie/SO2.jl")      # SO(2) rotations and Kronecker products
-include("patterns/lie/SO3.jl")      # SO(3) rotations and Kronecker products
-include("patterns/lie/SO4.jl")      # SO(4) detection and eigenvalues
-include("patterns/lie/SU2.jl")      # SU(2), Pauli matrices, Kronecker products
-include("patterns/lie/SU3.jl")      # SU(3), Gell-Mann matrices, Kronecker products
-include("patterns/lie/Sp.jl")       # Sp(2), Sp(4) symplectic groups
-include("patterns/lie/algebras.jl") # Lie algebra representations (spin-j, etc.)
+# Common detection utilities (orthogonal, unitary, symplectic checks)
+include("patterns/lie/common.jl")
+
+# SO(2): 2D rotations, e^{±iθ}
+include("patterns/lie/SO2.jl")
+
+# SO(3): 3D rotations, {1, e^{±iθ}}
+include("patterns/lie/SO3.jl")
+
+# SO(4): 4D double rotations, {e^{±iθ₁}, e^{±iθ₂}}
+include("patterns/lie/SO4.jl")
+
+# SU(2): Special unitary 2D, e^{±iθ/2} (spin-1/2)
+include("patterns/lie/SU2.jl")
+
+# SU(3): Special unitary 3D, cubic formula
+include("patterns/lie/SU3.jl")
+
+# Sp(2n): Symplectic groups, reciprocal eigenvalue pairs
+include("patterns/lie/Sp.jl")
+
+# Lie algebra representations (spin-j, etc.)
+include("patterns/lie/algebras.jl")
+
+# ============================================================================
+# Tensor Product Patterns
+# Kronecker products A ⊗ B where eigenvalues are products of factor eigenvalues.
+# For Lie group Kronecker products, see SO2.jl, SU2.jl (clean trig forms).
+# ============================================================================
+
+include("patterns/kronecker.jl")
+
+# ============================================================================
+# Structural Patterns
+# Non-group patterns with solvable structure (tridiagonal, anti-diagonal).
+# ============================================================================
+
+include("patterns/tridiagonal.jl")
 
 # ============================================================================
 # Public API
@@ -93,13 +143,39 @@ export SO3_Rx, SO3_Ry, SO3_Rz
 export pauli_x, pauli_y, pauli_z
 export SU2_Ux, SU2_Uy, SU2_Uz, SU2_kron, SU2_kron_eigenvalues
 
-# SU(3) - Special Unitary 3D
+# SU(3) - Special Unitary 3D (Gell-Mann matrices only, no trivial diagonal constructors)
 export gellmann_matrices, gellmann_1, gellmann_2, gellmann_3, gellmann_4
 export gellmann_5, gellmann_6, gellmann_7, gellmann_8
-export SU3_diagonal, SU3_diagonal_trig, SU3_kron, SU3_kron_eigenvalues
 
 # Lie Algebra Generators
 export spin_j_generators, so3_generators, su2_generators
+
+# ============================================================================
+# Coxeter/Weyl Group Exports
+# ============================================================================
+
+# Cartan matrix constructors (all classical and exceptional types)
+export cartan_matrix_A, cartan_matrix_B, cartan_matrix_C, cartan_matrix_D, cartan_matrix_E
+export cartan_matrix_F4, cartan_matrix_G2
+
+# Coxeter group theory
+export coxeter_number, coxeter_exponents, coxeter_element_eigenvalues
+
+# Graph Laplacians
+export path_laplacian, cycle_laplacian
+
+# Reflection matrices
+export householder_reflection
+
+# ============================================================================
+# Structured Matrix Exports
+# ============================================================================
+
+# Hadamard and DFT matrices
+export hadamard_matrix, dft_matrix
+
+# Anti-circulant and Kac-Murdock-Szegő matrices
+export anticirculant_matrix, kms_matrix
 
 # LinearAlgebra.eigen and LinearAlgebra.eigvals are automatically available when LinearAlgebra is imported
 

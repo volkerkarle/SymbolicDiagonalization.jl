@@ -80,13 +80,8 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
     # These produce cleaner eigenvalues than block decomposition for diagonal cases
     # =========================================================================
     
-    # Check for Kronecker product of SU(3) matrices (SU(3)^⊗k)
-    # For 9×9 matrices - complex unitary Kronecker products
-    su3_kron_result = _detect_SU3_kronecker_product(mat)
-    if !isnothing(su3_kron_result)
-        vals = su3_kron_result
-        return _build_eigenvalue_result(vals, λ, expand)
-    end
+    # Note: SU(3) Kronecker detection was removed - diagonal SU(3) Kronecker products
+    # have trivial eigenvectors (standard basis), providing no computational value.
     
     # Check for Kronecker product of SU(2) matrices (SU(2)^⊗k)
     # For 4×4, 8×8, etc. matrices that are products of spin-1/2 rotations
@@ -197,6 +192,97 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
             @debug "Block circulant structure detected but eigenvalue computation failed" exception=e
         end
     end
+    
+    # Check for BCCB matrix (Block Circulant with Circulant Blocks, Zₙ × Zₘ)
+    bccb_info = _is_bccb(mat)
+    if !isnothing(bccb_info)
+        n, m, first_rows = bccb_info
+        vals = _bccb_eigenvalues(n, m, first_rows)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for symmetric circulant (Dₙ-invariant, dihedral group)
+    symmetric_circ_row = _is_symmetric_circulant(mat)
+    if !isnothing(symmetric_circ_row)
+        vals = _symmetric_circulant_eigenvalues(symmetric_circ_row)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for polygon adjacency (cycle graph Cₙ)
+    polygon_n = _is_polygon_adjacency(mat)
+    if !isnothing(polygon_n)
+        vals = _polygon_eigenvalues_symbolic(polygon_n)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for block-diagonal quaternion matrix
+    quaternions = _is_block_quaternion(mat)
+    if !isnothing(quaternions)
+        vals = _block_quaternion_eigenvalues(quaternions)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for single 2×2 quaternion matrix
+    quat_params = _is_quaternion_matrix(mat)
+    if !isnothing(quat_params)
+        a, b, c, d = quat_params
+        vals = _quaternion_eigenvalues(a, b, c, d)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for Cartan matrix (only types with symbolic formulas: A, G₂)
+    cartan_type = _detect_cartan_type_symbolic(mat)
+    if !isnothing(cartan_type)
+        type, n = cartan_type
+        vals = _cartan_eigenvalues(type, n)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for path graph Laplacian
+    path_n = _is_path_laplacian(mat)
+    if !isnothing(path_n)
+        vals = _path_laplacian_eigenvalues(path_n)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for cycle graph Laplacian
+    cycle_n = _is_cycle_laplacian(mat)
+    if !isnothing(cycle_n)
+        vals = _cycle_laplacian_eigenvalues(cycle_n)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for Sylvester-Hadamard matrix (size 2ⁿ × 2ⁿ)
+    hadamard_order = _is_hadamard_sylvester(mat)
+    if !isnothing(hadamard_order)
+        vals = _hadamard_eigenvalues(hadamard_order)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for DFT matrix
+    dft_size = _is_dft_matrix(mat)
+    if !isnothing(dft_size)
+        vals = _dft_eigenvalues(dft_size)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # Check for normalized DFT matrix
+    dft_size_norm = _is_dft_matrix(mat, normalized=true)
+    if !isnothing(dft_size_norm)
+        vals = _dft_eigenvalues_normalized(dft_size_norm)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
+    # NOTE: Anti-circulant matrices are NOT included in eigenvalue detection
+    # because their eigenvalues do NOT have simple DFT-based closed-form formulas
+    # (unlike regular circulant matrices). The eigenvalues require solving the
+    # characteristic polynomial. The constructor anticirculant_matrix() is still
+    # available for building the matrix structure.
+    
+    # NOTE: KMS (Kac-Murdock-Szegő) matrices are NOT included in eigenvalue detection
+    # because their eigenvalues require solving a transcendental equation 
+    # (sin((n+1)ξ) + ρ·sin(nξ) = 0) and do not have simple closed-form expressions.
+    # The constructor kms_matrix() is still available for building the matrix.
     
     # Check for Toeplitz tridiagonal (any size n)
     toeplitz_params = _is_toeplitz_tridiagonal(mat)
@@ -479,7 +565,13 @@ function symbolic_diagonalize(A; var = nothing, structure = :auto, expand = true
     # guarantee linear independence of their eigenvectors.
     if length(eigenvectors) == n && length(unique(eigenvalues)) == n
         P = reduce(hcat, eigenvectors)
-        D = Matrix{eltype(P)}(Diagonal(eigenvalues))
+        # Use the promoted type of eigenvalues and eigenvectors for D
+        # This handles cases where eigenvectors are constant (e.g., [1, im]) but
+        # eigenvalues are symbolic (Complex{Num})
+        # Infer actual eltype from first eigenvalue since eigenvalues is Any[]
+        λ_eltype = isempty(eigenvalues) ? eltype(P) : typeof(first(eigenvalues))
+        D_eltype = promote_type(eltype(P), λ_eltype)
+        D = Matrix{D_eltype}(Diagonal(convert(Vector{D_eltype}, eigenvalues)))
         return P, D, pairs
     end
 
@@ -492,7 +584,10 @@ function symbolic_diagonalize(A; var = nothing, structure = :auto, expand = true
     # Pick the first n independent eigenvectors (in RREF order) to build P, D.
     selected = pivots[1:n]
     P = reduce(hcat, eigenvectors[selected])
-    D = Matrix{eltype(P)}(Diagonal(eigenvalues[selected]))
+    selected_eigenvalues = eigenvalues[selected]
+    λ_eltype = isempty(selected_eigenvalues) ? eltype(P) : typeof(first(selected_eigenvalues))
+    D_eltype = promote_type(eltype(P), λ_eltype)
+    D = Matrix{D_eltype}(Diagonal(convert(Vector{D_eltype}, selected_eigenvalues)))
     return P, D, pairs
 end
 

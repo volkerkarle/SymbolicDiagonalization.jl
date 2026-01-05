@@ -877,6 +877,409 @@ end
 end
 
 
+# ============================================================================
+# Dihedral Group Dₙ - Symmetric Circulant Matrices
+# ============================================================================
+
+@testset "Symmetric Circulant - Dihedral D₃" begin
+    # 3×3 symmetric circulant: first row [a, b, b] (palindromic)
+    @variables a b
+    D3 = [a b b;
+          b a b;
+          b b a]
+    
+    # Check detection
+    first_row = SymbolicDiagonalization._is_symmetric_circulant(D3)
+    @test !isnothing(first_row)
+    @test length(first_row) == 3
+    
+    vals, poly, λ = symbolic_eigenvalues(D3)
+    @test length(vals) == 3
+    
+    # Numeric verification
+    D3_num = [1.0 2.0 2.0; 2.0 1.0 2.0; 2.0 2.0 1.0]
+    vals_num, _, _ = symbolic_eigenvalues(D3_num)
+    @test length(vals_num) == 3
+    
+    numeric_eigs = eigvals(D3_num)
+    computed_eigs = [real(float(substitute(v, Dict()))) for v in vals_num]
+    @test sort(numeric_eigs) ≈ sort(computed_eigs) atol=1e-10
+end
+
+@testset "Symmetric Circulant - Dihedral D₄" begin
+    # 4×4 symmetric circulant: first row [a, b, c, b]
+    @variables a b c
+    D4 = [a b c b;
+          b a b c;
+          c b a b;
+          b c b a]
+    
+    first_row = SymbolicDiagonalization._is_symmetric_circulant(D4)
+    @test !isnothing(first_row)
+    
+    vals, poly, λ = symbolic_eigenvalues(D4)
+    @test length(vals) == 4
+    
+    # Numeric verification
+    D4_num = [1.0 2.0 3.0 2.0; 2.0 1.0 2.0 3.0; 3.0 2.0 1.0 2.0; 2.0 3.0 2.0 1.0]
+    vals_num, _, _ = symbolic_eigenvalues(D4_num)
+    
+    numeric_eigs = eigvals(D4_num)
+    computed_eigs = [real(float(substitute(v, Dict()))) for v in vals_num]
+    @test sort(numeric_eigs) ≈ sort(computed_eigs) atol=1e-10
+end
+
+@testset "Symmetric Circulant - Dihedral D₅" begin
+    # 5×5 symmetric circulant (larger than quartic limit)
+    # First row [a, b, c, c, b]
+    @variables a b c
+    D5 = [a b c c b;
+          b a b c c;
+          c b a b c;
+          c c b a b;
+          b c c b a]
+    
+    first_row = SymbolicDiagonalization._is_symmetric_circulant(D5)
+    @test !isnothing(first_row)
+    
+    vals, poly, λ = symbolic_eigenvalues(D5)
+    @test length(vals) == 5
+    
+    # Numeric verification
+    D5_num = [1.0 2.0 3.0 3.0 2.0; 2.0 1.0 2.0 3.0 3.0; 3.0 2.0 1.0 2.0 3.0; 
+              3.0 3.0 2.0 1.0 2.0; 2.0 3.0 3.0 2.0 1.0]
+    vals_num, _, _ = symbolic_eigenvalues(D5_num)
+    
+    numeric_eigs = eigvals(D5_num)
+    computed_eigs = [real(float(substitute(v, Dict()))) for v in vals_num]
+    @test sort(numeric_eigs) ≈ sort(computed_eigs) atol=1e-10
+end
+
+@testset "Symmetric Circulant - Non-Example" begin
+    # Not symmetric circulant: first row is not palindromic
+    @variables a b c
+    M = [a b c; c a b; b c a]  # Regular circulant, not symmetric
+    
+    first_row = SymbolicDiagonalization._is_symmetric_circulant(M)
+    @test isnothing(first_row)  # Should fail palindrome check
+    
+    # But should still be detected as circulant
+    @test SymbolicDiagonalization._is_circulant(M)
+end
+
+# ============================================================================
+# BCCB - Block Circulant with Circulant Blocks (Zₙ × Zₘ)
+# ============================================================================
+
+@testset "BCCB - 4×4 with 2×2 Circulant Blocks" begin
+    # BCCB with 2 blocks of size 2: both block circulant and each block circulant
+    # Block 0: [a b; b a], Block 1: [c d; d c]
+    @variables a b c d
+    B0 = [a b; b a]
+    B1 = [c d; d c]
+    M = [B0 B1; B1 B0]  # Block circulant with circulant blocks
+    
+    # Check detection
+    bccb_info = SymbolicDiagonalization._is_bccb(M)
+    @test !isnothing(bccb_info)
+    n, m, first_rows = bccb_info
+    @test n == 2
+    @test m == 2
+    
+    vals, poly, λ = symbolic_eigenvalues(M)
+    @test length(vals) == 4
+    
+    # Numeric verification
+    B0_num = [1.0 2.0; 2.0 1.0]
+    B1_num = [3.0 4.0; 4.0 3.0]
+    M_num = [B0_num B1_num; B1_num B0_num]
+    vals_num, _, _ = symbolic_eigenvalues(M_num)
+    
+    numeric_eigs = eigvals(M_num)
+    computed_eigs = [complex(float(substitute(v, Dict()))) for v in vals_num]
+    @test sort(real(numeric_eigs)) ≈ sort(real(computed_eigs)) atol=1e-10
+end
+
+@testset "BCCB - 9×9 with 3×3 Circulant Blocks" begin
+    # 3 blocks of size 3, each block is circulant
+    B0_num = [1.0 2.0 3.0; 3.0 1.0 2.0; 2.0 3.0 1.0]
+    B1_num = [4.0 5.0 6.0; 6.0 4.0 5.0; 5.0 6.0 4.0]
+    B2_num = [7.0 8.0 9.0; 9.0 7.0 8.0; 8.0 9.0 7.0]
+    
+    M = [B0_num B1_num B2_num;
+         B2_num B0_num B1_num;
+         B1_num B2_num B0_num]
+    
+    # Check detection
+    bccb_info = SymbolicDiagonalization._is_bccb(M)
+    @test !isnothing(bccb_info)
+    n, m, first_rows = bccb_info
+    @test n == 3
+    @test m == 3
+    
+    vals, poly, λ = symbolic_eigenvalues(M)
+    @test length(vals) == 9
+    
+    # Verify against Julia's eigvals
+    numeric_eigs = eigvals(M)
+    computed_eigs = [complex(float(substitute(v, Dict()))) for v in vals]
+    @test sort(real(numeric_eigs)) ≈ sort(real(computed_eigs)) atol=1e-10
+end
+
+@testset "BCCB - Non-Example (Block Circulant but Blocks Not Circulant)" begin
+    # Block circulant, but individual blocks are not circulant
+    A = [1 2; 3 4]  # Not circulant
+    B = [5 6; 7 8]  # Not circulant
+    M = [A B; B A]
+    
+    # Should be detected as block circulant
+    block_info = SymbolicDiagonalization._is_block_circulant(M)
+    @test !isnothing(block_info)
+    
+    # But NOT as BCCB
+    bccb_info = SymbolicDiagonalization._is_bccb(M)
+    @test isnothing(bccb_info)
+end
+
+# ============================================================================
+# Polygon Adjacency - Cycle Graphs Cₙ
+# ============================================================================
+
+@testset "Polygon Adjacency - Triangle C₃" begin
+    C3 = [0 1 1; 1 0 1; 1 1 0]
+    
+    polygon_n = SymbolicDiagonalization._is_polygon_adjacency(C3)
+    @test polygon_n == 3
+    
+    vals, poly, λ = symbolic_eigenvalues(C3)
+    @test length(vals) == 3
+    
+    # Triangle eigenvalues: 2, -1, -1
+    vals_sorted = sort(real.(vals))
+    @test vals_sorted ≈ [-1.0, -1.0, 2.0] atol=1e-10
+end
+
+@testset "Polygon Adjacency - Square C₄" begin
+    C4 = [0 1 0 1; 1 0 1 0; 0 1 0 1; 1 0 1 0]
+    
+    polygon_n = SymbolicDiagonalization._is_polygon_adjacency(C4)
+    @test polygon_n == 4
+    
+    vals, poly, λ = symbolic_eigenvalues(C4)
+    @test length(vals) == 4
+    
+    # Square eigenvalues: 2, 0, -2, 0
+    vals_sorted = sort(real.(vals))
+    @test vals_sorted ≈ [-2.0, 0.0, 0.0, 2.0] atol=1e-10
+end
+
+@testset "Polygon Adjacency - Pentagon C₅" begin
+    C5 = [0 1 0 0 1;
+          1 0 1 0 0;
+          0 1 0 1 0;
+          0 0 1 0 1;
+          1 0 0 1 0]
+    
+    polygon_n = SymbolicDiagonalization._is_polygon_adjacency(C5)
+    @test polygon_n == 5
+    
+    vals, poly, λ = symbolic_eigenvalues(C5)
+    @test length(vals) == 5
+    
+    # Pentagon eigenvalues: 2, (√5-1)/2, (√5-1)/2, -(√5+1)/2, -(√5+1)/2
+    # ≈ 2, 0.618, 0.618, -1.618, -1.618
+    numeric_eigs = eigvals(float.(C5))
+    computed_eigs = [real(float(substitute(v, Dict()))) for v in vals]
+    @test sort(numeric_eigs) ≈ sort(computed_eigs) atol=1e-10
+end
+
+@testset "Polygon Adjacency - Hexagon C₆" begin
+    C6 = [0 1 0 0 0 1;
+          1 0 1 0 0 0;
+          0 1 0 1 0 0;
+          0 0 1 0 1 0;
+          0 0 0 1 0 1;
+          1 0 0 0 1 0]
+    
+    polygon_n = SymbolicDiagonalization._is_polygon_adjacency(C6)
+    @test polygon_n == 6
+    
+    vals, poly, λ = symbolic_eigenvalues(C6)
+    @test length(vals) == 6
+    
+    # Hexagon eigenvalues: 2, 1, -1, -2, -1, 1
+    vals_sorted = sort(real.(vals))
+    @test vals_sorted ≈ [-2.0, -1.0, -1.0, 1.0, 1.0, 2.0] atol=1e-10
+end
+
+@testset "Polygon Adjacency - Larger Cycles" begin
+    # C₇ and C₈ to verify formulas work for larger n
+    for n in [7, 8, 10, 12]
+        # Build Cₙ adjacency matrix
+        Cn = zeros(Int, n, n)
+        for i in 1:n
+            Cn[i, mod1(i+1, n)] = 1
+            Cn[i, mod1(i-1, n)] = 1
+        end
+        
+        polygon_n = SymbolicDiagonalization._is_polygon_adjacency(Cn)
+        @test polygon_n == n
+        
+        vals, poly, λ = symbolic_eigenvalues(Cn)
+        @test length(vals) == n
+        
+        # Verify numerically
+        numeric_eigs = eigvals(float.(Cn))
+        computed_eigs = [real(float(substitute(v, Dict()))) for v in vals]
+        @test sort(numeric_eigs) ≈ sort(computed_eigs) atol=1e-10
+    end
+end
+
+@testset "Polygon Adjacency - Non-Examples" begin
+    # Complete graph K₄ (not a cycle)
+    K4 = [0 1 1 1; 1 0 1 1; 1 1 0 1; 1 1 1 0]
+    @test isnothing(SymbolicDiagonalization._is_polygon_adjacency(K4))
+    
+    # Path graph P₄ (not closed)
+    P4 = [0 1 0 0; 1 0 1 0; 0 1 0 1; 0 0 1 0]
+    @test isnothing(SymbolicDiagonalization._is_polygon_adjacency(P4))
+    
+    # Weighted cycle (not 0-1)
+    W4 = [0 2 0 2; 2 0 2 0; 0 2 0 2; 2 0 2 0]
+    @test isnothing(SymbolicDiagonalization._is_polygon_adjacency(W4))
+end
+
+# ============================================================================
+# Quaternion Group Q₈ - Quaternion Matrices
+# ============================================================================
+
+@testset "Quaternion Units" begin
+    # Verify quaternion unit matrices satisfy i² = j² = k² = ijk = -1
+    I2, Qi, Qj, Qk = SymbolicDiagonalization._quaternion_unit_matrices()
+    
+    @test Qi^2 ≈ -I2
+    @test Qj^2 ≈ -I2
+    @test Qk^2 ≈ -I2
+    @test Qi*Qj*Qk ≈ -I2
+    
+    # Verify ij = k, jk = i, ki = j
+    @test Qi*Qj ≈ Qk
+    @test Qj*Qk ≈ Qi
+    @test Qk*Qi ≈ Qj
+end
+
+@testset "Quaternion Matrix Detection" begin
+    # 2×2 quaternion matrix: q = a + bi + cj + dk
+    # Matrix form: [a+bi  c+di; -c+di  a-bi]
+    
+    # Numeric test
+    Q_num = [1.0+2.0im 3.0+4.0im; -3.0+4.0im 1.0-2.0im]
+    quat = SymbolicDiagonalization._is_quaternion_matrix(Q_num)
+    @test !isnothing(quat)
+    a, b, c, d = quat
+    @test a ≈ 1.0
+    @test b ≈ 2.0
+    @test c ≈ 3.0
+    @test d ≈ 4.0
+    
+    # Pure quaternion (a = 0)
+    Q_pure = [2.0im 3.0+4.0im; -3.0+4.0im -2.0im]
+    quat_pure = SymbolicDiagonalization._is_quaternion_matrix(Q_pure)
+    @test !isnothing(quat_pure)
+    @test quat_pure[1] ≈ 0.0  # a = 0
+    
+    # Real scalar (b = c = d = 0)
+    Q_real = [5.0+0.0im 0.0+0.0im; 0.0+0.0im 5.0-0.0im]
+    quat_real = SymbolicDiagonalization._is_quaternion_matrix(Q_real)
+    @test !isnothing(quat_real)
+    @test quat_real[1] ≈ 5.0
+    @test all(≈(0.0), quat_real[2:4])
+    
+    # Non-quaternion matrix
+    M_bad = [1.0+2.0im 3.0+4.0im; 5.0+6.0im 7.0-8.0im]  # Doesn't satisfy conjugate structure
+    @test isnothing(SymbolicDiagonalization._is_quaternion_matrix(M_bad))
+end
+
+@testset "Quaternion Eigenvalues - Numeric" begin
+    # Test eigenvalue formula: λ = a ± i√(b² + c² + d²)
+    
+    # General quaternion
+    Q_num = [1.0+2.0im 3.0+4.0im; -3.0+4.0im 1.0-2.0im]
+    vals, poly, λ = symbolic_eigenvalues(Q_num)
+    @test length(vals) == 2
+    
+    # Verify against LinearAlgebra
+    numeric_eigs = eigvals(Q_num)
+    computed_eigs = [complex(float(v)) for v in vals]
+    @test sort(real(numeric_eigs)) ≈ sort(real(computed_eigs)) atol=1e-10
+    @test sort(imag(numeric_eigs)) ≈ sort(imag(computed_eigs)) atol=1e-10
+    
+    # Pure imaginary eigenvalues (a = 0)
+    Q_pure = [0.0+1.0im 0.0+0.0im; 0.0+0.0im 0.0-1.0im]  # Just i-component
+    vals_pure, _, _ = symbolic_eigenvalues(Q_pure)
+    @test all(v -> abs(real(v)) < 1e-10, vals_pure)  # Real part should be 0
+    
+    # Double eigenvalue (b = c = d = 0, real scalar)
+    Q_scalar = [3.0+0.0im 0.0+0.0im; 0.0+0.0im 3.0-0.0im]
+    vals_scalar, _, _ = symbolic_eigenvalues(Q_scalar)
+    @test length(vals_scalar) == 2
+    @test all(v -> abs(v - 3.0) < 1e-10, vals_scalar)  # Both eigenvalues = 3
+end
+
+@testset "Block Quaternion Matrix" begin
+    # 4×4 block-diagonal with two quaternion blocks
+    Q1 = [1.0+0.0im 0.0+1.0im; 0.0+1.0im 1.0-0.0im]  # q = 1 + k
+    Q2 = [2.0+1.0im 1.0+0.0im; -1.0+0.0im 2.0-1.0im]  # q = 2 + i + j
+    
+    M = zeros(ComplexF64, 4, 4)
+    M[1:2, 1:2] = Q1
+    M[3:4, 3:4] = Q2
+    
+    # Verify detection
+    quaternions = SymbolicDiagonalization._is_block_quaternion(M)
+    @test !isnothing(quaternions)
+    @test length(quaternions) == 2
+    
+    # Compute eigenvalues
+    vals, poly, λ = symbolic_eigenvalues(M)
+    @test length(vals) == 4
+    
+    # Verify numerically
+    numeric_eigs = eigvals(M)
+    computed_eigs = [complex(float(v)) for v in vals]
+    @test sort(real(numeric_eigs)) ≈ sort(real(computed_eigs)) atol=1e-10
+end
+
+@testset "Quaternion Algebra Operations" begin
+    # Test quaternion multiplication
+    q1 = (1.0, 2.0, 3.0, 4.0)  # 1 + 2i + 3j + 4k
+    q2 = (5.0, 6.0, 7.0, 8.0)  # 5 + 6i + 7j + 8k
+    
+    # Manual calculation: (1+2i+3j+4k)(5+6i+7j+8k)
+    # a = 1*5 - 2*6 - 3*7 - 4*8 = 5 - 12 - 21 - 32 = -60
+    # b = 1*6 + 2*5 + 3*8 - 4*7 = 6 + 10 + 24 - 28 = 12
+    # c = 1*7 - 2*8 + 3*5 + 4*6 = 7 - 16 + 15 + 24 = 30
+    # d = 1*8 + 2*7 - 3*6 + 4*5 = 8 + 14 - 18 + 20 = 24
+    
+    result = SymbolicDiagonalization._symbolic_quaternion_multiply(q1, q2)
+    @test result[1] ≈ -60.0  # a
+    @test result[2] ≈ 12.0   # b
+    @test result[3] ≈ 30.0   # c
+    @test result[4] ≈ 24.0   # d
+    
+    # Test norm squared
+    norm_sq = SymbolicDiagonalization._symbolic_quaternion_norm_squared(1.0, 2.0, 3.0, 4.0)
+    @test norm_sq ≈ 30.0  # 1 + 4 + 9 + 16
+    
+    # Test inverse: q * q⁻¹ = 1
+    q_inv = SymbolicDiagonalization._symbolic_quaternion_inverse(1.0, 2.0, 3.0, 4.0)
+    product = SymbolicDiagonalization._symbolic_quaternion_multiply(q1, q_inv)
+    @test product[1] ≈ 1.0 atol=1e-10
+    @test abs(product[2]) < 1e-10
+    @test abs(product[3]) < 1e-10
+    @test abs(product[4]) < 1e-10
+end
+
 @testset "SO(2) ⊗ SO(2) Kronecker Products" begin
     @variables θ φ
     
@@ -930,3 +1333,401 @@ end
     # simplify sin²(θ) + cos²(θ) = 1. The different-angle case works correctly.
 end
 
+# ============================================================================
+# Coxeter/Weyl Groups - Reflection Groups
+# ============================================================================
+
+@testset "Cartan Matrix Type A" begin
+    # Type Aₙ Cartan matrix: tridiagonal with 2 on diagonal, -1 off-diagonal
+    for n in 1:6
+        C = SymbolicDiagonalization._cartan_matrix_A(n)
+        @test SymbolicDiagonalization._is_cartan_matrix_A(C) == n
+        
+        vals, _, _ = symbolic_eigenvalues(C)
+        @test length(vals) == n
+        
+        # Verify eigenvalues numerically
+        numeric_eigs = eigvals(Float64.(C))
+        computed_eigs = [real(complex(v)) for v in vals]
+        @test sort(numeric_eigs) ≈ sort(computed_eigs) atol=1e-10
+    end
+end
+
+@testset "Cartan Matrix Type D" begin
+    # Type Dₙ Cartan matrix: forked structure (constructor only, no symbolic eigenvalues)
+    for n in 4:6
+        C = SymbolicDiagonalization._cartan_matrix_D(n)
+        @test SymbolicDiagonalization._is_cartan_matrix_D(C) == n
+        @test SymbolicDiagonalization._detect_cartan_type(C) == (:D, n)
+        # No symbolic eigenvalue support - matrix constructors only
+    end
+end
+
+@testset "Cartan Matrix Type E" begin
+    # Type Eₙ Cartan matrix: exceptional types (constructor only, no symbolic eigenvalues)
+    for n in [6, 7, 8]
+        C = SymbolicDiagonalization._cartan_matrix_E(n)
+        @test SymbolicDiagonalization._is_cartan_matrix_E(C) == n
+        @test SymbolicDiagonalization._detect_cartan_type(C) == (:E, n)
+        # No symbolic eigenvalue support - matrix constructors only
+    end
+end
+
+@testset "Cartan Matrix Type B" begin
+    # Type Bₙ Cartan matrix: SO(2n+1), non-symmetric (constructor only)
+    for n in [2, 3, 4, 5]
+        C = SymbolicDiagonalization._cartan_matrix_B(n)
+        @test SymbolicDiagonalization._is_cartan_matrix_B(C) == n
+        @test SymbolicDiagonalization._detect_cartan_type(C) == (:B, n)
+        
+        # Verify asymmetric bond: C[1,2] = -2, C[2,1] = -1
+        @test C[1, 2] == -2
+        @test C[2, 1] == -1
+        # No symbolic eigenvalue support
+    end
+end
+
+@testset "Cartan Matrix Type C" begin
+    # Type Cₙ Cartan matrix: Sp(2n), non-symmetric (constructor only)
+    for n in [2, 3, 4, 5]
+        C = SymbolicDiagonalization._cartan_matrix_C(n)
+        @test SymbolicDiagonalization._is_cartan_matrix_C(C) == n
+        @test SymbolicDiagonalization._detect_cartan_type(C) == (:C, n)
+        
+        # Verify asymmetric bond: C[n,n-1] = -2, C[n-1,n] = -1
+        @test C[n, n-1] == -2
+        @test C[n-1, n] == -1
+        # No symbolic eigenvalue support
+    end
+end
+
+@testset "Cartan Matrix Type F4" begin
+    # Type F₄ Cartan matrix: exceptional, non-symmetric (constructor only)
+    C = SymbolicDiagonalization._cartan_matrix_F4()
+    @test size(C) == (4, 4)
+    @test SymbolicDiagonalization._is_cartan_matrix_F4(C) == 4
+    @test SymbolicDiagonalization._detect_cartan_type(C) == (:F, 4)
+    
+    # Verify double bond: C[2,3] = -2, C[3,2] = -1
+    @test C[2, 3] == -2
+    @test C[3, 2] == -1
+    # No symbolic eigenvalue support
+end
+
+@testset "Cartan Matrix Type G2" begin
+    # Type G₂ Cartan matrix: exceptional with SYMBOLIC eigenvalue formula
+    C = SymbolicDiagonalization._cartan_matrix_G2()
+    @test size(C) == (2, 2)
+    @test SymbolicDiagonalization._is_cartan_matrix_G2(C) == 2
+    @test SymbolicDiagonalization._detect_cartan_type(C) == (:G, 2)
+    @test SymbolicDiagonalization._detect_cartan_type_symbolic(C) == (:G, 2)
+    
+    # Verify triple bond: C[1,2] = -3, C[2,1] = -1
+    @test C[1, 2] == -3
+    @test C[2, 1] == -1
+    
+    # Symbolic eigenvalues: 2 ± √3
+    vals, _, _ = symbolic_eigenvalues(C)
+    @test length(vals) == 2
+    @test sort([Float64(v) for v in vals]) ≈ [2 - sqrt(3), 2 + sqrt(3)] atol=1e-10
+end
+
+@testset "Cartan Symbolic Detection" begin
+    # Only types A and G₂ should be detected for symbolic eigenvalues
+    A5 = SymbolicDiagonalization._cartan_matrix_A(5)
+    @test SymbolicDiagonalization._detect_cartan_type_symbolic(A5) == (:A, 5)
+    
+    G2 = SymbolicDiagonalization._cartan_matrix_G2()
+    @test SymbolicDiagonalization._detect_cartan_type_symbolic(G2) == (:G, 2)
+    
+    # Types B, C, D, E, F should NOT be detected for symbolic eigenvalues
+    B3 = SymbolicDiagonalization._cartan_matrix_B(3)
+    @test isnothing(SymbolicDiagonalization._detect_cartan_type_symbolic(B3))
+    
+    C3 = SymbolicDiagonalization._cartan_matrix_C(3)
+    @test isnothing(SymbolicDiagonalization._detect_cartan_type_symbolic(C3))
+    
+    D4 = SymbolicDiagonalization._cartan_matrix_D(4)
+    @test isnothing(SymbolicDiagonalization._detect_cartan_type_symbolic(D4))
+    
+    E6 = SymbolicDiagonalization._cartan_matrix_E(6)
+    @test isnothing(SymbolicDiagonalization._detect_cartan_type_symbolic(E6))
+    
+    F4 = SymbolicDiagonalization._cartan_matrix_F4()
+    @test isnothing(SymbolicDiagonalization._detect_cartan_type_symbolic(F4))
+end
+
+@testset "Cartan Eigenvalues Dispatcher" begin
+    # Test _cartan_eigenvalues dispatcher for symbolic types only
+    @test length(SymbolicDiagonalization._cartan_eigenvalues(:A, 5)) == 5
+    @test length(SymbolicDiagonalization._cartan_eigenvalues(:G, 2)) == 2
+    
+    # Non-symbolic types should error
+    @test_throws ErrorException SymbolicDiagonalization._cartan_eigenvalues(:B, 4)
+    @test_throws ErrorException SymbolicDiagonalization._cartan_eigenvalues(:C, 4)
+    @test_throws ErrorException SymbolicDiagonalization._cartan_eigenvalues(:D, 5)
+    @test_throws ErrorException SymbolicDiagonalization._cartan_eigenvalues(:E, 6)
+    @test_throws ErrorException SymbolicDiagonalization._cartan_eigenvalues(:F, 4)
+end
+
+@testset "Public API Cartan Constructors" begin
+    # Test exported functions (constructors work for all types)
+    @test cartan_matrix_A(3) == SymbolicDiagonalization._cartan_matrix_A(3)
+    @test cartan_matrix_B(3) == SymbolicDiagonalization._cartan_matrix_B(3)
+    @test cartan_matrix_C(3) == SymbolicDiagonalization._cartan_matrix_C(3)
+    @test cartan_matrix_D(4) == SymbolicDiagonalization._cartan_matrix_D(4)
+    @test cartan_matrix_E(6) == SymbolicDiagonalization._cartan_matrix_E(6)
+    @test cartan_matrix_F4() == SymbolicDiagonalization._cartan_matrix_F4()
+    @test cartan_matrix_G2() == SymbolicDiagonalization._cartan_matrix_G2()
+    
+    # Test Coxeter functions (these are just lookup tables, no numerics)
+    @test coxeter_number(:B, 4) == 8
+    @test coxeter_number(:C, 4) == 8
+    @test coxeter_number(:F, 4) == 12
+    @test coxeter_number(:G, 2) == 6
+    
+    @test coxeter_exponents(:B, 3) == [1, 3, 5]
+    @test coxeter_exponents(:F, 4) == [1, 5, 7, 11]
+    @test coxeter_exponents(:G, 2) == [1, 5]
+    
+    # Test graph Laplacians
+    @test size(path_laplacian(5)) == (5, 5)
+    @test size(cycle_laplacian(5)) == (5, 5)
+end
+
+@testset "Coxeter Numbers and Exponents" begin
+    # Coxeter numbers
+    @test SymbolicDiagonalization._coxeter_number(:A, 4) == 5
+    @test SymbolicDiagonalization._coxeter_number(:D, 5) == 8
+    @test SymbolicDiagonalization._coxeter_number(:E, 6) == 12
+    @test SymbolicDiagonalization._coxeter_number(:E, 7) == 18
+    @test SymbolicDiagonalization._coxeter_number(:E, 8) == 30
+    
+    # Exponents
+    @test SymbolicDiagonalization._coxeter_exponents(:A, 4) == [1, 2, 3, 4]
+    @test SymbolicDiagonalization._coxeter_exponents(:E, 6) == [1, 4, 5, 7, 8, 11]
+    @test SymbolicDiagonalization._coxeter_exponents(:E, 8) == [1, 7, 11, 13, 17, 19, 23, 29]
+end
+
+@testset "Coxeter Element Eigenvalues" begin
+    # Coxeter element eigenvalues should be on unit circle
+    for (type, n) in [(:A, 3), (:A, 4), (:D, 4), (:E, 6)]
+        h = SymbolicDiagonalization._coxeter_number(type, n)
+        exps = SymbolicDiagonalization._coxeter_exponents(type, n)
+        eigs = SymbolicDiagonalization._coxeter_element_eigenvalues(type, n)
+        
+        # All eigenvalues on unit circle
+        @test all(abs.(eigs) .≈ 1.0)
+        
+        # Check eigenvalues are e^{2πi·m/h}
+        expected = [exp(2π*im * m / h) for m in exps]
+        @test sort(eigs, by=angle) ≈ sort(expected, by=angle) atol=1e-10
+    end
+end
+
+@testset "Path Graph Laplacian" begin
+    for n in [3, 5, 8, 10]
+        # Build path Laplacian
+        L = zeros(Int, n, n)
+        for i in 1:n
+            L[i, i] = (i == 1 || i == n) ? 1 : 2
+            if i > 1
+                L[i, i-1] = -1
+            end
+            if i < n
+                L[i, i+1] = -1
+            end
+        end
+        
+        @test SymbolicDiagonalization._is_path_laplacian(L) == n
+        
+        vals, _, _ = symbolic_eigenvalues(L)
+        @test length(vals) == n
+        
+        numeric_eigs = eigvals(Float64.(L))
+        computed_eigs = [real(complex(v)) for v in vals]
+        @test sort(numeric_eigs) ≈ sort(computed_eigs) atol=1e-10
+    end
+end
+
+@testset "Cycle Graph Laplacian" begin
+    for n in [4, 5, 6, 8]
+        # Build cycle Laplacian
+        L = zeros(Int, n, n)
+        for i in 1:n
+            L[i, i] = 2
+            L[i, mod1(i+1, n)] = -1
+            L[i, mod1(i-1, n)] = -1
+        end
+        
+        @test SymbolicDiagonalization._is_cycle_laplacian(L) == n
+        
+        vals, _, _ = symbolic_eigenvalues(L)
+        @test length(vals) == n
+        
+        numeric_eigs = eigvals(Float64.(L))
+        computed_eigs = [real(complex(v)) for v in vals]
+        @test sort(numeric_eigs) ≈ sort(computed_eigs) atol=1e-10
+    end
+end
+
+@testset "Cartan Matrix Non-Examples" begin
+    # Not a Cartan matrix (wrong diagonal)
+    M1 = [1 -1; -1 1]
+    @test isnothing(SymbolicDiagonalization._is_cartan_matrix_A(M1))
+    
+    # Not type A (wrong off-diagonal)
+    M2 = [2 -2 0; -2 2 -2; 0 -2 2]
+    @test isnothing(SymbolicDiagonalization._is_cartan_matrix_A(M2))
+    
+    # Generic symmetric matrix
+    M3 = [2 1 0; 1 2 1; 0 1 2]
+    @test isnothing(SymbolicDiagonalization._is_cartan_matrix_A(M3))
+end
+
+@testset "Reflection Matrix Detection" begin
+    # Householder reflection
+    v = [1.0, 0.0, 0.0]
+    H = SymbolicDiagonalization._householder_reflection(v)
+    @test SymbolicDiagonalization._is_reflection_matrix(H)
+    
+    # Eigenvalues: {1, 1, -1}
+    eigs = SymbolicDiagonalization._reflection_eigenvalues(3)
+    @test count(==(1), eigs) == 2
+    @test count(==(-1), eigs) == 1
+    
+    # Non-reflection (rotation)
+    θ = π/4
+    R = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+    @test !SymbolicDiagonalization._is_reflection_matrix(R)
+end
+
+# ============================================================================
+# Hadamard Matrices
+# ============================================================================
+
+@testset "Hadamard Matrices" begin
+    @testset "Hadamard H₁ (2×2)" begin
+        H = hadamard_matrix(1)
+        @test size(H) == (2, 2)
+        @test all(abs.(H) .== 1)
+        
+        vals, _, _ = symbolic_eigenvalues(H)
+        @test length(vals) == 2
+        
+        # Eigenvalues should be ±√2
+        vals_sorted = sort(Float64.(vals))
+        @test isapprox(vals_sorted[1], -sqrt(2), atol=1e-10)
+        @test isapprox(vals_sorted[2], sqrt(2), atol=1e-10)
+    end
+    
+    @testset "Hadamard H₂ (4×4)" begin
+        H = hadamard_matrix(2)
+        @test size(H) == (4, 4)
+        @test all(abs.(H) .== 1)
+        
+        vals, _, _ = symbolic_eigenvalues(H)
+        @test length(vals) == 4
+        
+        # Eigenvalues should be ±2, each with multiplicity 2
+        vals_sorted = sort(Float64.(vals))
+        @test isapprox(vals_sorted[1], -2.0, atol=1e-10)
+        @test isapprox(vals_sorted[2], -2.0, atol=1e-10)
+        @test isapprox(vals_sorted[3], 2.0, atol=1e-10)
+        @test isapprox(vals_sorted[4], 2.0, atol=1e-10)
+    end
+    
+    @testset "Hadamard H₃ (8×8)" begin
+        H = hadamard_matrix(3)
+        @test size(H) == (8, 8)
+        @test all(abs.(H) .== 1)
+        
+        vals, _, _ = symbolic_eigenvalues(H)
+        @test length(vals) == 8
+        
+        # Eigenvalues should be ±√8 = ±2√2, each with multiplicity 4
+        sqrt8 = sqrt(8)
+        @test count(v -> isapprox(v, sqrt8, atol=1e-10), vals) == 4
+        @test count(v -> isapprox(v, -sqrt8, atol=1e-10), vals) == 4
+    end
+    
+    @testset "Hadamard Orthogonality" begin
+        for n in 1:4
+            H = hadamard_matrix(n)
+            m = 2^n
+            # H * H' = m * I
+            @test H * H' ≈ m * I(m)
+        end
+    end
+end
+
+# ============================================================================
+# DFT (Discrete Fourier Transform) Matrices
+# ============================================================================
+
+@testset "DFT Matrices" begin
+    @testset "DFT F₄ (4×4)" begin
+        F = dft_matrix(4)
+        @test size(F) == (4, 4)
+        
+        vals, _, _ = symbolic_eigenvalues(F)
+        @test length(vals) == 4
+        
+        # Expected multiplicities for n=4: (√n:2, -√n:1, i√n:0, -i√n:1)
+        sqrtn = sqrt(4)
+        m1 = count(v -> isapprox(v, sqrtn), vals)
+        m_neg1 = count(v -> isapprox(v, -sqrtn), vals)
+        m_i = count(v -> isapprox(v, sqrtn*im), vals)
+        m_negi = count(v -> isapprox(v, -sqrtn*im), vals)
+        @test (m1, m_neg1, m_i, m_negi) == (2, 1, 1, 0)  # positive omega convention
+    end
+    
+    @testset "DFT eigenvalue multiplicities" begin
+        # Test multiplicities for various sizes
+        # Using positive omega convention: ω = e^{+2πi/n}
+        expected_mults = Dict(
+            1 => (1, 0, 0, 0),
+            2 => (1, 1, 0, 0),
+            3 => (1, 1, 1, 0),   # swapped i/-i from negative omega
+            4 => (2, 1, 1, 0),   # swapped i/-i from negative omega
+            5 => (2, 1, 1, 1),
+            6 => (2, 2, 1, 1),
+            7 => (2, 2, 2, 1),   # swapped i/-i from negative omega
+            8 => (3, 2, 2, 1),   # swapped i/-i from negative omega
+        )
+        
+        for n in 1:8
+            F = dft_matrix(n)
+            vals, _, _ = symbolic_eigenvalues(F)
+            sqrtn = sqrt(n)
+            
+            m1 = count(v -> isapprox(v, sqrtn), vals)
+            m_neg1 = count(v -> isapprox(v, -sqrtn), vals)
+            m_i = count(v -> isapprox(v, sqrtn*im), vals)
+            m_negi = count(v -> isapprox(v, -sqrtn*im), vals)
+            
+            @test (m1, m_neg1, m_i, m_negi) == expected_mults[n]
+        end
+    end
+    
+    @testset "DFT unitarity (normalized)" begin
+        for n in [2, 3, 4, 5]
+            F = dft_matrix(n, normalized=true)
+            # Normalized DFT is unitary: F * F' = I
+            @test F * F' ≈ I(n) atol=1e-10
+        end
+    end
+    
+    @testset "Normalized DFT eigenvalues" begin
+        for n in [2, 3, 4, 5]
+            F = dft_matrix(n, normalized=true)
+            vals, _, _ = symbolic_eigenvalues(F)
+            
+            # Normalized DFT has eigenvalues that are 4th roots of unity: {1, -1, i, -i}
+            for v in vals
+                is_4th_root = any(isapprox(v, r, atol=1e-10) for r in [1, -1, im, -im])
+                @test is_4th_root
+            end
+        end
+    end
+end

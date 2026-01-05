@@ -1,6 +1,21 @@
 # ============================================================================
-# Tridiagonal Matrix Pattern Detection and Eigenvalue Computation
-# Includes Toeplitz tridiagonal and special 5×5 patterns
+# Structural Pattern: Tridiagonal Matrices
+# ============================================================================
+#
+# Symmetric Toeplitz Tridiagonal:
+#   These matrices have known eigenbasis (discrete sine transform). The eigenvalue
+#   equation reduces to a three-term recurrence defining Chebyshev polynomials,
+#   giving the closed form: λₖ = a + 2b·cos(kπ/(n+1))
+#
+# Special 5×5 Patterns:
+#   Certain near-Toeplitz tridiagonal patterns with exactly one different entry
+#   also admit closed-form solutions discovered empirically.
+#
+# Anti-diagonal Patterns:
+#   Matrices with anti-diagonal structure have eigenvalues in ±pairs due to
+#   the involutory nature of the flip transformation.
+#
+# While not strictly group-theoretic, these patterns have solvable structure.
 # ============================================================================
 
 """

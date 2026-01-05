@@ -25,11 +25,10 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 
 - **Closed-form root solvers** for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
 - **Automatic structure detection** (block-diagonal, persymmetric, Hermitian)
-- **16+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Toeplitz tridiagonal, permutation, etc.)
+- **18+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Hadamard, DFT, Toeplitz tridiagonal, permutation, etc.)
 - **Lie group detection** (SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4)) with symbolic eigenvalues
 - **SO(2) Kronecker products** with automatic trig simplification (e.g., `cos(θ+φ) + i·sin(θ+φ)`)
 - **SU(2) Kronecker products** with half-angle eigenvalues (e.g., `cos((α+β)/2) + i·sin((α+β)/2)`)
-- **SU(3) Kronecker products** for 9×9 diagonal matrices with angle-sum eigenvalues
 - **Diagonal shift optimization** for full 6-parameter 3×3 symmetric matrices
 - **Nested Kronecker products** (A₁ ⊗ A₂ ⊗ ... ⊗ Aₙ) - solve 1024×1024 matrices with 30 parameters!
 - **Clean LinearAlgebra.jl interface** (`eigen()`, `eigvals()`)
@@ -117,16 +116,6 @@ eigvals(K)
 #  cos((α-β)/2) - im*sin((α-β)/2), cos((α+β)/2) - im*sin((α+β)/2)]
 ```
 
-### SU(3) Kronecker Products
-
-```julia
-@variables α₁ α₂ β₁ β₂
-# SU(3) diagonal matrices (Cartan subalgebra)
-K = SU3_kron((α₁, α₂), (β₁, β₂))  # 9×9 matrix
-eigvals(K)
-# 9 eigenvalues of the form cos(θ) + im*sin(θ) where θ is an angle sum
-```
-
 ### Aggressive Symbolic Simplification
 
 Clean eigenvalue expressions via automatic trigonometric simplification:
@@ -143,6 +132,38 @@ Rz = [cos(θ) -sin(θ) 0; sin(θ) cos(θ) 0; 0 0 1]
 eigvals(Rz)  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
 ```
 
+### Closed-Form Eigenvectors for Lie Groups
+
+For rotation and symplectic matrices, the package computes eigenvectors analytically without nullspace computation:
+
+```julia
+@variables θ
+
+# SO(2) has fixed eigenvectors regardless of angle
+R = SO2_rotation(θ)
+pairs, _, _ = symbolic_eigenpairs(R)
+# pairs[1] = (cos(θ) + im*sin(θ), [[1, -im]])  # e^{iθ} with eigenvector [1, -i]
+# pairs[2] = (cos(θ) - im*sin(θ), [[1, im]])   # e^{-iθ} with eigenvector [1, i]
+
+# SO(3) axis-aligned rotations
+Rz = SO3_Rz(θ)
+pairs, _, _ = symbolic_eigenpairs(Rz)
+# pairs[1] = (1, [[0, 0, 1]])                  # eigenvalue 1 (rotation axis)
+# pairs[2] = (cos(θ) + im*sin(θ), [[1, im, 0]])
+# pairs[3] = (cos(θ) - im*sin(θ), [[1, -im, 0]])
+
+# SO(4) block-diagonal: two independent rotations
+@variables φ
+R4 = [cos(θ) -sin(θ) 0 0; sin(θ) cos(θ) 0 0; 0 0 cos(φ) -sin(φ); 0 0 sin(φ) cos(φ)]
+pairs, _, _ = symbolic_eigenpairs(R4)
+# Eigenvectors are padded: [1, ±i, 0, 0] and [0, 0, 1, ±i]
+
+# Full diagonalization: A = P * D * P⁻¹
+P, D, pairs = symbolic_diagonalize(R)
+```
+
+Supported groups: **SO(2), SO(3), SO(4), SU(2), Sp(2), Sp(4)** (non-diagonal cases only)
+
 ### Full 6-Parameter 3×3 Symmetric Matrix
 
 ```julia
@@ -150,6 +171,28 @@ eigvals(Rz)  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
 A = [a b c; b d e; c e f]  # 6 independent parameters
 
 eigvals(A)  # Works! Uses diagonal shift optimization
+```
+
+### Hadamard Matrices (any power of 2)
+
+```julia
+H = hadamard_matrix(3)  # 8×8 Sylvester-Hadamard matrix
+eigvals(H)              # [±2√2], each with multiplicity 4
+
+# Works for any size 2ⁿ
+H32 = hadamard_matrix(5)  # 32×32
+eigvals(H32)              # [±√32], each with multiplicity 16
+```
+
+### DFT (Fourier) Matrices (any size)
+
+```julia
+F = dft_matrix(8)       # 8×8 Fourier matrix
+eigvals(F)              # {±√8, ±i√8} with multiplicities (3,2,2,1)
+
+# Normalized (unitary) version
+F_norm = dft_matrix(8, normalized=true)
+eigvals(F_norm)         # {1, -1, i, -i}
 ```
 
 ### Nested Kronecker Products (Scalable to 1000+ dimensions)
@@ -173,7 +216,7 @@ eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
 
 - [User Guide](https://volkerkarle.github.io/SymbolicDiagonalization.jl/user_guide/) - Practical examples and workflows
 - [API Reference](https://volkerkarle.github.io/SymbolicDiagonalization.jl/api_reference/) - Complete function reference
-- [Pattern Library](https://volkerkarle.github.io/SymbolicDiagonalization.jl/pattern_library/) - All 16+ supported matrix patterns
+- [Pattern Library](https://volkerkarle.github.io/SymbolicDiagonalization.jl/pattern_library/) - All 18+ supported matrix patterns
 - [Mathematical Background](https://volkerkarle.github.io/SymbolicDiagonalization.jl/mathematical_background/) - Theory and proofs
 - [Contributing](https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/) - Development guide
 
@@ -184,11 +227,11 @@ eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
 | All matrices up to 4×4 | Closed-form solutions via root formulas |
 | Full 6-parameter 3×3 symmetric | Diagonal shift optimization |
 | Block-diagonal decomposition | Automatic detection and recursion |
-| 16+ pattern solvers | Circulant, Kronecker, tridiagonal, permutation, etc. |
+| 18+ pattern solvers | Circulant, Kronecker, Hadamard, DFT, tridiagonal, permutation, etc. |
 | Lie group detection | SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4) with symbolic eigenvalues |
+| **Lie group eigenvectors** | Closed-form eigenvectors for SO(2)-SO(4), SU(2), Sp(2), Sp(4) (non-diagonal) |
 | SO(2) Kronecker products | `cos(θ±φ) + i·sin(θ±φ)` form via trig simplification |
 | SU(2) Kronecker products | `cos((α±β)/2) + i·sin((α±β)/2)` with half-angle formulas |
-| SU(3) Kronecker products | 9×9 diagonal matrices with angle-sum eigenvalues |
 | Nested Kronecker A₁⊗A₂⊗...⊗Aₙ | Scales to 1024×1024 with 30 parameters |
 | 382 passing tests | Comprehensive test coverage |
 

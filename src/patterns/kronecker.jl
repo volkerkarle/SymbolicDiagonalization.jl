@@ -1,5 +1,19 @@
 # ============================================================================
-# Kronecker Product Pattern Detection and Eigenvalue Computation
+# Tensor Products: Kronecker Product Detection and Eigenvalue Computation
+# ============================================================================
+#
+# Kronecker products A ⊗ B arise from tensor product representations in group
+# theory. If V and W are representations of groups G and H, then V ⊗ W is a
+# representation of G × H.
+#
+# Key eigenvalue property:
+#   λ(A ⊗ B) = {λᵢ(A) · λⱼ(B)} for all pairs (i,j)
+#
+# This reduces an (mn) × (mn) eigenvalue problem to solving m × m and n × n
+# problems separately, then forming products.
+#
+# For Lie group Kronecker products (SO(2)⊗k, SU(2)⊗k), see patterns/lie/.
+# Those have additional structure giving clean trigonometric forms.
 # ============================================================================
 
 """

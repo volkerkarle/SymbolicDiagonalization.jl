@@ -237,13 +237,9 @@ end
 """
     _SU2_axis_eigenvectors(axis_type)
 
-Return the eigenvectors for an axis-aligned SU(2) rotation.
+Return the eigenvectors for a non-diagonal axis-aligned SU(2) rotation.
 
 For eigenvalues {e^{iθ/2}, e^{-iθ/2}}:
-
-Uz (diagonal):
-  - λ=e^{-iθ/2}: [1, 0] (standard basis)
-  - λ=e^{iθ/2}: [0, 1] (standard basis)
 
 Ux (rotation around x):
   - λ=e^{iθ/2}: [1, 1]/√2
@@ -253,38 +249,43 @@ Uy (rotation around y):
   - λ=e^{iθ/2}: [1, i]/√2
   - λ=e^{-iθ/2}: [1, -i]/√2
 
-Note: Returns unnormalized eigenvectors.
+Note: Uz (diagonal) is NOT handled here because it's trivial - 
+eigenvectors are just standard basis vectors [1,0] and [0,1].
+
+Returns unnormalized eigenvectors.
 """
 function _SU2_axis_eigenvectors(axis_type)
-    if axis_type == :Uz
-        # Diagonal case: standard basis
-        return [[1, 0], [0, 1]]
-    elseif axis_type == :Ux
+    if axis_type == :Ux
         # Ux eigenvectors
         return [[1, 1], [1, -1]]
     elseif axis_type == :Uy
         # Uy eigenvectors (same as SO(2))
         return [[1, im], [1, -im]]
     end
+    # Uz is trivial (diagonal), return nothing
     return nothing
 end
 
 """
     _SU2_eigenpairs(A)
 
-Compute eigenvalue-eigenvector pairs for an SU(2) matrix.
+Compute eigenvalue-eigenvector pairs for a non-diagonal SU(2) matrix.
 
-For axis-aligned rotations (Ux, Uy, Uz), returns closed-form eigenpairs.
-For general rotations, returns nothing (requires nullspace computation).
+For non-diagonal axis-aligned rotations (Ux, Uy), returns closed-form eigenpairs.
+For diagonal Uz and general rotations, returns nothing.
+
+NOTE: Diagonal matrices (like Uz) are not handled because their eigenpairs
+are trivial - eigenvalues are on the diagonal and eigenvectors are standard basis.
 
 Returns Vector{Tuple{eigenvalue, Vector{eigenvector}}} or nothing.
 
 # Example
 ```julia
 @variables θ
-U = SU2_Uz(θ)
+U = SU2_Ux(θ)
 pairs = _SU2_eigenpairs(U)
-# For Uz diagonal: eigenvectors are [1,0] and [0,1]
+# pairs[1] = (cos(θ/2) + i*sin(θ/2), [[1, 1]])
+# pairs[2] = (cos(θ/2) - i*sin(θ/2), [[1, -1]])
 ```
 """
 function _SU2_eigenpairs(A)
@@ -293,23 +294,18 @@ function _SU2_eigenpairs(A)
     # First check axis type - this is fast and doesn't require full SU(2) verification
     axis_type = _SU2_rotation_type(A)
     
-    # For general SU(2) rotations, we need nullspace computation
+    # For general SU(2) rotations or diagonal Uz, we skip
+    # Uz is trivial (diagonal), general requires nullspace computation
     isnothing(axis_type) && return nothing
+    axis_type == :Uz && return nothing  # Trivial case - skip
     
     # Verify it's actually SU(2) using trig-aware check
     # (The standard _is_SU2 may fail on trig expressions)
     _is_SU2(A) || _is_SU2_trig(A) || return nothing
     
-    # Get eigenvectors for this axis type
+    # Get eigenvectors for this axis type (Ux or Uy only)
     vecs = _SU2_axis_eigenvectors(axis_type)
     isnothing(vecs) && return nothing
-    
-    # For Uz (diagonal), eigenvalues are directly on the diagonal
-    if axis_type == :Uz
-        λ1 = A[1, 1]  # e^{-iθ/2}
-        λ2 = A[2, 2]  # e^{iθ/2}
-        return [(λ1, [vecs[1]]), (λ2, [vecs[2]])]
-    end
     
     # For Ux and Uy, compute eigenvalues from trace
     # Use trace-based formula which is more robust
