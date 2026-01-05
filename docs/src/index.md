@@ -17,14 +17,29 @@ Pkg.add("SymbolicDiagonalization")
 
 ```@example main
 using SymbolicDiagonalization, Symbolics, LinearAlgebra
+using Main: LaTeX  # Import LaTeX wrapper from make.jl
 
 @variables a b c
 M = [a b; b c]
-eigvals(M)
+nothing # hide
 ```
 
+**Input matrix:**
+
 ```@example main
-eigen(M).vectors
+LaTeX(M)
+```
+
+**Eigenvalues:**
+
+```@example main
+LaTeX(eigvals(M))
+```
+
+**Eigenvectors:**
+
+```@example main
+LaTeX(eigen(M).vectors)
 ```
 
 ## Supported Patterns
@@ -105,7 +120,19 @@ Other types have matrix constructors available for reference.
 ```@example main
 @variables a b c d
 C = [a b c d; d a b c; c d a b; b c d a]
-eigvals(C)
+nothing # hide
+```
+
+**Input matrix:**
+
+```@example main
+LaTeX(C)
+```
+
+**Eigenvalues (via DFT):**
+
+```@example main
+LaTeX(eigvals(C))
 ```
 
 ### SO(2) Rotation
@@ -113,14 +140,33 @@ eigvals(C)
 ```@example main
 @variables θ
 R = SO2_rotation(θ)
-eigvals(R)
+nothing # hide
+```
+
+**Rotation matrix:**
+
+```@example main
+LaTeX(R)
+```
+
+**Eigenvalues** $e^{\pm i\theta}$:
+
+```@example main
+LaTeX(eigvals(R))
 ```
 
 ### SO(2) Kronecker Product
 
 ```@example main
 @variables θ φ
-eigvals(kron(SO2_rotation(θ), SO2_rotation(φ)))
+K = kron(SO2_rotation(θ), SO2_rotation(φ))
+nothing # hide
+```
+
+**Kronecker product eigenvalues** $e^{i(\pm\theta \pm \phi)}$:
+
+```@example main
+LaTeX(eigvals(K))
 ```
 
 ### Quaternion Group Q₈ Regular Representation
@@ -128,7 +174,13 @@ eigvals(kron(SO2_rotation(θ), SO2_rotation(φ)))
 ```@example main
 # Q₈-invariant 8×8 matrix with 8 coefficients (one per group element)
 M = Q8_invariant_matrix(1.0, 0.5, 0.3, 0.2, 0.4, 0.1, 0.25, 0.15)
-eigvals(M)
+nothing # hide
+```
+
+**Eigenvalues (5 distinct via character theory):**
+
+```@example main
+LaTeX(eigvals(M))
 ```
 
 ### Nested Kronecker (1024×1024)
