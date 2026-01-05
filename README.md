@@ -25,7 +25,7 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 
 - **Closed-form root solvers** for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
 - **Automatic structure detection** (block-diagonal, persymmetric, Hermitian)
-- **18+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Hadamard, DFT, Toeplitz tridiagonal, permutation, etc.)
+- **19+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Hadamard, DFT, Toeplitz tridiagonal, permutation, Q₈ regular representation, etc.)
 - **Lie group detection** (SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4)) with symbolic eigenvalues
 - **SO(2) Kronecker products** with automatic trig simplification (e.g., `cos(θ+φ) + i·sin(θ+φ)`)
 - **SU(2) Kronecker products** with half-angle eigenvalues (e.g., `cos((α+β)/2) + i·sin((α+β)/2)`)
@@ -195,6 +195,18 @@ F_norm = dft_matrix(8, normalized=true)
 eigvals(F_norm)         # {1, -1, i, -i}
 ```
 
+### Quaternion Group Q₈ Regular Representation
+
+```julia
+# Q₈ is the 8-element quaternion group {±1, ±i, ±j, ±k}
+# The regular representation gives 8×8 matrices with closed-form eigenvalues
+M = Q8_invariant_matrix(1.0, 0.5, 0.3, 0.2, 0.4, 0.1, 0.25, 0.15)
+eigvals(M)
+# Character theory formulas:
+# - 4 one-dimensional irreps (multiplicity 1 each)
+# - 1 two-dimensional irrep with eigenvalue c₁ - c₋₁ (multiplicity 4)
+```
+
 ### Nested Kronecker Products (Scalable to 1000+ dimensions)
 
 ```julia
@@ -216,7 +228,7 @@ eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
 
 - [User Guide](https://volkerkarle.github.io/SymbolicDiagonalization.jl/user_guide/) - Practical examples and workflows
 - [API Reference](https://volkerkarle.github.io/SymbolicDiagonalization.jl/api_reference/) - Complete function reference
-- [Pattern Library](https://volkerkarle.github.io/SymbolicDiagonalization.jl/pattern_library/) - All 18+ supported matrix patterns
+- [Pattern Library](https://volkerkarle.github.io/SymbolicDiagonalization.jl/pattern_library/) - All 19+ supported matrix patterns
 - [Mathematical Background](https://volkerkarle.github.io/SymbolicDiagonalization.jl/mathematical_background/) - Theory and proofs
 - [Contributing](https://volkerkarle.github.io/SymbolicDiagonalization.jl/contributing/) - Development guide
 
@@ -227,7 +239,7 @@ eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
 | All matrices up to 4×4 | Closed-form solutions via root formulas |
 | Full 6-parameter 3×3 symmetric | Diagonal shift optimization |
 | Block-diagonal decomposition | Automatic detection and recursion |
-| 18+ pattern solvers | Circulant, Kronecker, Hadamard, DFT, tridiagonal, permutation, etc. |
+| 19+ pattern solvers | Circulant, Kronecker, Hadamard, DFT, tridiagonal, permutation, Q₈, etc. |
 | Lie group detection | SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4) with symbolic eigenvalues |
 | **Lie group eigenvectors** | Closed-form eigenvectors for SO(2)-SO(4), SU(2), Sp(2), Sp(4) (non-diagonal) |
 | SO(2) Kronecker products | `cos(θ±φ) + i·sin(θ±φ)` form via trig simplification |

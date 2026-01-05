@@ -177,6 +177,9 @@ export hadamard_matrix, dft_matrix
 # Anti-circulant and Kac-Murdock-Szegő matrices
 export anticirculant_matrix, kms_matrix
 
+# Q₈ group algebra matrices
+export Q8_invariant_matrix
+
 # LinearAlgebra.eigen and LinearAlgebra.eigvals are automatically available when LinearAlgebra is imported
 
 end

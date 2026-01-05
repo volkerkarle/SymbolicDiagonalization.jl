@@ -4,4 +4,4 @@ SymbolicDiagonalization = "20400ecc-8495-4878-83aa-560642c30d15"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [sources]
-SymbolicDiagonalization = {path = ".."}
+SymbolicDiagonalization = {path = "/home/vsilv/.nextcloud/src/SymbolicDiagonalization.jl"}

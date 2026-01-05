@@ -1731,3 +1731,93 @@ end
         end
     end
 end
+
+# ============================================================================
+# Q₈ Regular Representation (Quaternion Group)
+# ============================================================================
+
+@testset "Q₈ Regular Representation" begin
+    @testset "Q₈ constructor and detection" begin
+        # Test symbolic Q₈ matrix construction
+        @variables c1 cm1 ci cmi cj cmj ck cmk
+        
+        M = Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)
+        @test size(M) == (8, 8)
+        
+        # Verify detection works
+        coeffs = SymbolicDiagonalization._is_Q8_regular_representation(M)
+        @test !isnothing(coeffs)
+        @test length(coeffs) == 8
+    end
+    
+    @testset "Q₈ eigenvalue formula" begin
+        # Test with symbolic coefficients
+        @variables c1 cm1 ci cmi cj cmj ck cmk
+        
+        M = Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)
+        vals, _, _ = symbolic_eigenvalues(M)
+        @test length(vals) == 8
+        
+        # Should have 5 distinct eigenvalues (4 from 1D irreps + 1 from 2D with mult 4)
+        unique_vals = unique(vals)
+        @test length(unique_vals) == 5
+        
+        # The 2D irrep eigenvalue (c1 - cm1) should have multiplicity 4
+        two_d_eigenval = c1 - cm1
+        mult_2d = count(v -> isequal(Symbolics.simplify(v - two_d_eigenval), 0), vals)
+        @test mult_2d == 4
+    end
+    
+    @testset "Q₈ numeric verification" begin
+        # Numeric test with random coefficients
+        c1, cm1, ci, cmi, cj, cmj, ck, cmk = 1.0, 0.5, 0.3, -0.3, 0.2, -0.2, 0.1, -0.1
+        
+        M = Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)
+        vals, _, _ = symbolic_eigenvalues(M)
+        
+        # Compare with direct eigenvalue computation
+        direct_vals = sort(real.(eigvals(M)))
+        our_vals = sort(Float64.(vals))
+        
+        @test isapprox(direct_vals, our_vals, atol=1e-10)
+    end
+    
+    @testset "Q₈ character theory eigenvalues" begin
+        # Verify the character-theoretic formulas
+        c1, cm1, ci, cmi, cj, cmj, ck, cmk = 2.0, 1.0, 0.5, 0.5, 0.3, 0.3, 0.2, 0.2
+        
+        # Expected eigenvalues from character table:
+        λ1 = c1 + cm1 + ci + cmi + cj + cmj + ck + cmk  # trivial rep
+        λ2 = c1 + cm1 + ci + cmi - cj - cmj - ck - cmk  # sign on j,k
+        λ3 = c1 + cm1 - ci - cmi + cj + cmj - ck - cmk  # sign on i,k
+        λ4 = c1 + cm1 - ci - cmi - cj - cmj + ck + cmk  # sign on i,j
+        λ5 = c1 - cm1  # 2D irrep (multiplicity 4)
+        
+        expected = sort([λ1, λ2, λ3, λ4, λ5, λ5, λ5, λ5])
+        
+        M = Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)
+        vals, _, _ = symbolic_eigenvalues(M)
+        # Handle potential small imaginary parts from floating point
+        computed = sort(real.(complex.(vals)))
+        
+        @test isapprox(expected, computed, atol=1e-10)
+    end
+    
+    @testset "Q₈ group algebra identities" begin
+        # Test that certain special Q₈ matrices have known eigenstructure
+        
+        # Identity: all coeffs = 1 except cm1 = 0
+        # This is the sum of all right multiplication operators
+        M_sum = Q8_invariant_matrix(1, 0, 1, 1, 1, 1, 1, 1)
+        vals_sum, _, _ = symbolic_eigenvalues(M_sum)
+        # The 2D eigenvalue should be 1-0=1 with mult 4
+        @test count(v -> isapprox(real(complex(v)), 1.0, atol=1e-10), vals_sum) == 4
+        
+        # Projection onto trivial: c_g = 1 for all g
+        M_trivial = Q8_invariant_matrix(1, 1, 1, 1, 1, 1, 1, 1)
+        vals_trivial, _, _ = symbolic_eigenvalues(M_trivial)
+        # Trivial eigenvalue = 8, all others = 0
+        @test any(v -> isapprox(real(complex(v)), 8.0, atol=1e-10), vals_trivial)
+        @test count(v -> isapprox(abs(complex(v)), 0.0, atol=1e-10), vals_trivial) >= 4  # 2D irrep gives 0
+    end
+end

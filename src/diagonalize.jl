@@ -230,6 +230,13 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         return _build_eigenvalue_result(vals, λ, expand)
     end
     
+    # Check for Q₈ regular representation (8×8 Q₈-invariant matrix)
+    q8_coeffs = _is_Q8_regular_representation(mat)
+    if !isnothing(q8_coeffs)
+        vals = _Q8_regular_eigenvalues(q8_coeffs)
+        return _build_eigenvalue_result(vals, λ, expand)
+    end
+    
     # Check for Cartan matrix (only types with symbolic formulas: A, G₂)
     cartan_type = _detect_cartan_type_symbolic(mat)
     if !isnothing(cartan_type)

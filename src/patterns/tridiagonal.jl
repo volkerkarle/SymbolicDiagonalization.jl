@@ -176,6 +176,112 @@ function _detect_special_5x5_tridiagonal(mat)
 end
 
 """
+    _detect_symmetric_double_perturbation_tridiagonal(mat)
+
+Detect symmetric tridiagonal matrices with double perturbation pattern.
+
+For (2k+1)×(2k+1) matrices with off-diagonal pattern [b, d, b, ..., b, d, b]
+(i.e., d at symmetric positions from the ends), there are partial closed-form eigenvalues:
+    λ = a                    (always)
+    λ = a ± √(b² + d²)       (always)
+
+The remaining eigenvalues don't have simple closed forms for k > 2.
+
+Pattern structure for 7×7:
+    [a  b  0  0  0  0  0]
+    [b  a  d  0  0  0  0]
+    [0  d  a  b  0  0  0]
+    [0  0  b  a  b  0  0]
+    [0  0  0  b  a  d  0]
+    [0  0  0  0  d  a  b]
+    [0  0  0  0  0  b  a]
+
+Returns (n, a, b, d) if pattern matches, nothing otherwise.
+Note: For n=5, this reduces to pattern [b,d,b,d,b] which is handled by _detect_special_5x5_tridiagonal.
+"""
+function _detect_symmetric_double_perturbation_tridiagonal(mat)
+    n = size(mat, 1)
+    n == size(mat, 2) || return nothing
+    n >= 7 || return nothing  # 5×5 handled separately, need at least 7×7
+    n % 2 == 1 || return nothing  # Must be odd dimension
+    
+    # Check that matrix is tridiagonal
+    for i in 1:n, j in 1:n
+        if abs(i - j) > 1 && !_issymzero(mat[i, j])
+            return nothing
+        end
+    end
+    
+    # Check symmetric
+    if !_is_symmetric(mat)
+        return nothing
+    end
+    
+    # Check constant diagonal
+    a = mat[1, 1]
+    for i in 2:n
+        if !_issymzero(mat[i, i] - a)
+            return nothing
+        end
+    end
+    
+    # Extract off-diagonal elements
+    off_diag = [mat[i, i+1] for i in 1:n-1]
+    
+    # Expected pattern: [b, d, b, b, ..., b, b, d, b]
+    # d appears at positions 2 and n-2 (1-indexed)
+    
+    # Get the common value b (should be at position 1)
+    b = off_diag[1]
+    
+    # Check positions 2 and n-2 are the same (this is d)
+    if !_issymzero(off_diag[2] - off_diag[n-2])
+        return nothing
+    end
+    d = off_diag[2]
+    
+    # Check that d ≠ b (otherwise it's just constant tridiagonal)
+    if _issymzero(d - b)
+        return nothing
+    end
+    
+    # Check all other positions equal b
+    # Positions to check: 1, 3, 4, ..., n-3, n-1 (all except 2 and n-2)
+    for i in [1; 3:n-3; n-1]
+        if !_issymzero(off_diag[i] - b)
+            return nothing
+        end
+    end
+    
+    return (n, a, b, d)
+end
+
+"""
+    _symmetric_double_perturbation_eigenvalues(n, a, b, d)
+
+Compute the 3 closed-form eigenvalues for a symmetric double-perturbation tridiagonal matrix.
+
+For odd n with pattern [b, d, b, ..., b, d, b]:
+    λ₁ = a
+    λ₂ = a - √(b² + d²)
+    λ₃ = a + √(b² + d²)
+
+Note: Only 3 out of n eigenvalues have closed forms. The remaining n-3 eigenvalues
+require numeric computation or solving degree-(n-3)/2 polynomials.
+
+Returns only the 3 closed-form eigenvalues (not the full set).
+This is a PARTIAL solver - useful for identifying eigenvalue structure but not complete.
+"""
+function _symmetric_double_perturbation_eigenvalues(n, a, b, d)
+    sqrt_term = sqrt(b^2 + d^2)
+    return [
+        a,
+        Symbolics.simplify(a - sqrt_term),
+        Symbolics.simplify(a + sqrt_term)
+    ]
+end
+
+"""
     _is_antidiagonal(mat)
 
 Check if a matrix is anti-diagonal (non-zero only on anti-diagonal).

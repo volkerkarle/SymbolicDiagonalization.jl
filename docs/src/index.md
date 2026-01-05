@@ -38,7 +38,8 @@ Matrices larger than 4×4 require exploitable structure. The package detects:
 | Circulant | Zₙ | `[a b c; c a b; b c a]` | DFT of first row |
 | Symmetric Circulant | Dₙ | Palindromic first row | λₖ = c₀ + 2·Σcⱼcos(2πjk/n) |
 | Permutation | Sₙ | `[0 1 0; 0 0 1; 1 0 0]` | Roots of unity from cycles |
-| Quaternion | Q₈ | 2×2 quaternion blocks | λ = a ± i√(b²+c²+d²) |
+| Quaternion (single) | Q₈ | 2×2 quaternion blocks | λ = a ± i√(b²+c²+d²) |
+| Q₈ Regular Rep | Q₈ | 8×8 Q₈-invariant | Character theory: 5 distinct eigenvalues |
 | Hypercube Qₙ | (Z₂)ⁿ | 2ⁿ×2ⁿ adjacency | λₖ = n - 2k |
 
 ### Transform Matrices
@@ -122,6 +123,14 @@ eigvals(R)
 eigvals(kron(SO2_rotation(θ), SO2_rotation(φ)))
 ```
 
+### Quaternion Group Q₈ Regular Representation
+
+```@example main
+# Q₈-invariant 8×8 matrix with 8 coefficients (one per group element)
+M = Q8_invariant_matrix(1.0, 0.5, 0.3, 0.2, 0.4, 0.1, 0.25, 0.15)
+eigvals(M)
+```
+
 ### Nested Kronecker (1024×1024)
 
 ```julia
@@ -192,6 +201,9 @@ householder_reflection(v)     # Householder matrix
 hadamard_matrix(n)            # 2ⁿ×2ⁿ Sylvester-Hadamard matrix
 dft_matrix(n)                 # n×n DFT matrix (ω = e^{2πi/n})
 dft_matrix(n, normalized=true)  # Unitary DFT (F/√n)
+
+# Finite Group Matrices
+Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)  # Q₈ regular rep
 ```
 
 ## Limitations

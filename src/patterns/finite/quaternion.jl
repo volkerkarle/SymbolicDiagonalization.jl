@@ -204,35 +204,206 @@ function _block_quaternion_eigenvalues(quaternions)
 end
 
 """
+    _Q8_group_elements()
+
+Return the 8 elements of Q₈ in order: 1, -1, i, -i, j, -j, k, -k
+Each element is represented as (a, b, c, d) where q = a·1 + b·i + c·j + d·k
+"""
+function _Q8_group_elements()
+    return [
+        (1, 0, 0, 0),   # 1
+        (-1, 0, 0, 0),  # -1
+        (0, 1, 0, 0),   # i
+        (0, -1, 0, 0),  # -i
+        (0, 0, 1, 0),   # j
+        (0, 0, -1, 0),  # -j
+        (0, 0, 0, 1),   # k
+        (0, 0, 0, -1),  # -k
+    ]
+end
+
+"""
+    _Q8_multiplication_table()
+
+Return the Q₈ group multiplication table as an 8×8 matrix.
+Entry (i,j) gives the index of the product g_i · g_j in the element list.
+
+Element ordering: 1, -1, i, -i, j, -j, k, -k (indices 1-8)
+"""
+function _Q8_multiplication_table()
+    # Multiplication table for Q₈ = {1, -1, i, -i, j, -j, k, -k}
+    # Using indices 1-8 for the 8 elements
+    return [
+        # 1   -1   i   -i   j   -j   k   -k
+        1    2    3    4    5    6    7    8;   # 1·x
+        2    1    4    3    6    5    8    7;   # (-1)·x
+        3    4    2    1    7    8    6    5;   # i·x
+        4    3    1    2    8    7    5    6;   # (-i)·x
+        5    6    8    7    2    1    3    4;   # j·x
+        6    5    7    8    1    2    4    3;   # (-j)·x
+        7    8    5    6    4    3    2    1;   # k·x
+        8    7    6    5    3    4    1    2;   # (-k)·x
+    ]
+end
+
+"""
     _is_Q8_regular_representation(mat)
 
-Check if an 8×8 matrix is invariant under the regular representation of Q₈.
+Check if an 8×8 matrix is a Q₈-invariant matrix in the regular representation.
 
-The regular representation of Q₈ acts on an 8-dimensional space (one basis
-element per group element). A Q₈-invariant matrix commutes with this action.
+A matrix M in the group algebra ℂ[Q₈] has the form:
+    M = Σ_{g ∈ Q₈} c_g · R_g
 
-Due to Q₈'s representation theory, such matrices decompose as:
-- 4 copies of 1D trivial-like irreps
-- 1 copy of 2D quaternion irrep (with multiplicity 2)
+where R_g is the regular representation matrix for element g (permutation matrix
+from right multiplication by g⁻¹).
 
-This is a specialized check for the 8×8 case.
+Such matrices are characterized by having constant values along "Q₈-orbits":
+for each g ∈ Q₈, M[h, k] = M[hg, kg] for all h, k.
 
-Returns `true` if the matrix appears to be Q₈-regular-invariant.
+Returns a tuple of 8 coefficients (c₁, c₋₁, cᵢ, c₋ᵢ, cⱼ, c₋ⱼ, cₖ, c₋ₖ) if the
+matrix is Q₈-invariant, or `nothing` otherwise.
 """
 function _is_Q8_regular_representation(mat)
-    size(mat) == (8, 8) || return false
+    size(mat) == (8, 8) || return nothing
     
-    # For a matrix to be Q₈-regular invariant, it must have very specific
-    # structure based on the group multiplication table.
-    # This is complex to check in general, so we use a simpler heuristic:
-    # Check if eigenvalues match the expected pattern from character theory.
+    # In the regular representation, a Q₈-invariant matrix M satisfies:
+    # M[h, k] depends only on the "quotient" h⁻¹·k
+    #
+    # So M[i, j] = c_{g_i⁻¹ · g_j} for all i, j
+    #
+    # This means we need to check that M[i,j] = M[i',j'] whenever
+    # g_i⁻¹·g_j = g_{i'}⁻¹·g_{j'}
     
-    # Q₈ has 5 conjugacy classes, so Q₈-invariant matrices should have
-    # at most 5 distinct eigenvalues (in the regular representation context).
+    mult_table = _Q8_multiplication_table()
+    elements = _Q8_group_elements()
     
-    # This is a placeholder - full implementation would need group
-    # algebra structure checks.
-    return false
+    # Compute inverse indices: for Q₈, inverse of (a,b,c,d) is (a,-b,-c,-d)
+    # except for ±1 which are self-inverse
+    inverse_idx = [1, 2, 4, 3, 6, 5, 8, 7]  # inv(1)=1, inv(-1)=-1, inv(i)=-i, etc.
+    
+    # Build a map from (i,j) -> index of g_i⁻¹·g_j
+    quotient_idx = zeros(Int, 8, 8)
+    for i in 1:8, j in 1:8
+        inv_i = inverse_idx[i]
+        quotient_idx[i, j] = mult_table[inv_i, j]
+    end
+    
+    # Extract the coefficient for each group element by finding a representative entry
+    # For each group element g (index 1-8), find the first (i,j) such that g_i⁻¹·g_j = g
+    coeffs = Vector{Any}(undef, 8)
+    for g in 1:8
+        # Find first (i,j) with quotient_idx[i,j] == g
+        found = false
+        for i in 1:8, j in 1:8
+            if quotient_idx[i, j] == g
+                coeffs[g] = mat[i, j]
+                found = true
+                break
+            end
+        end
+        if !found
+            return nothing  # Should never happen
+        end
+    end
+    
+    # Now verify all entries match the expected pattern
+    for i in 1:8, j in 1:8
+        g = quotient_idx[i, j]
+        expected = coeffs[g]
+        if !_issymzero(mat[i, j] - expected)
+            return nothing
+        end
+    end
+    
+    return tuple(coeffs...)
+end
+
+"""
+    _Q8_regular_eigenvalues(coeffs)
+
+Compute eigenvalues of a Q₈-invariant matrix given its group algebra coefficients.
+
+For M = Σ c_g · R_g in ℂ[Q₈], the eigenvalues come from the character table of Q₈:
+
+Character table of Q₈:
+   Class:   {1}  {-1}  {±i}  {±j}  {±k}
+   χ₁:       1     1     1     1     1    (trivial)
+   χ₂:       1     1     1    -1    -1
+   χ₃:       1     1    -1     1    -1
+   χ₄:       1     1    -1    -1     1
+   χ₅:       2    -2     0     0     0    (2D irrep)
+
+For each irrep χ with dimension d, we get eigenvalue:
+   λ_χ = (1/d) · Σ_{g ∈ G} c_g · χ(g)
+
+with multiplicity d.
+
+So:
+   λ₁ = c₁ + c₋₁ + cᵢ + c₋ᵢ + cⱼ + c₋ⱼ + cₖ + c₋ₖ        (mult 1)
+   λ₂ = c₁ + c₋₁ + cᵢ + c₋ᵢ - cⱼ - c₋ⱼ - cₖ - c₋ₖ        (mult 1)
+   λ₃ = c₁ + c₋₁ - cᵢ - c₋ᵢ + cⱼ + c₋ⱼ - cₖ - c₋ₖ        (mult 1)
+   λ₄ = c₁ + c₋₁ - cᵢ - c₋ᵢ - cⱼ - c₋ⱼ + cₖ + c₋ₖ        (mult 1)
+   λ₅ = c₁ - c₋₁                                          (mult 4)
+"""
+function _Q8_regular_eigenvalues(coeffs)
+    c1, cm1, ci, cmi, cj, cmj, ck, cmk = coeffs
+    
+    # 1D irreps
+    λ1 = c1 + cm1 + ci + cmi + cj + cmj + ck + cmk  # trivial
+    λ2 = c1 + cm1 + ci + cmi - cj - cmj - ck - cmk  # sign on j,k
+    λ3 = c1 + cm1 - ci - cmi + cj + cmj - ck - cmk  # sign on i,k
+    λ4 = c1 + cm1 - ci - cmi - cj - cmj + ck + cmk  # sign on i,j
+    
+    # 2D irrep (mult 4 because 2² = 4 in regular representation)
+    # χ₅(1) = 2, χ₅(-1) = -2, χ₅(±i) = χ₅(±j) = χ₅(±k) = 0
+    # λ₅ = (1/2) · (2·c₁ + (-2)·c₋₁) = c₁ - c₋₁
+    λ5 = c1 - cm1
+    
+    # Simplify all eigenvalues
+    eigenvalues = [
+        Symbolics.simplify(λ1),
+        Symbolics.simplify(λ2),
+        Symbolics.simplify(λ3),
+        Symbolics.simplify(λ4),
+        Symbolics.simplify(λ5),
+        Symbolics.simplify(λ5),
+        Symbolics.simplify(λ5),
+        Symbolics.simplify(λ5),
+    ]
+    
+    return eigenvalues
+end
+
+"""
+    Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)
+
+Construct an 8×8 Q₈-invariant matrix from group algebra coefficients.
+
+Returns M = c₁·R₁ + c₋₁·R₋₁ + cᵢ·Rᵢ + c₋ᵢ·R₋ᵢ + cⱼ·Rⱼ + c₋ⱼ·R₋ⱼ + cₖ·Rₖ + c₋ₖ·R₋ₖ
+
+where R_g is the permutation matrix for right multiplication by g⁻¹.
+"""
+function Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)
+    coeffs = (c1, cm1, ci, cmi, cj, cmj, ck, cmk)
+    mult_table = _Q8_multiplication_table()
+    inverse_idx = [1, 2, 4, 3, 6, 5, 8, 7]
+    
+    # Compute quotient indices
+    quotient_idx = zeros(Int, 8, 8)
+    for i in 1:8, j in 1:8
+        inv_i = inverse_idx[i]
+        quotient_idx[i, j] = mult_table[inv_i, j]
+    end
+    
+    # Build matrix
+    T = promote_type(typeof(c1), typeof(cm1), typeof(ci), typeof(cmi),
+                     typeof(cj), typeof(cmj), typeof(ck), typeof(cmk))
+    mat = Matrix{T}(undef, 8, 8)
+    for i in 1:8, j in 1:8
+        mat[i, j] = coeffs[quotient_idx[i, j]]
+    end
+    
+    return mat
 end
 
 # ============================================================================
