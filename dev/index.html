@@ -38,9 +38,9 @@ b & c & d & a \\
 \[
 \begin{aligned}
 \lambda_{1} &= a + b + c + d \\[0.3em]
-\lambda_{2} &= a + 6.123233995736766e-17 ~ b - c - 1.8369701987210297e-16 ~ d + \left( b + 1.2246467991473532e-16 ~ c - d \right) ~ \mathit{i} \\[0.3em]
-\lambda_{3} &= a - b + c - d + \left( 1.2246467991473532e-16 ~ b - 2.4492935982947064e-16 ~ c + 3.6739403974420594e-16 ~ d \right) ~ \mathit{i} \\[0.3em]
-\lambda_{4} &= a - 1.8369701987210297e-16 ~ b - c + 5.51091059616309e-16 ~ d + \left(  - b + 3.6739403974420594e-16 ~ c + d \right) ~ \mathit{i}
+\lambda_{2} &= a - c + \left( b - d \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= a - b + c - d \\[0.3em]
+\lambda_{4} &= a - c + \left(  - b + d \right) ~ \mathit{i}
 \end{aligned}
 \]<h3 id="SO(2)-Rotation"><a class="docs-heading-anchor" href="#SO(2)-Rotation">SO(2) Rotation</a><a id="SO(2)-Rotation-1"></a><a class="docs-heading-anchor-permalink" href="#SO(2)-Rotation" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables θ
 R = SO2_rotation(θ)</code></pre><p><strong>Rotation matrix:</strong></p><pre><code class="language-julia hljs">LaTeX(R)</code></pre>\[
@@ -69,14 +69,14 @@ K = kron(SO2_rotation(θ), SO2_rotation(φ))</code></pre><p><strong>Kronecker pr
 M = Q8_invariant_matrix(1.0, 0.5, 0.3, 0.2, 0.4, 0.1, 0.25, 0.15)</code></pre><p><strong>Eigenvalues (5 distinct via character theory):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(M))</code></pre><p><strong>Eigenvalues:</strong></p>
 \[
 \begin{aligned}
-\lambda_{1} &= 0.49999999999999967-0.3316624790355397\mathit{i} \\[0.3em]
-\lambda_{2} &= 0.49999999999999967+0.3316624790355397\mathit{i} \\[0.3em]
-\lambda_{3} &= 0.4999999999999998-0.33166247903554\mathit{i} \\[0.3em]
-\lambda_{4} &= 0.4999999999999998+0.33166247903554\mathit{i} \\[0.3em]
-\lambda_{5} &= 0.9000000000000004+0.0\mathit{i} \\[0.3em]
-\lambda_{6} &= 1.0999999999999996+0.0\mathit{i} \\[0.3em]
-\lambda_{7} &= 1.1000000000000008+0.0\mathit{i} \\[0.3em]
-\lambda_{8} &= 2.8999999999999995+0.0\mathit{i}
+\lambda_{1} &= 0.5-0.33166247903554014\mathit{i} \\[0.3em]
+\lambda_{2} &= 0.5+0.33166247903554014\mathit{i} \\[0.3em]
+\lambda_{3} &= 0.5000000000000003-0.33166247903553975\mathit{i} \\[0.3em]
+\lambda_{4} &= 0.5000000000000003+0.33166247903553975\mathit{i} \\[0.3em]
+\lambda_{5} &= 0.8999999999999996+0.0\mathit{i} \\[0.3em]
+\lambda_{6} &= 1.0999999999999999+0.0\mathit{i} \\[0.3em]
+\lambda_{7} &= 1.0999999999999999+0.0\mathit{i} \\[0.3em]
+\lambda_{8} &= 2.9000000000000004+0.0\mathit{i}
 \end{aligned}
 \]<h3 id="Nested-Kronecker-(10241024)"><a class="docs-heading-anchor" href="#Nested-Kronecker-(10241024)">Nested Kronecker (1024×1024)</a><a id="Nested-Kronecker-(10241024)-1"></a><a class="docs-heading-anchor-permalink" href="#Nested-Kronecker-(10241024)" title="Permalink"></a></h3><pre><code class="language-julia hljs">matrices = [[Symbolics.variable(Symbol(&quot;a\$i&quot;)) Symbolics.variable(Symbol(&quot;b\$i&quot;));
              Symbolics.variable(Symbol(&quot;b\$i&quot;)) Symbolics.variable(Symbol(&quot;c\$i&quot;))] for i in 1:10]
@@ -127,4 +127,4 @@ dft_matrix(n)                 # n×n DFT matrix (ω = e^{2πi/n})
 dft_matrix(n, normalized=true)  # Unitary DFT (F/√n)
 
 # Finite Group Matrices
-Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)  # Q₈ regular rep</code></pre><h2 id="Limitations"><a class="docs-heading-anchor" href="#Limitations">Limitations</a><a id="Limitations-1"></a><a class="docs-heading-anchor-permalink" href="#Limitations" title="Permalink"></a></h2><ul><li><strong>5×5+ without structure</strong>: No solution exists (Abel-Ruffini)</li><li><strong>Large expressions</strong>: 4×4 quartic produces ~50MB expressions</li><li><strong>No threading</strong>: Symbolics.jl is not thread-safe</li></ul><h2 id="Source"><a class="docs-heading-anchor" href="#Source">Source</a><a id="Source-1"></a><a class="docs-heading-anchor-permalink" href="#Source" title="Permalink"></a></h2><p><a href="https://github.com/volkerkarle/SymbolicDiagonalization.jl">github.com/volkerkarle/SymbolicDiagonalization.jl</a></p></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 5 January 2026 22:39">Monday 5 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)  # Q₈ regular rep</code></pre><h2 id="Limitations"><a class="docs-heading-anchor" href="#Limitations">Limitations</a><a id="Limitations-1"></a><a class="docs-heading-anchor-permalink" href="#Limitations" title="Permalink"></a></h2><ul><li><strong>5×5+ without structure</strong>: No solution exists (Abel-Ruffini)</li><li><strong>Large expressions</strong>: 4×4 quartic produces ~50MB expressions</li><li><strong>No threading</strong>: Symbolics.jl is not thread-safe</li></ul><h2 id="Source"><a class="docs-heading-anchor" href="#Source">Source</a><a id="Source-1"></a><a class="docs-heading-anchor-permalink" href="#Source" title="Permalink"></a></h2><p><a href="https://github.com/volkerkarle/SymbolicDiagonalization.jl">github.com/volkerkarle/SymbolicDiagonalization.jl</a></p></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Monday 5 January 2026 23:23">Monday 5 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
