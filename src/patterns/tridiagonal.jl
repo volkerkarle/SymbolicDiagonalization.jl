@@ -210,10 +210,22 @@ function _toeplitz_tridiagonal_eigenvalues(n, a, b, c)
     # For the symmetric case: λₖ = a + 2b·cos(kπ/(n+1))
     # (We verified b = c in the detection function)
     
+    # Check if a and b are numeric (not symbolic)
+    a_is_numeric = !(a isa Symbolics.Num)
+    b_is_numeric = !(b isa Symbolics.Num)
+    
     for k in 1:n
-        θ = k * π / (n + 1)
-        λₖ = a + 2 * b * cos(θ)
-        eigenvalues[k] = Symbolics.simplify(λₖ)
+        if a_is_numeric && b_is_numeric
+            # Keep eigenvalues symbolic: cos(kπ/(n+1)) stays as symbolic expression
+            # Use Symbolics.Num to prevent π from being evaluated to Float64
+            angle = Symbolics.Num(k) * Symbolics.Num(π) / Symbolics.Num(n + 1)
+            λₖ = a + 2 * b * cos(angle)
+        else
+            # For symbolic a, b: just compute directly
+            θ = k * π / (n + 1)
+            λₖ = a + 2 * b * cos(θ)
+        end
+        eigenvalues[k] = λₖ
     end
     
     return eigenvalues

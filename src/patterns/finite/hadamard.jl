@@ -117,19 +117,26 @@ function _hadamard_eigenvalues(n::Int)
     size = 2^n
     multiplicity = 2^(n - 1)
     
-    # Eigenvalue magnitude: √(2ⁿ) = 2^(n/2)
-    λ = 2^(n // 2)  # Use rational to keep exact when possible
-    
     eigenvalues = Vector{Any}(undef, size)
+    
+    # Eigenvalue is √(2^n) = 2^(n/2)
+    # For even n: 2^n is a perfect square, use exact integer 2^(n÷2)
+    # For odd n: √(2^n) = 2^((n-1)/2) * √2, keep symbolic
+    if iseven(n)
+        sqrtn = 2^(n ÷ 2)  # Exact integer
+    else
+        # 2^n = 2^(n-1) * 2, so √(2^n) = 2^((n-1)/2) * √2
+        sqrtn = 2^((n - 1) ÷ 2) * sqrt(Symbolics.Num(2))
+    end
     
     # First half: +√(2ⁿ)
     for i in 1:multiplicity
-        eigenvalues[i] = sqrt(Rational(2)^n)
+        eigenvalues[i] = sqrtn
     end
     
     # Second half: -√(2ⁿ)
     for i in 1:multiplicity
-        eigenvalues[multiplicity + i] = -sqrt(Rational(2)^n)
+        eigenvalues[multiplicity + i] = -sqrtn
     end
     
     return eigenvalues
@@ -215,7 +222,7 @@ function _dft_eigenvalues(n::Int)
     n >= 1 || error("DFT size must be positive")
     
     if n == 1
-        return [1.0 + 0.0im]
+        return [1]
     end
     
     # The correct multiplicities for DFT eigenvalues with ω = e^{+2πi/n}
@@ -249,25 +256,32 @@ function _dft_eigenvalues(n::Int)
     total = m1 + m_neg1 + m_i + m_negi
     @assert total == n "Multiplicity error: got $total, expected $n"
     
-    sqrtn = sqrt(n)
+    # Keep eigenvalues symbolic, but simplify perfect squares
+    # Check if n is a perfect square
+    sqrtint = isqrt(n)
+    if sqrtint^2 == n
+        sqrtn = sqrtint  # Exact integer
+    else
+        sqrtn = sqrt(Symbolics.Num(n))  # Keep symbolic
+    end
     
-    eigenvalues = Vector{ComplexF64}(undef, n)
+    eigenvalues = Vector{Any}(undef, n)
     idx = 1
     
     for _ in 1:m1
-        eigenvalues[idx] = sqrtn + 0.0im
+        eigenvalues[idx] = sqrtn
         idx += 1
     end
     for _ in 1:m_neg1
-        eigenvalues[idx] = -sqrtn + 0.0im
+        eigenvalues[idx] = -sqrtn
         idx += 1
     end
     for _ in 1:m_i
-        eigenvalues[idx] = 0.0 + sqrtn*im
+        eigenvalues[idx] = sqrtn * im
         idx += 1
     end
     for _ in 1:m_negi
-        eigenvalues[idx] = 0.0 - sqrtn*im
+        eigenvalues[idx] = -sqrtn * im
         idx += 1
     end
     
@@ -286,7 +300,7 @@ function _dft_eigenvalues_normalized(n::Int)
     n >= 1 || error("DFT size must be positive")
     
     if n == 1
-        return [Complex{Float64}(1)]
+        return [1]
     end
     
     # Multiplicities for normalized DFT with ω = e^{+2πi/n} (positive omega convention)
@@ -315,23 +329,23 @@ function _dft_eigenvalues_normalized(n::Int)
         m_negi = (n - 1) ÷ 4 # swapped for positive omega
     end
     
-    eigenvalues = Vector{Complex{Float64}}(undef, n)
+    eigenvalues = Vector{Any}(undef, n)
     idx = 1
     
     for _ in 1:m1
-        eigenvalues[idx] = 1.0 + 0.0im
+        eigenvalues[idx] = 1
         idx += 1
     end
     for _ in 1:m_neg1
-        eigenvalues[idx] = -1.0 + 0.0im
+        eigenvalues[idx] = -1
         idx += 1
     end
     for _ in 1:m_i
-        eigenvalues[idx] = 0.0 + 1.0im
+        eigenvalues[idx] = im
         idx += 1
     end
     for _ in 1:m_negi
-        eigenvalues[idx] = 0.0 - 1.0im
+        eigenvalues[idx] = -im
         idx += 1
     end
     

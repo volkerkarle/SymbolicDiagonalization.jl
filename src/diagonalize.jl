@@ -574,6 +574,52 @@ function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure
 end
 
 """
+    _build_diagonal_matrix(eigenvalues, n, D_eltype)
+
+Build a diagonal matrix from eigenvalues without using Diagonal type.
+This avoids the zero(Any) issue when eigenvalues is Vector{Any}.
+"""
+function _build_diagonal_matrix(eigenvalues, n::Int, D_eltype::Type)
+    # If D_eltype is Any, try to infer a better type from the actual eigenvalues
+    actual_eltype = D_eltype
+    if D_eltype === Any && !isempty(eigenvalues)
+        # Find the common type of all eigenvalues
+        types = unique(typeof.(eigenvalues))
+        if length(types) == 1
+            actual_eltype = types[1]
+        else
+            # Try to promote all types
+            actual_eltype = reduce(promote_type, types)
+        end
+    end
+    
+    # Determine the appropriate zero value
+    # For Num types, use Symbolics.Num(0); for others, use zero
+    if actual_eltype <: Num
+        zero_val = Symbolics.Num(0)
+    elseif actual_eltype <: Complex && actual_eltype !== Complex
+        # Complex{Num} or similar
+        T = eltype(actual_eltype)
+        if T <: Num
+            zero_val = Complex(Symbolics.Num(0), Symbolics.Num(0))
+        else
+            zero_val = zero(actual_eltype)
+        end
+    elseif actual_eltype === Any
+        # Last resort: use 0 (Int) which works with most types
+        zero_val = 0
+    else
+        zero_val = zero(actual_eltype)
+    end
+    
+    D = fill(zero_val, n, n)
+    for i in 1:n
+        D[i, i] = eigenvalues[i]
+    end
+    return D
+end
+
+"""
     symbolic_diagonalize(A; var = nothing, structure = :auto, expand = true, complexity_threshold = DEFAULT_COMPLEXITY_THRESHOLD, timeout = DEFAULT_TIMEOUT_SECONDS, max_terms = DEFAULT_MAX_TERMS)
 
 Attempt to diagonalize `A` symbolically. Returns `(P, D, pairs)` where `P`
@@ -611,7 +657,8 @@ function symbolic_diagonalize(A; var = nothing, structure = :auto, expand = true
         # Infer actual eltype from first eigenvalue since eigenvalues is Any[]
         λ_eltype = isempty(eigenvalues) ? eltype(P) : typeof(first(eigenvalues))
         D_eltype = promote_type(eltype(P), λ_eltype)
-        D = Matrix{D_eltype}(Diagonal(convert(Vector{D_eltype}, eigenvalues)))
+        # Build diagonal matrix directly to avoid zero(Any) issue with Diagonal type
+        D = _build_diagonal_matrix(eigenvalues, n, D_eltype)
         return P, D, pairs
     end
 
@@ -627,7 +674,8 @@ function symbolic_diagonalize(A; var = nothing, structure = :auto, expand = true
     selected_eigenvalues = eigenvalues[selected]
     λ_eltype = isempty(selected_eigenvalues) ? eltype(P) : typeof(first(selected_eigenvalues))
     D_eltype = promote_type(eltype(P), λ_eltype)
-    D = Matrix{D_eltype}(Diagonal(convert(Vector{D_eltype}, selected_eigenvalues)))
+    # Build diagonal matrix directly to avoid zero(Any) issue with Diagonal type
+    D = _build_diagonal_matrix(selected_eigenvalues, n, D_eltype)
     return P, D, pairs
 end
 

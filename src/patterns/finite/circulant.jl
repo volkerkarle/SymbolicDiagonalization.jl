@@ -31,43 +31,46 @@ function _exact_root_of_unity(n::Int, k::Int)
     # Normalize k to [0, n-1]
     k = mod(k, n)
     
-    # Exact values for small n
+    # Exact values for small n (using symbolic sqrt to avoid Float64)
     if n == 1
         return 1
     elseif n == 2
         return k == 0 ? 1 : -1
     elseif n == 3
+        sqrt3 = sqrt(Symbolics.Num(3))
         if k == 0
             return 1
         elseif k == 1
-            return Complex(-0.5, sqrt(3)/2)
+            return Complex(Rational(-1, 2), sqrt3 / 2)
         else  # k == 2
-            return Complex(-0.5, -sqrt(3)/2)
+            return Complex(Rational(-1, 2), -sqrt3 / 2)
         end
     elseif n == 4
         return [1, im, -1, -im][k+1]
     elseif n == 6
-        sqrt3_2 = sqrt(3)/2
+        sqrt3 = sqrt(Symbolics.Num(3))
+        sqrt3_2 = sqrt3 / 2
         roots = [
-            Complex(1.0, 0.0),           # k=0
-            Complex(0.5, sqrt3_2),       # k=1
-            Complex(-0.5, sqrt3_2),      # k=2
-            Complex(-1.0, 0.0),          # k=3
-            Complex(-0.5, -sqrt3_2),     # k=4
-            Complex(0.5, -sqrt3_2)       # k=5
+            1,                                       # k=0
+            Complex(Rational(1, 2), sqrt3_2),        # k=1
+            Complex(Rational(-1, 2), sqrt3_2),       # k=2
+            -1,                                      # k=3
+            Complex(Rational(-1, 2), -sqrt3_2),      # k=4
+            Complex(Rational(1, 2), -sqrt3_2)        # k=5
         ]
         return roots[k+1]
     elseif n == 8
-        sqrt2_2 = sqrt(2)/2
+        sqrt2 = sqrt(Symbolics.Num(2))
+        sqrt2_2 = sqrt2 / 2
         roots = [
-            Complex(1.0, 0.0),           # k=0
-            Complex(sqrt2_2, sqrt2_2),   # k=1
-            Complex(0.0, 1.0),           # k=2
-            Complex(-sqrt2_2, sqrt2_2),  # k=3
-            Complex(-1.0, 0.0),          # k=4
-            Complex(-sqrt2_2, -sqrt2_2), # k=5
-            Complex(0.0, -1.0),          # k=6
-            Complex(sqrt2_2, -sqrt2_2)   # k=7
+            1,                                       # k=0
+            Complex(sqrt2_2, sqrt2_2),               # k=1
+            im,                                      # k=2
+            Complex(-sqrt2_2, sqrt2_2),              # k=3
+            -1,                                      # k=4
+            Complex(-sqrt2_2, -sqrt2_2),             # k=5
+            -im,                                     # k=6
+            Complex(sqrt2_2, -sqrt2_2)               # k=7
         ]
         return roots[k+1]
     else
@@ -75,6 +78,127 @@ function _exact_root_of_unity(n::Int, k::Int)
         θ = 2 * π * k / n
         return Complex(cos(θ), sin(θ))
     end
+end
+
+"""
+    _symbolic_root_of_unity(n, k)
+
+Return a symbolic k-th n-th root of unity ω^k where ω = exp(2πi/n).
+
+Returns exact rational/symbolic values that simplify properly:
+- Uses exact values (integers, rationals, sqrt expressions) when possible
+- Falls back to symbolic cos/sin only when necessary
+- Avoids returning unsimplified expressions like cos(0) or sin(0)
+"""
+function _symbolic_root_of_unity(n::Int, k::Int)
+    # Normalize k to [0, n-1]
+    k = mod(k, n)
+    
+    # Handle special case k=0: always 1
+    if k == 0
+        return 1
+    end
+    
+    # For n that divides 12, we can use exact algebraic values
+    # This covers n = 1, 2, 3, 4, 6, 12
+    if 12 % n == 0
+        return _exact_root_of_unity(n, k)
+    end
+    
+    # For n = 8, we also have exact values
+    if n == 8
+        return _exact_root_of_unity(n, k)
+    end
+    
+    # Check if the angle is a simple multiple of π
+    # θ = 2πk/n, check if this simplifies to a multiple of π/2, π/3, π/4, π/6
+    g = gcd(2k, n)
+    reduced_num = 2k ÷ g
+    reduced_den = n ÷ g
+    
+    # Special angles where exact values are known
+    # θ = (reduced_num / reduced_den) * π
+    if reduced_den == 1
+        # Multiple of π: cos(mπ) = (-1)^m, sin(mπ) = 0
+        return (reduced_num % 2 == 0) ? 1 : -1
+    elseif reduced_den == 2
+        # Multiple of π/2
+        m = reduced_num
+        cosval = (m % 4 == 0) ? 1 : (m % 4 == 2) ? -1 : 0
+        sinval = (m % 4 == 1) ? 1 : (m % 4 == 3) ? -1 : 0
+        return Complex(cosval, sinval)
+    elseif reduced_den == 3
+        # Angle is (m/3)π for some m
+        m = reduced_num % 6  # Periodicity of 2π means period 6 in units of π/3
+        sqrt3 = sqrt(Symbolics.Num(3))
+        if m == 1
+            return Complex(Rational(1, 2), sqrt3 / 2)
+        elseif m == 2
+            return Complex(Rational(-1, 2), sqrt3 / 2)
+        elseif m == 3
+            return -1
+        elseif m == 4
+            return Complex(Rational(-1, 2), -sqrt3 / 2)
+        elseif m == 5
+            return Complex(Rational(1, 2), -sqrt3 / 2)
+        else  # m == 0
+            return 1
+        end
+    elseif reduced_den == 4
+        # Angle is (m/4)π
+        m = reduced_num % 8  # Period 8 in units of π/4
+        sqrt2 = sqrt(Symbolics.Num(2))
+        if m == 1
+            return Complex(sqrt2 / 2, sqrt2 / 2)
+        elseif m == 2
+            return im
+        elseif m == 3
+            return Complex(-sqrt2 / 2, sqrt2 / 2)
+        elseif m == 4
+            return -1
+        elseif m == 5
+            return Complex(-sqrt2 / 2, -sqrt2 / 2)
+        elseif m == 6
+            return -im
+        elseif m == 7
+            return Complex(sqrt2 / 2, -sqrt2 / 2)
+        else  # m == 0
+            return 1
+        end
+    elseif reduced_den == 6
+        # Angle is (m/6)π
+        m = reduced_num % 12  # Period 12 in units of π/6
+        sqrt3 = sqrt(Symbolics.Num(3))
+        if m == 1
+            return Complex(sqrt3 / 2, Rational(1, 2))
+        elseif m == 2
+            return Complex(Rational(1, 2), sqrt3 / 2)
+        elseif m == 3
+            return im
+        elseif m == 4
+            return Complex(Rational(-1, 2), sqrt3 / 2)
+        elseif m == 5
+            return Complex(-sqrt3 / 2, Rational(1, 2))
+        elseif m == 6
+            return -1
+        elseif m == 7
+            return Complex(-sqrt3 / 2, Rational(-1, 2))
+        elseif m == 8
+            return Complex(Rational(-1, 2), -sqrt3 / 2)
+        elseif m == 9
+            return -im
+        elseif m == 10
+            return Complex(Rational(1, 2), -sqrt3 / 2)
+        elseif m == 11
+            return Complex(sqrt3 / 2, Rational(-1, 2))
+        else  # m == 0
+            return 1
+        end
+    end
+    
+    # General case: use symbolic cos/sin with simplified rational angle
+    angle = Symbolics.Num(reduced_num) * Symbolics.Num(π) / Symbolics.Num(reduced_den)
+    return cos(angle) + im * sin(angle)
 end
 
 """
@@ -144,18 +268,12 @@ function _circulant_eigenvalues(mat)
         λ = first_row[1]  # c₀ term (ω^0 = 1)
         
         for k in 1:(n-1)
-            if has_symbolic
-                # Use exact roots of unity for symbolic matrices
-                ω_power = _exact_root_of_unity(n, j * k)
-            else
-                # Use floating point for numeric matrices
-                θ = 2 * π * j * k / n
-                ω_power = cos(θ) + im * sin(θ)
-            end
+            # Use _symbolic_root_of_unity for exact values when possible
+            ω_power = _symbolic_root_of_unity(n, j * k)
             λ = λ + first_row[k+1] * ω_power
         end
         
-        eigenvalues[j+1] = Symbolics.simplify(λ)
+        eigenvalues[j+1] = λ
     end
     
     return eigenvalues

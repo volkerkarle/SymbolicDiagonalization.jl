@@ -6,6 +6,37 @@ Symbolic matrix diagonalization for Julia.
 
 The eigenvalue problem requires solving the characteristic polynomial. For degree ≥ 5, no general formula exists (Abel-Ruffini theorem). This package finds closed-form symbolic eigenvalues by exploiting matrix structure.
 
+## Key Feature: Truly Symbolic Eigenvalues
+
+Unlike numerical solvers that return floating-point approximations, SymbolicDiagonalization returns **exact symbolic expressions**:
+
+| Matrix Type | Numerical Solver | SymbolicDiagonalization |
+|-------------|-----------------|-------------------------|
+| Circulant 6×6 | `-3.0 - 5.196...im` | `-3 - 3√3·im` |
+| Hadamard 4×4 | `2.0, -2.0` | `2, -2` (exact integers) |
+| Hadamard 2×2 | `1.414...` | `√2` (symbolic) |
+| DFT 4×4 | `2.0, -2.0, 2.0im` | `2, -2, 2im` (exact) |
+| Path Laplacian | `0.381...` | `(3/2) - (1/2)√5` |
+
+This preserves mathematical structure for downstream symbolic computation.
+
+### Special Angle Simplification
+
+Eigenvalues at special angles (multiples of π/6, π/5, π/4, π/3, π/2) are automatically simplified to their exact algebraic values:
+
+| Angle | cos value | sin value |
+|-------|-----------|-----------|
+| π/6 | √3/2 | 1/2 |
+| π/5 | (1+√5)/4 | √(10-2√5)/4 |
+| π/4 | √2/2 | √2/2 |
+| π/3 | 1/2 | √3/2 |
+| 2π/5 | (√5-1)/4 | √(10+2√5)/4 |
+| π/2 | 0 | 1 |
+
+For example, path Laplacian eigenvalues `2 - 2cos(kπ/5)` simplify to golden ratio expressions:
+- `2 - 2cos(π/5) → (3/2) - (1/2)√5`
+- `2 - 2cos(2π/5) → (5/2) - (1/2)√5`
+
 ## Installation
 
 ```julia
@@ -50,19 +81,19 @@ Matrices larger than 4×4 require exploitable structure. The package detects:
 
 | Pattern | Group | Example | Eigenvalue Formula |
 |---------|-------|---------|-------------------|
-| Circulant | Zₙ | `[a b c; c a b; b c a]` | DFT of first row |
+| Circulant | Zₙ | `[a b c; c a b; b c a]` | DFT of first row (exact roots of unity: `1, -1, ±i, ±√3/2`, etc.) |
 | Symmetric Circulant | Dₙ | Palindromic first row | λₖ = c₀ + 2·Σcⱼcos(2πjk/n) |
 | Permutation | Sₙ | `[0 1 0; 0 0 1; 1 0 0]` | Roots of unity from cycles |
 | Quaternion (single) | Q₈ | 2×2 quaternion blocks | λ = a ± i√(b²+c²+d²) |
 | Q₈ Regular Rep | Q₈ | 8×8 Q₈-invariant | Character theory: 5 distinct eigenvalues |
-| Hypercube Qₙ | (Z₂)ⁿ | 2ⁿ×2ⁿ adjacency | λₖ = n - 2k |
+| Hypercube Qₙ | (Z₂)ⁿ | 2ⁿ×2ⁿ adjacency | λₖ = n - 2k (exact integers) |
 
 ### Transform Matrices
 
 | Pattern | Size | Constructor | Eigenvalue Formula |
 |---------|------|-------------|-------------------|
-| Hadamard | 2ⁿ×2ⁿ | `hadamard_matrix(n)` | λ = ±2^(n/2) |
-| DFT (Fourier) | n×n | `dft_matrix(n)` | λ ∈ {±√n, ±i√n} |
+| Hadamard | 2ⁿ×2ⁿ | `hadamard_matrix(n)` | λ = ±2^(n/2) (exact: integers for even n, √2 multiples for odd n) |
+| DFT (Fourier) | n×n | `dft_matrix(n)` | λ ∈ {±√n, ±i√n} (exact integers for perfect square n) |
 
 ### Coxeter/Weyl Groups
 
@@ -192,6 +223,78 @@ K = reduce(kron, matrices)  # 1024×1024, 30 parameters
 eigvals(K)  # ~33 seconds
 ```
 
+## Breaking the Abel-Ruffini Barrier
+
+The Abel-Ruffini theorem states that polynomials of degree 5+ have no general closed-form solution. Yet these matrices---which would require solving degree-10, degree-16, or even degree-1024 polynomials---yield exact symbolic eigenvalues instantly:
+
+### 10×10 Circulant Matrix
+
+```julia
+# Degree-10 characteristic polynomial - no closed form in general!
+n = 10
+first_row = collect(1:n)
+C = [first_row[mod(j - i, n) + 1] for i in 1:n, j in 1:n]
+eigvals(C)  # Instant via DFT formula
+# Works for 100×100, 1000×1000, any size!
+```
+
+The Discrete Fourier Transform diagonalizes *all* circulant matrices, regardless of size.
+
+### 16×16 Hypercube Graph Q₄
+
+```julia
+# 4-dimensional hypercube: 16 vertices, each connected to 4 neighbors
+Q4 = zeros(Int, 16, 16)
+for i in 0:15, j in 0:15
+    count_ones(xor(i, j)) == 1 && (Q4[i+1, j+1] = 1)
+end
+eigvals(Q4)  # λₖ = 4-2k with multiplicity C(4,k)
+# Works for Q₆ (64×64), Q₁₀ (1024×1024), any dimension!
+```
+
+The Walsh-Hadamard basis diagonalizes all hypercube graphs. Eigenvalues: $\lambda_k = n - 2k$ with multiplicity $\binom{n}{k}$.
+
+### 20×20 Path Laplacian
+
+```julia
+L = path_laplacian(20)  # Tridiagonal [1,-1,0,...], [-1,2,-1,...], ...
+eigvals(L)              # λₖ = 2 - 2cos(πk/20) for k=0,...,19
+# Works for 50×50, 100×100, any size!
+```
+
+Chebyshev polynomial theory gives closed-form eigenvalues for all symmetric Toeplitz tridiagonal matrices.
+
+### 16×16 Hadamard Matrix
+
+```julia
+H = hadamard_matrix(4)  # 2⁴ = 16×16 matrix of ±1 entries
+eigvals(H)              # Only 2 distinct eigenvalues: ±4
+# Works for H₃₂, H₆₄, H₁₀₂₄, any power of 2!
+```
+
+The self-similar structure of Sylvester-Hadamard matrices means a degree-16 polynomial factors completely!
+
+### Double Rotation Kronecker (Symbolic)
+
+```julia
+@variables θ₁ θ₂
+R = kron(SO2_rotation(θ₁), SO2_rotation(θ₂))
+eigvals(R)  # 4 eigenvalues: e^{i(±θ₁±θ₂)}
+```
+
+Kronecker products reduce to smaller subproblems: $\lambda(A \otimes B) = \lambda(A) \cdot \lambda(B)$.
+
+### Why Structure Beats Algebra
+
+| Matrix | Size | Polynomial Degree | Why It Works |
+|--------|------|------------------|--------------|
+| Circulant | 10×10+ | 10+ | DFT diagonalizes all Zₙ-invariant matrices |
+| Hypercube Q₄ | 16×16 | 16 | Walsh-Hadamard basis from (Z₂)⁴ symmetry |
+| Hadamard H₁₆ | 16×16 | 16 | Only 2 distinct eigenvalues (±4) |
+| Path Laplacian | 20×20 | 20 | Chebyshev polynomials → trigonometric formula |
+| Cartan A₇ | 7×7 | 7 | Root system theory → sine formula |
+| Kronecker 2^⊗10 | 1024×1024 | 1024 | Factors into 10 quadratic problems |
+
 ## API
 
 ### Main Functions
@@ -256,6 +359,22 @@ dft_matrix(n, normalized=true)  # Unitary DFT (F/√n)
 
 # Finite Group Matrices
 Q8_invariant_matrix(c1, cm1, ci, cmi, cj, cmj, ck, cmk)  # Q₈ regular rep
+```
+
+### Simplification Functions
+
+```julia
+# Simplify eigenvalue expressions
+simplify_eigenvalue(expr)     # Full simplification (trig + special angles + algebraic)
+simplify_eigenvalues(vals)    # Apply to vector of eigenvalues
+
+# Specific simplifications
+simplify_special_angles(expr) # cos(π/3)→1/2, cos(2π/5)→(√5-1)/4, etc.
+aggressive_simplify(expr)     # Combines all simplification rules
+trig_simplify(expr)           # Trigonometric identities (sin²+cos²=1, etc.)
+
+# Supported special angles: 0, π/6, π/5, π/4, π/3, 2π/5, π/2, 3π/5, 2π/3, 3π/4, 4π/5, 5π/6, π
+# Both division form (π/n) and multiplication form ((k//n)*π) are handled
 ```
 
 ## Limitations

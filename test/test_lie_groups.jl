@@ -737,10 +737,10 @@ end
         @test v1 == [1, im]
         @test v2 == [1, -im]
         
-        # Eigenvalue should be cos(θ) + im*sin(θ) for first eigenpair
+        # Eigenvalue should be cos(θ) - im*sin(θ) for first eigenpair (e^{-iθ})
         λ1 = pairs[1][1]
         @test isequal(real(λ1), cos(θ))
-        @test isequal(imag(λ1), sin(θ))
+        @test isequal(imag(λ1), -sin(θ))
         
         # Test through symbolic_eigenpairs interface
         full_pairs, poly, λ = symbolic_eigenpairs(R)

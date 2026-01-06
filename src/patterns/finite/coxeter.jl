@@ -476,9 +476,10 @@ function _cartan_eigenvalues_A(n::Int)
     eigenvalues = Vector{Any}(undef, n)
     
     for k in 1:n
-        # λₖ = 4·sin²(πk / 2(n+1))
-        θ = π * k / (n + 1)
-        λ = 2 - 2 * cos(θ)
+        # λₖ = 4·sin²(πk / 2(n+1)) = 2 - 2·cos(πk/(n+1))
+        # Keep symbolic: use Symbolics.Num to prevent π from being evaluated
+        angle = Symbolics.Num(k) * Symbolics.Num(π) / Symbolics.Num(n + 1)
+        λ = 2 - 2 * cos(angle)
         eigenvalues[k] = λ
     end
     
@@ -840,11 +841,17 @@ Eigenvalues: λₖ = 2 - 2·cos(πk/n) = 4·sin²(πk/2n) for k = 0, 1, ..., n-1
 Note: λ₀ = 0 (constant eigenvector).
 """
 function _path_laplacian_eigenvalues(n::Int)
-    eigenvalues = Vector{Float64}(undef, n)
+    eigenvalues = Vector{Any}(undef, n)
     
     for k in 0:n-1
-        θ = π * k / n
-        eigenvalues[k + 1] = 2 - 2 * cos(θ)
+        # λₖ = 2 - 2·cos(πk/n)
+        # Keep symbolic: use Symbolics.Num to prevent π from being evaluated
+        if k == 0
+            eigenvalues[k + 1] = 0  # Exact zero for k=0
+        else
+            angle = Symbolics.Num(k) * Symbolics.Num(π) / Symbolics.Num(n)
+            eigenvalues[k + 1] = 2 - 2 * cos(angle)
+        end
     end
     
     return eigenvalues
@@ -896,11 +903,17 @@ Eigenvalues: λₖ = 2 - 2·cos(2πk/n) = 4·sin²(πk/n) for k = 0, 1, ..., n-1
 Note: λ₀ = 0 (constant eigenvector).
 """
 function _cycle_laplacian_eigenvalues(n::Int)
-    eigenvalues = Vector{Float64}(undef, n)
+    eigenvalues = Vector{Any}(undef, n)
     
     for k in 0:n-1
-        θ = 2π * k / n
-        eigenvalues[k + 1] = 2 - 2 * cos(θ)
+        # λₖ = 2 - 2·cos(2πk/n)
+        # Keep symbolic: use Symbolics.Num to prevent π from being evaluated
+        if k == 0
+            eigenvalues[k + 1] = 0  # Exact zero for k=0
+        else
+            angle = Symbolics.Num(2) * Symbolics.Num(k) * Symbolics.Num(π) / Symbolics.Num(n)
+            eigenvalues[k + 1] = 2 - 2 * cos(angle)
+        end
     end
     
     return eigenvalues

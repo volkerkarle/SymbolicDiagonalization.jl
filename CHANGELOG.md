@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Special angle simplification**: Trig functions at special angles (π/6, π/5, π/4, π/3, 2π/5, π/2, etc.) automatically simplify to exact algebraic values
+  - `cos(π/3) → 1/2`, `cos(π/4) → √2/2`, `cos(2π/5) → (√5-1)/4`
+  - Path Laplacian eigenvalues `2 - 2cos(kπ/n)` simplify to golden ratio expressions
+  - New functions: `simplify_special_angles(expr)`, lookup tables `COS_SPECIAL_VALUES`, `SIN_SPECIAL_VALUES`
 - Aqua.jl tests for package quality assurance
 - Comprehensive edge case and error handling tests
 - Examples directory with interactive pattern exploration script

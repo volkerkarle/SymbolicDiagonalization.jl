@@ -25,6 +25,7 @@ The Abel-Ruffini theorem proves that no general closed-form solution exists for 
 
 - **Closed-form root solvers** for degrees 1-4 (linear, quadratic, Cardano, Ferrari)
 - **Automatic structure detection** (block-diagonal, persymmetric, Hermitian)
+- **Truly symbolic eigenvalues** - returns exact expressions like `±√2`, `-3/2 ± (√3/2)i`, not floating-point approximations
 - **19+ special pattern solvers** for arbitrary-sized matrices (circulant, Kronecker, Hadamard, DFT, Toeplitz tridiagonal, permutation, Q₈ regular representation, etc.)
 - **Lie group detection** (SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4)) with symbolic eigenvalues
 - **SO(2) Kronecker products** with automatic trig simplification (e.g., `cos(θ+φ) + i·sin(θ+φ)`)
@@ -67,13 +68,17 @@ eigvals(mat)  # [a+b, a-b, c+d, c-d]
 
 ### Circulant Matrices (any size)
 
-```julia
-@variables a b c
-C = [a b c;
-     c a b;
-     b c a]
+Circulant matrices return **exact symbolic eigenvalues** using roots of unity:
 
-eigvals(C)  # Uses DFT: works for any n, even n=100
+```julia
+# Numeric circulant matrix
+C = [1 2 3; 3 1 2; 2 3 1]
+eigvals(C)  # [6, -3//2 - (√3/2)im, -3//2 + (√3/2)im]  -- exact!
+
+# Symbolic circulant matrix
+@variables a b c
+C_sym = [a b c; c a b; b c a]
+eigvals(C_sym)  # DFT formula works for any n, even n=100
 ```
 
 ### Kronecker Products
@@ -85,6 +90,57 @@ B = [c 0; 0 d]
 M = kron(A, B)
 
 eigvals(M)  # {ac, ad, bc, bd}
+```
+
+### Truly Symbolic Eigenvalues (No Floating-Point!)
+
+Unlike numerical eigenvalue solvers, SymbolicDiagonalization returns **exact symbolic expressions**:
+
+```julia
+# Circulant eigenvalues use exact roots of unity
+C = [1 2 3 4 5 6; 6 1 2 3 4 5; 5 6 1 2 3 4; 
+     4 5 6 1 2 3; 3 4 5 6 1 2; 2 3 4 5 6 1]
+eigvals(C)
+# Returns: [21, -3 - 3√3·im, -3 - √3·im, -3, -3 + √3·im, -3 + 3√3·im]
+# NOT:     [21.0, -3.0 - 5.196...im, ...]  (no floating-point!)
+
+# Path Laplacian eigenvalues stay symbolic
+L = path_laplacian(5)
+eigvals(L)  # [2 - 2cos(π/5), 2 - 2cos(2π/5), ...]  -- symbolic cos!
+
+# Hadamard eigenvalues are exact
+H = hadamard_matrix(3)  # 8×8
+eigvals(H)  # [2√2, -2√2]  -- not [2.828..., -2.828...]
+```
+
+This is crucial for:
+- **Mathematical proofs** requiring exact expressions
+- **Downstream symbolic computation** (integration, limits, etc.)
+- **Avoiding numerical error accumulation**
+- **Understanding eigenvalue structure** (e.g., seeing that eigenvalues are roots of unity)
+
+### Special Angle Simplification
+
+Eigenvalues involving trigonometric functions at special angles are automatically simplified to their exact algebraic values:
+
+```julia
+using SymbolicDiagonalization: simplify_eigenvalue
+
+# Path Laplacian eigenvalues simplify to algebraic forms
+L = [2 -1 0 0; -1 2 -1 0; 0 -1 2 -1; 0 0 -1 2]  # 4×4 path Laplacian
+vals, _, _ = symbolic_eigenvalues(L)
+
+# Raw eigenvalues: 2 - 2cos(kπ/5) for k=1,2,3,4
+# After simplification:
+simplify_eigenvalue.(vals)
+# [(3//2) - (1//2)*√5,   # ≈ 0.382 (golden ratio related!)
+#  (5//2) - (1//2)*√5,   # ≈ 1.382
+#  (3//2) + (1//2)*√5,   # ≈ 2.618
+#  (5//2) + (1//2)*√5]   # ≈ 3.618
+
+# Supported special angles: π/2, π/3, π/4, π/5, π/6, and their multiples
+# cos(π/2) → 0,  cos(π/3) → 1/2,  cos(π/4) → √2/2,  cos(π/6) → √3/2
+# cos(2π/5) → (√5-1)/4  (golden ratio related)
 ```
 
 ### SO(2) Rotation Kronecker Products
@@ -118,11 +174,11 @@ eigvals(K)
 
 ### Aggressive Symbolic Simplification
 
-Clean eigenvalue expressions via automatic trigonometric simplification:
+Clean eigenvalue expressions via automatic trigonometric and special angle simplification:
 
 ```julia
 @variables θ
-using SymbolicDiagonalization: aggressive_simplify
+using SymbolicDiagonalization: aggressive_simplify, simplify_eigenvalue
 
 # sqrt(1 - cos²θ) automatically becomes sin(θ)
 aggressive_simplify(sqrt(1 - cos(θ)^2))  # sin(θ)
@@ -130,6 +186,10 @@ aggressive_simplify(sqrt(1 - cos(θ)^2))  # sin(θ)
 # SO(3) rotation gives clean eigenvalues
 Rz = [cos(θ) -sin(θ) 0; sin(θ) cos(θ) 0; 0 0 1]
 eigvals(Rz)  # [1, cos(θ) + im*sin(θ), cos(θ) - im*sin(θ)]
+
+# Special angles simplify to exact algebraic values
+# 2 - 2cos(π/3) → 1  (since cos(π/3) = 1/2)
+# 2 - 2cos(2π/5) → (5/2) - (1/2)√5  (golden ratio!)
 ```
 
 ### Closed-Form Eigenvectors for Lie Groups
@@ -175,22 +235,34 @@ eigvals(A)  # Works! Uses diagonal shift optimization
 
 ### Hadamard Matrices (any power of 2)
 
-```julia
-H = hadamard_matrix(3)  # 8×8 Sylvester-Hadamard matrix
-eigvals(H)              # [±2√2], each with multiplicity 4
+Hadamard eigenvalues are **exact integers or symbolic square roots**:
 
-# Works for any size 2ⁿ
-H32 = hadamard_matrix(5)  # 32×32
-eigvals(H32)              # [±√32], each with multiplicity 16
+```julia
+H = hadamard_matrix(2)  # 4×4 Sylvester-Hadamard matrix
+eigvals(H)              # [2, 2, -2, -2]  -- exact integers!
+
+H = hadamard_matrix(1)  # 2×2
+eigvals(H)              # [√2, -√2]  -- symbolic sqrt
+
+H = hadamard_matrix(3)  # 8×8
+eigvals(H)              # [2√2, 2√2, 2√2, 2√2, -2√2, -2√2, -2√2, -2√2]
 ```
 
 ### DFT (Fourier) Matrices (any size)
 
-```julia
-F = dft_matrix(8)       # 8×8 Fourier matrix
-eigvals(F)              # {±√8, ±i√8} with multiplicities (3,2,2,1)
+DFT eigenvalues are **exact for perfect square sizes**:
 
-# Normalized (unitary) version
+```julia
+F = dft_matrix(4)       # 4×4 Fourier matrix
+eigvals(F)              # [2, 2, -2, 2im]  -- exact integers!
+
+F = dft_matrix(9)       # 9×9 Fourier matrix
+eigvals(F)              # {±3, ±3im} -- exact (9 is a perfect square)
+
+F = dft_matrix(3)       # 3×3 Fourier matrix
+eigvals(F)              # [√3, -√3, √3·im]  -- symbolic sqrt
+
+# Normalized (unitary) version has eigenvalues {1, -1, i, -i}
 F_norm = dft_matrix(8, normalized=true)
 eigvals(F_norm)         # {1, -1, i, -i}
 ```
@@ -239,13 +311,15 @@ eigvals(K)  # 32 symbolic eigenvalues in ~12 seconds!
 | All matrices up to 4×4 | Closed-form solutions via root formulas |
 | Full 6-parameter 3×3 symmetric | Diagonal shift optimization |
 | Block-diagonal decomposition | Automatic detection and recursion |
+| **Truly symbolic eigenvalues** | Exact expressions: `√2`, `-3/2 ± (√3/2)i`, `cos(π/n)` |
+| **Special angle simplification** | `cos(π/3)→1/2`, `cos(2π/5)→(√5-1)/4`, etc. |
 | 19+ pattern solvers | Circulant, Kronecker, Hadamard, DFT, tridiagonal, permutation, Q₈, etc. |
 | Lie group detection | SO(2)-SO(4), SU(2), SU(3), Sp(2), Sp(4) with symbolic eigenvalues |
 | **Lie group eigenvectors** | Closed-form eigenvectors for SO(2)-SO(4), SU(2), Sp(2), Sp(4) (non-diagonal) |
 | SO(2) Kronecker products | `cos(θ±φ) + i·sin(θ±φ)` form via trig simplification |
 | SU(2) Kronecker products | `cos((α±β)/2) + i·sin((α±β)/2)` with half-angle formulas |
 | Nested Kronecker A₁⊗A₂⊗...⊗Aₙ | Scales to 1024×1024 with 30 parameters |
-| 382 passing tests | Comprehensive test coverage |
+| 1114 passing tests | Comprehensive test coverage |
 
 ## Performance Benchmarks
 

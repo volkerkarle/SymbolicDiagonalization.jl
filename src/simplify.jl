@@ -72,6 +72,188 @@ const TRIG_RULES = [
 ]
 
 # ============================================================================
+# Special Angle Value Rules
+# ============================================================================
+
+"""
+    _is_symbolic_pi(x)
+
+Check if a symbolic expression represents π.
+"""
+function _is_symbolic_pi(x)
+    str = string(x)
+    return str == "π"
+end
+
+"""
+Lookup table for cos(k*π/n) values.
+Keys are (numerator, denominator) pairs normalized so gcd(k,n)=1 and 0 ≤ k ≤ n.
+"""
+const COS_SPECIAL_VALUES = Dict{Tuple{Int,Int}, Any}(
+    # Multiples of π
+    (0, 1) => 1,      # cos(0) = 1
+    (1, 1) => -1,     # cos(π) = -1
+    
+    # Multiples of π/2
+    (1, 2) => 0,      # cos(π/2) = 0
+    
+    # Multiples of π/3
+    (1, 3) => Rational(1, 2),      # cos(π/3) = 1/2
+    (2, 3) => Rational(-1, 2),     # cos(2π/3) = -1/2
+    
+    # Multiples of π/4
+    (1, 4) => sqrt(Symbolics.Num(2)) / 2,     # cos(π/4) = √2/2
+    (3, 4) => -sqrt(Symbolics.Num(2)) / 2,    # cos(3π/4) = -√2/2
+    
+    # Multiples of π/5 (golden ratio related)
+    (1, 5) => (1 + sqrt(Symbolics.Num(5))) / 4,       # cos(π/5) = (1+√5)/4
+    (2, 5) => (sqrt(Symbolics.Num(5)) - 1) / 4,       # cos(2π/5) = (√5-1)/4
+    (3, 5) => (1 - sqrt(Symbolics.Num(5))) / 4,       # cos(3π/5) = (1-√5)/4
+    (4, 5) => -(1 + sqrt(Symbolics.Num(5))) / 4,      # cos(4π/5) = -(1+√5)/4
+    
+    # Multiples of π/6
+    (1, 6) => sqrt(Symbolics.Num(3)) / 2,     # cos(π/6) = √3/2
+    (5, 6) => -sqrt(Symbolics.Num(3)) / 2,    # cos(5π/6) = -√3/2
+)
+
+"""
+Lookup table for sin(k*π/n) values.
+"""
+const SIN_SPECIAL_VALUES = Dict{Tuple{Int,Int}, Any}(
+    # Multiples of π
+    (0, 1) => 0,      # sin(0) = 0
+    (1, 1) => 0,      # sin(π) = 0
+    
+    # Multiples of π/2
+    (1, 2) => 1,      # sin(π/2) = 1
+    
+    # Multiples of π/3
+    (1, 3) => sqrt(Symbolics.Num(3)) / 2,     # sin(π/3) = √3/2
+    (2, 3) => sqrt(Symbolics.Num(3)) / 2,     # sin(2π/3) = √3/2
+    
+    # Multiples of π/4
+    (1, 4) => sqrt(Symbolics.Num(2)) / 2,     # sin(π/4) = √2/2
+    (3, 4) => sqrt(Symbolics.Num(2)) / 2,     # sin(3π/4) = √2/2
+    
+    # Multiples of π/5
+    (1, 5) => sqrt(Symbolics.Num(10) - 2*sqrt(Symbolics.Num(5))) / 4,  # sin(π/5)
+    (2, 5) => sqrt(Symbolics.Num(10) + 2*sqrt(Symbolics.Num(5))) / 4,  # sin(2π/5)
+    (3, 5) => sqrt(Symbolics.Num(10) + 2*sqrt(Symbolics.Num(5))) / 4,  # sin(3π/5) = sin(2π/5)
+    (4, 5) => sqrt(Symbolics.Num(10) - 2*sqrt(Symbolics.Num(5))) / 4,  # sin(4π/5) = sin(π/5)
+    
+    # Multiples of π/6
+    (1, 6) => Rational(1, 2),     # sin(π/6) = 1/2
+    (5, 6) => Rational(1, 2),     # sin(5π/6) = 1/2
+)
+
+"""
+    _lookup_trig_value(lookup_table, k, n)
+
+Look up trig value for angle k*π/n, handling normalization and symmetries.
+Returns the value if found, nothing otherwise.
+"""
+function _lookup_trig_value(lookup_table, k::Integer, n::Integer)
+    # Normalize to [0, 2π) range
+    k = mod(k, 2n)
+    
+    # Use symmetry: for cos, cos(2π - x) = cos(x); for sin, sin(2π - x) = -sin(x)
+    # We only store values for [0, π], so handle the second half
+    negate = false
+    if k > n
+        k = 2n - k
+        if lookup_table === SIN_SPECIAL_VALUES
+            negate = true
+        end
+    end
+    
+    # Reduce fraction
+    g = gcd(k, n)
+    k_reduced = k ÷ g
+    n_reduced = n ÷ g
+    
+    value = get(lookup_table, (k_reduced, n_reduced), nothing)
+    if value !== nothing && negate
+        return -value
+    end
+    return value
+end
+
+"""
+Rule for cos(π/n) form - matches cos where argument is π divided by an integer.
+"""
+const _rule_cos_div = @rule cos((~p::_is_symbolic_pi) / (~n)) => begin
+    if ~n isa Integer && ~n > 0
+        _lookup_trig_value(COS_SPECIAL_VALUES, 1, Int(~n))
+    else
+        nothing
+    end
+end
+
+"""
+Rule for cos((k//n)*π) form - matches cos where argument is a rational times π.
+"""
+const _rule_cos_mul = @rule cos((~r) * (~p::_is_symbolic_pi)) => begin
+    if ~r isa Rational
+        k = numerator(~r)
+        n = denominator(~r)
+        _lookup_trig_value(COS_SPECIAL_VALUES, k, n)
+    elseif ~r isa Integer
+        # Handle cos(k*π) = (-1)^k
+        k = Int(~r)
+        k = mod(k, 2)
+        k == 0 ? 1 : -1
+    else
+        nothing
+    end
+end
+
+"""
+Rule for sin(π/n) form.
+"""
+const _rule_sin_div = @rule sin((~p::_is_symbolic_pi) / (~n)) => begin
+    if ~n isa Integer && ~n > 0
+        _lookup_trig_value(SIN_SPECIAL_VALUES, 1, Int(~n))
+    else
+        nothing
+    end
+end
+
+"""
+Rule for sin((k//n)*π) form.
+"""
+const _rule_sin_mul = @rule sin((~r) * (~p::_is_symbolic_pi)) => begin
+    if ~r isa Rational
+        k = numerator(~r)
+        n = denominator(~r)
+        _lookup_trig_value(SIN_SPECIAL_VALUES, k, n)
+    elseif ~r isa Integer
+        # Handle sin(k*π) = 0
+        0
+    else
+        nothing
+    end
+end
+
+"""
+    SPECIAL_ANGLE_RULES
+
+Simplification rules for trig functions at special angles (multiples of π/6, π/4, etc).
+These convert cos(kπ/n) and sin(kπ/n) to their exact algebraic values.
+
+Uses predicate-based pattern matching to handle symbolic π expressions in both
+division form (π/n) and multiplication form ((k//n)*π).
+"""
+const SPECIAL_ANGLE_RULES = [
+    _rule_cos_div,
+    _rule_cos_mul,
+    _rule_sin_div,
+    _rule_sin_mul,
+    # Also handle cos(0) and sin(0)
+    (@rule cos(0) => 1),
+    (@rule sin(0) => 0),
+]
+
+# ============================================================================
 # Algebraic Simplification Rules
 # ============================================================================
 
@@ -157,8 +339,12 @@ const _algebraic_rewriter = Fixpoint(Prewalk(PassThrough(Chain(ALGEBRAIC_RULES))
 """Internal rewriter for sqrt-trig simplification."""
 const _sqrt_trig_rewriter = Fixpoint(Prewalk(PassThrough(Chain(SQRT_TRIG_RULES))))
 
+"""Internal rewriter for special angle values."""
+const _special_angle_rewriter = Fixpoint(Prewalk(PassThrough(Chain(SPECIAL_ANGLE_RULES))))
+
 """Combined aggressive rewriter."""
 const _aggressive_rewriter = Fixpoint(Prewalk(PassThrough(Chain([
+    SPECIAL_ANGLE_RULES...,  # Apply special angles first
     TRIG_RULES...,
     ALGEBRAIC_RULES...,
     SQRT_TRIG_RULES...
@@ -290,6 +476,47 @@ Apply simplification to a vector of eigenvalues.
 """
 function simplify_eigenvalues(vals::AbstractVector)
     return [simplify_eigenvalue(v) for v in vals]
+end
+
+"""
+    simplify_special_angles(expr)
+
+Simplify trig functions at special angles to their exact algebraic values.
+
+This converts expressions like:
+- cos(π/2) → 0
+- sin(π/6) → 1/2
+- cos(π/3) → 1/2
+- 2 - 2cos(π/2) → 2
+
+# Examples
+```julia
+@variables x
+simplify_special_angles(cos(π/2))  # → 0
+simplify_special_angles(2 - 2*cos(π/2))  # → 2
+simplify_special_angles(cos(π/3))  # → 1//2
+```
+"""
+function simplify_special_angles(expr)
+    if expr isa Num
+        unwrapped = Symbolics.unwrap(expr)
+        result = _special_angle_rewriter(unwrapped)
+        if !isnothing(result)
+            wrapped = Symbolics.wrap(result)
+            # Simplify to combine terms after substitution
+            return Symbolics.simplify(wrapped)
+        end
+        return Symbolics.simplify(expr)
+    elseif expr isa Complex
+        re_simp = simplify_special_angles(real(expr))
+        im_simp = simplify_special_angles(imag(expr))
+        return re_simp + im * im_simp
+    elseif expr isa Number
+        return expr
+    else
+        result = _special_angle_rewriter(expr)
+        return isnothing(result) ? expr : result
+    end
 end
 
 """
