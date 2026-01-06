@@ -56,13 +56,6 @@ LaTeX(eigvals(M))
 | SO(2) Kronecker | Angle sum/difference |
 | SU(2) Kronecker | Half-angle formulas |
 
-### Transform Matrices
-
-| Pattern | Eigenvalues |
-|---------|-------------|
-| Hadamard 2ⁿ | ±√(2ⁿ) |
-| DFT n×n | Fourth roots of n |
-
 ### Lie Groups
 
 | Group | Eigenvalues |
@@ -78,9 +71,6 @@ LaTeX(eigvals(M))
 | Pattern | Formula |
 |---------|---------|
 | Symmetric Toeplitz | λₖ = a + 2b·cos(kπ/(n+1)) |
-| Path Laplacian | λₖ = 2 - 2cos(πk/n) |
-| Cycle Laplacian | λₖ = 2 - 2cos(2πk/n) |
-| Cartan Aₙ | λₖ = 4sin²(πk/2(n+1)) |
 
 ## Examples
 
@@ -127,21 +117,26 @@ K = reduce(kron, matrices)
 eigvals(K)  # ~33 seconds
 ```
 
-### Path Laplacian
+### Symmetric Toeplitz Tridiagonal
 
 ```@example main
-L = path_laplacian(5)
+@variables a b
+
+T = [a b 0 0;
+     b a b 0;
+     0 b a b;
+     0 0 b a]
 nothing # hide
 ```
 
 ```@example main
-LaTeX(L)
+LaTeX(T)
 ```
 
-**Eigenvalues λₖ = 2 - 2cos(πk/n):**
+**Eigenvalues λₖ = a + 2b·cos(kπ/(n+1)):**
 
 ```@example main
-LaTeX(eigvals(L))
+LaTeX(eigvals(T))
 ```
 
 ## API
@@ -159,26 +154,14 @@ symbolic_diagonalize(M)       # Returns (P, D, pairs) where M = P*D*P⁻¹
 ### Constructors
 
 ```julia
-# Rotations
+# Rotations (symbolic angle)
 SO2_rotation(θ)
 SO3_Rx(θ), SO3_Ry(θ), SO3_Rz(θ)
 SU2_Ux(θ), SU2_Uy(θ), SU2_Uz(θ)
 
-# Kronecker
+# Kronecker products
 SO2_kron([θ, φ, ...])
 SU2_kron([θ, φ, ...])
-
-# Graphs
-path_laplacian(n)
-cycle_laplacian(n)
-
-# Transforms
-hadamard_matrix(n)  # 2ⁿ×2ⁿ
-dft_matrix(n)
-
-# Cartan
-cartan_matrix_A(n)
-cartan_matrix_G2()
 ```
 
 ## Limitations

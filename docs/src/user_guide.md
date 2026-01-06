@@ -127,13 +127,13 @@ LaTeX(vals)
 
 ### Kronecker Products
 
-Eigenvalues of A ⊗ B are products of individual eigenvalues:
+Eigenvalues of A ⊗ B are products of individual eigenvalues. A 4×4 Kronecker product that would require solving a quartic is reduced to two quadratics:
 
 ```@example guide
-@variables α β γ δ
+@variables a b c d
 
-A = [α 0; 0 β]
-B = [γ 0; 0 δ]
+A = [a b; b a]
+B = [c d; d c]
 K = kron(A, B)
 
 vals = eigvals(K)
@@ -146,7 +146,7 @@ nothing # hide
 LaTeX(K)
 ```
 
-**Eigenvalues {αγ, αδ, βγ, βδ}:**
+**Eigenvalues (products of 2×2 eigenvalues):**
 
 ```@example guide
 LaTeX(vals)
@@ -219,13 +219,15 @@ LaTeX(vals)
 Before calling `eigvals()`, consider if your matrix has exploitable structure:
 
 ```julia
+@variables a b c d e f
+
 # Good: Circulant structure detected automatically
-C = [1 2 3; 3 1 2; 2 3 1]
+C = [a b c; c a b; b c a]
 eigvals(C)  # Instant via DFT
 
-# Slower: Generic 3×3 symmetric
+# Slower: Generic 3×3 symmetric (no special structure)
 M = [a b c; b d e; c e f]
-eigvals(M)  # Uses Cardano formula (still exact, but larger expressions)
+eigvals(M)  # Uses Cardano formula (larger expressions)
 ```
 
 ### 2. Use Constructors for Lie Groups
@@ -269,50 +271,30 @@ val_numeric = substitute(vals[1], Dict(a => 1.0, b => 2.0))
 
 ## Common Patterns
 
-### Tridiagonal Matrices
+### Symmetric Toeplitz Tridiagonal
 
-Symmetric Toeplitz tridiagonal matrices have closed-form eigenvalues:
+Matrices with constant diagonals have closed-form eigenvalues:
 
 ```@example guide
-# Path Laplacian is symmetric Toeplitz tridiagonal
-L = path_laplacian(5)
-vals = eigvals(L)
+@variables a b
+
+# 4×4 symmetric Toeplitz tridiagonal
+T = [a b 0 0;
+     b a b 0;
+     0 b a b;
+     0 0 b a]
+
+vals = eigvals(T)
 nothing # hide
 ```
 
-**5×5 Path Laplacian eigenvalues:**
+**Matrix:**
 
 ```@example guide
-LaTeX(vals)
+LaTeX(T)
 ```
 
-### Hadamard Matrices
-
-Sylvester-Hadamard matrices have eigenvalues ±√(2ⁿ):
-
-```@example guide
-H = hadamard_matrix(3)  # 8×8
-vals = eigvals(H)
-nothing # hide
-```
-
-**Hadamard eigenvalues (exact):**
-
-```@example guide
-LaTeX(vals)
-```
-
-### DFT Matrices
-
-Fourier matrices have eigenvalues in {±√n, ±i√n}:
-
-```@example guide
-F = dft_matrix(4)
-vals = eigvals(F)
-nothing # hide
-```
-
-**DFT eigenvalues:**
+**Eigenvalues λₖ = a + 2b·cos(kπ/(n+1)):**
 
 ```@example guide
 LaTeX(vals)

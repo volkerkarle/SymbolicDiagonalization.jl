@@ -113,28 +113,6 @@ LaTeX(S)
 LaTeX(eigvals(S))
 ```
 
-### Permutation Matrices (Symmetric Group Sₙ)
-
-Eigenvalues are roots of unity determined by cycle structure:
-
-```@example patterns
-# Cyclic permutation (1→2→3→1)
-P = [0 0 1;
-     1 0 0;
-     0 1 0]
-nothing # hide
-```
-
-```@example patterns
-LaTeX(P)
-```
-
-**Eigenvalues (cube roots of unity):**
-
-```@example patterns
-LaTeX(eigvals(P))
-```
-
 ### Quaternion Group Q₈
 
 #### Single Quaternion Matrix
@@ -154,171 +132,6 @@ LaTeX(Q)
 
 ```@example patterns
 LaTeX(eigvals(Q))
-```
-
-#### Q₈ Regular Representation (8×8)
-
-The 8-dimensional regular representation has 5 distinct eigenvalues via character theory:
-
-```@example patterns
-M = Q8_invariant_matrix(1.0, 0.5, 0.3, 0.2, 0.4, 0.1, 0.25, 0.15)
-vals = eigvals(M)
-nothing # hide
-```
-
-**Eigenvalues:**
-
-```@example patterns
-LaTeX(vals)
-```
-
----
-
-## Transform Matrices
-
-### Hadamard Matrices
-
-Sylvester-Hadamard matrices of order 2ⁿ have eigenvalues ±√(2ⁿ):
-
-```@example patterns
-H2 = hadamard_matrix(2)  # 4×4
-nothing # hide
-```
-
-```@example patterns
-LaTeX(H2)
-```
-
-**Eigenvalues (exact integers ±2):**
-
-```@example patterns
-LaTeX(eigvals(H2))
-```
-
-**Larger Hadamard (8×8):**
-
-```@example patterns
-LaTeX(eigvals(hadamard_matrix(3)))
-```
-
-### DFT (Fourier) Matrices
-
-The n×n DFT matrix has eigenvalues in {±√n, ±i√n}:
-
-```@example patterns
-F4 = dft_matrix(4)
-nothing # hide
-```
-
-```@example patterns
-LaTeX(F4)
-```
-
-**Eigenvalues:**
-
-```@example patterns
-LaTeX(eigvals(F4))
-```
-
----
-
-## Coxeter/Weyl Groups
-
-### Type Aₙ (Cartan Matrix of SU(n+1))
-
-Closed-form eigenvalues via root system theory:
-
-```@example patterns
-A4 = cartan_matrix_A(4)  # 4×4 Cartan matrix
-nothing # hide
-```
-
-```@example patterns
-LaTeX(A4)
-```
-
-**Eigenvalues λₖ = 4sin²(πk/(2(n+1))):**
-
-```@example patterns
-LaTeX(eigvals(A4))
-```
-
-### Type G₂
-
-```@example patterns
-G2 = cartan_matrix_G2()
-nothing # hide
-```
-
-```@example patterns
-LaTeX(G2)
-```
-
-**Eigenvalues:**
-
-```@example patterns
-LaTeX(eigvals(G2))
-```
-
----
-
-## Graph Laplacians
-
-### Path Graph Laplacian
-
-```@example patterns
-L5 = path_laplacian(5)
-nothing # hide
-```
-
-```@example patterns
-LaTeX(L5)
-```
-
-**Eigenvalues λₖ = 2 - 2cos(πk/n):**
-
-```@example patterns
-LaTeX(eigvals(L5))
-```
-
-### Cycle Graph Laplacian
-
-```@example patterns
-C6 = cycle_laplacian(6)
-nothing # hide
-```
-
-```@example patterns
-LaTeX(C6)
-```
-
-**Eigenvalues:**
-
-```@example patterns
-LaTeX(eigvals(C6))
-```
-
-### Hypercube Graph Qₙ
-
-The n-dimensional hypercube has 2ⁿ vertices with eigenvalues n - 2k:
-
-```@example patterns
-# 3-dimensional hypercube (8 vertices)
-Q3 = zeros(Int, 8, 8)
-for i in 0:7, j in 0:7
-    count_ones(xor(i, j)) == 1 && (Q3[i+1, j+1] = 1)
-end
-nothing # hide
-```
-
-```@example patterns
-LaTeX(Q3)
-```
-
-**Eigenvalues {-3, -1, 1, 3} with multiplicities {1, 3, 3, 1}:**
-
-```@example patterns
-LaTeX(eigvals(Q3))
 ```
 
 ---
@@ -409,13 +222,13 @@ LaTeX(eigvals(Uz))
 
 ### General Kronecker Products
 
-Eigenvalues of A ⊗ B are products of individual eigenvalues:
+Eigenvalues of A ⊗ B are products of individual eigenvalues. A 4×4 matrix (degree-4 polynomial) reduces to two quadratics:
 
 ```@example patterns
 @variables a b c d
 
-A = [a 0; 0 b]
-B = [c 0; 0 d]
+A = [a b; b a]
+B = [c d; d c]
 K = kron(A, B)
 nothing # hide
 ```
@@ -423,6 +236,8 @@ nothing # hide
 ```@example patterns
 LaTeX(K)
 ```
+
+**Eigenvalues (products of factor eigenvalues):**
 
 ```@example patterns
 LaTeX(eigvals(K))
@@ -514,14 +329,12 @@ When multiple patterns apply, the package uses this priority:
 
 1. **Diagonal** - Trivial eigenvalues
 2. **Block-diagonal** - Recursive decomposition
-3. **Lie groups** - SO(2), SO(3), SO(4), SU(2), SU(3), Sp(2), Sp(4)
+3. **Lie groups** - SO(2), SO(3), SO(4), SU(2), SU(3)
 4. **Kronecker products** - Detect and factor
 5. **Circulant** - DFT formula
-6. **Hadamard/DFT** - Transform eigenvalues
-7. **Tridiagonal** - Chebyshev formulas
-8. **Permutation** - Cycle decomposition
-9. **Persymmetric** - Half-size reduction
-10. **General** - Cardano/Ferrari formulas (up to 4×4)
+6. **Tridiagonal** - Chebyshev formulas
+7. **Persymmetric** - Half-size reduction
+8. **General** - Cardano/Ferrari formulas (up to 4×4)
 
 ## Adding Custom Patterns
 
