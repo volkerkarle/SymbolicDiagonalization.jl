@@ -68,7 +68,12 @@ end
 makedocs(;
     sitename = "SymbolicDiagonalization",
     modules = [SymbolicDiagonalization],
-    pages = ["Documentation" => "index.md"],
+    pages = [
+        "Home" => "index.md",
+        "User Guide" => "user_guide.md",
+        "Pattern Library" => "pattern_library.md",
+        "Mathematical Background" => "mathematical_background.md",
+    ],
     checkdocs = :none,
     repo = "https://github.com/volkerkarle/SymbolicDiagonalization.jl/blob/{commit}{path}#{line}",
     format = Documenter.HTML(;

@@ -42,4 +42,12 @@ using Aqua
     @testset "Lie Algebra Representations" begin
         include("test_lie_algebras.jl")
     end
+    
+    @testset "LaTeX Output" begin
+        include("test_latex.jl")
+    end
+    
+    @testset "Special Toeplitz Patterns" begin
+        include("test_toeplitz_special.jl")
+    end
 end
