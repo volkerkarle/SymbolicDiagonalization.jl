@@ -90,28 +90,28 @@ b & c & d & a \\
 \lambda_{3} &= a - b + c - d \\[0.3em]
 \lambda_{4} &= a - c + \left(  - b + d \right) ~ \mathit{i}
 \end{aligned}
-\]<h3 id="Kronecker-Products"><a class="docs-heading-anchor" href="#Kronecker-Products">Kronecker Products</a><a id="Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#Kronecker-Products" title="Permalink"></a></h3><p>Eigenvalues of A ⊗ B are products of individual eigenvalues:</p><pre><code class="language-julia hljs">@variables α β γ δ
+\]<h3 id="Kronecker-Products"><a class="docs-heading-anchor" href="#Kronecker-Products">Kronecker Products</a><a id="Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#Kronecker-Products" title="Permalink"></a></h3><p>Eigenvalues of A ⊗ B are products of individual eigenvalues. A 4×4 Kronecker product that would require solving a quartic is reduced to two quadratics:</p><pre><code class="language-julia hljs">@variables a b c d
 
-A = [α 0; 0 β]
-B = [γ 0; 0 δ]
+A = [a b; b a]
+B = [c d; d c]
 K = kron(A, B)
 
 vals = eigvals(K)</code></pre><p><strong>The 4×4 Kronecker product:</strong></p><pre><code class="language-julia hljs">LaTeX(K)</code></pre>\[
 \left[
 \begin{array}{cccc}
-\alpha ~ \gamma & 0 & 0 & 0 \\
-0 & \alpha ~ \delta & 0 & 0 \\
-0 & 0 & \beta ~ \gamma & 0 \\
-0 & 0 & 0 & \beta ~ \delta \\
+a ~ c & a ~ d & b ~ c & b ~ d \\
+a ~ d & a ~ c & b ~ d & b ~ c \\
+b ~ c & b ~ d & a ~ c & a ~ d \\
+b ~ d & b ~ c & a ~ d & a ~ c \\
 \end{array}
 \right]
-\]<p><strong>Eigenvalues {αγ, αδ, βγ, βδ}:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\]<p><strong>Eigenvalues (products of 2×2 eigenvalues):</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
 \[
 \begin{aligned}
-\lambda_{1} &= \alpha ~ \gamma \\[0.3em]
-\lambda_{2} &= \alpha ~ \delta \\[0.3em]
-\lambda_{3} &= \beta ~ \gamma \\[0.3em]
-\lambda_{4} &= \beta ~ \delta
+\lambda_{1} &= \left( a + b \right) ~ \left( c + d \right) \\[0.3em]
+\lambda_{2} &= \left( a + b \right) ~ c - \left( a + b \right) ~ d + 1.2246467991473532e-16 ~ \left( a + b \right) ~ d ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= a ~ \left( c + d \right) - b ~ \left( c + d \right) + 1.2246467991473532e-16 ~ b ~ \left( c + d \right) ~ \mathit{i} \\[0.3em]
+\lambda_{4} &= a ~ c - a ~ d - b ~ c + b ~ d + \left( 1.2246467991473532e-16 ~ a ~ d + 1.2246467991473532e-16 ~ b ~ c - 2.4492935982947064e-16 ~ b ~ d \right) ~ \mathit{i}
 \end{aligned}
 \]<h2 id="Rotation-Matrices"><a class="docs-heading-anchor" href="#Rotation-Matrices">Rotation Matrices</a><a id="Rotation-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Rotation-Matrices" title="Permalink"></a></h2><h3 id="SO(2):-2D-Rotations"><a class="docs-heading-anchor" href="#SO(2):-2D-Rotations">SO(2): 2D Rotations</a><a id="SO(2):-2D-Rotations-1"></a><a class="docs-heading-anchor-permalink" href="#SO(2):-2D-Rotations" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables θ
 
@@ -156,13 +156,15 @@ vals = eigvals(K)</code></pre><p><strong>Eigenvalues e^{i(±θ±φ)}:</strong></
 \lambda_{3} &= \cos\left(  - \theta + \varphi \right) + \sin\left(  - \theta + \varphi \right) ~ \mathit{i} \\[0.3em]
 \lambda_{4} &= \cos\left( \theta + \varphi \right) + \sin\left( \theta + \varphi \right) ~ \mathit{i}
 \end{aligned}
-\]<h2 id="Tips-and-Best-Practices"><a class="docs-heading-anchor" href="#Tips-and-Best-Practices">Tips and Best Practices</a><a id="Tips-and-Best-Practices-1"></a><a class="docs-heading-anchor-permalink" href="#Tips-and-Best-Practices" title="Permalink"></a></h2><h3 id="1.-Check-for-Structure-First"><a class="docs-heading-anchor" href="#1.-Check-for-Structure-First">1. Check for Structure First</a><a id="1.-Check-for-Structure-First-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Check-for-Structure-First" title="Permalink"></a></h3><p>Before calling <code>eigvals()</code>, consider if your matrix has exploitable structure:</p><pre><code class="language-julia hljs"># Good: Circulant structure detected automatically
-C = [1 2 3; 3 1 2; 2 3 1]
+\]<h2 id="Tips-and-Best-Practices"><a class="docs-heading-anchor" href="#Tips-and-Best-Practices">Tips and Best Practices</a><a id="Tips-and-Best-Practices-1"></a><a class="docs-heading-anchor-permalink" href="#Tips-and-Best-Practices" title="Permalink"></a></h2><h3 id="1.-Check-for-Structure-First"><a class="docs-heading-anchor" href="#1.-Check-for-Structure-First">1. Check for Structure First</a><a id="1.-Check-for-Structure-First-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Check-for-Structure-First" title="Permalink"></a></h3><p>Before calling <code>eigvals()</code>, consider if your matrix has exploitable structure:</p><pre><code class="language-julia hljs">@variables a b c d e f
+
+# Good: Circulant structure detected automatically
+C = [a b c; c a b; b c a]
 eigvals(C)  # Instant via DFT
 
-# Slower: Generic 3×3 symmetric
+# Slower: Generic 3×3 symmetric (no special structure)
 M = [a b c; b d e; c e f]
-eigvals(M)  # Uses Cardano formula (still exact, but larger expressions)</code></pre><h3 id="2.-Use-Constructors-for-Lie-Groups"><a class="docs-heading-anchor" href="#2.-Use-Constructors-for-Lie-Groups">2. Use Constructors for Lie Groups</a><a id="2.-Use-Constructors-for-Lie-Groups-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Use-Constructors-for-Lie-Groups" title="Permalink"></a></h3><p>The built-in constructors ensure proper structure detection:</p><pre><code class="language-julia hljs"># Good: Uses SO2_rotation constructor
+eigvals(M)  # Uses Cardano formula (larger expressions)</code></pre><h3 id="2.-Use-Constructors-for-Lie-Groups"><a class="docs-heading-anchor" href="#2.-Use-Constructors-for-Lie-Groups">2. Use Constructors for Lie Groups</a><a id="2.-Use-Constructors-for-Lie-Groups-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Use-Constructors-for-Lie-Groups" title="Permalink"></a></h3><p>The built-in constructors ensure proper structure detection:</p><pre><code class="language-julia hljs"># Good: Uses SO2_rotation constructor
 R = SO2_rotation(θ)
 
 # Works but less clear: Manual construction
@@ -177,37 +179,29 @@ vals = eigvals(M)
 # Substitute numeric values
 using Symbolics: substitute
 val_numeric = substitute(vals[1], Dict(a =&gt; 1.0, b =&gt; 2.0))
-# Should match: eigvals([1.0 2.0; 2.0 1.0])</code></pre><h2 id="Common-Patterns"><a class="docs-heading-anchor" href="#Common-Patterns">Common Patterns</a><a id="Common-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Common-Patterns" title="Permalink"></a></h2><h3 id="Tridiagonal-Matrices"><a class="docs-heading-anchor" href="#Tridiagonal-Matrices">Tridiagonal Matrices</a><a id="Tridiagonal-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Tridiagonal-Matrices" title="Permalink"></a></h3><p>Symmetric Toeplitz tridiagonal matrices have closed-form eigenvalues:</p><pre><code class="language-julia hljs"># Path Laplacian is symmetric Toeplitz tridiagonal
-L = path_laplacian(5)
-vals = eigvals(L)</code></pre><p><strong>5×5 Path Laplacian eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+# Should match: eigvals([1.0 2.0; 2.0 1.0])</code></pre><h2 id="Common-Patterns"><a class="docs-heading-anchor" href="#Common-Patterns">Common Patterns</a><a id="Common-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Common-Patterns" title="Permalink"></a></h2><h3 id="Symmetric-Toeplitz-Tridiagonal"><a class="docs-heading-anchor" href="#Symmetric-Toeplitz-Tridiagonal">Symmetric Toeplitz Tridiagonal</a><a id="Symmetric-Toeplitz-Tridiagonal-1"></a><a class="docs-heading-anchor-permalink" href="#Symmetric-Toeplitz-Tridiagonal" title="Permalink"></a></h3><p>Matrices with constant diagonals have closed-form eigenvalues:</p><pre><code class="language-julia hljs">@variables a b
+
+# 4×4 symmetric Toeplitz tridiagonal
+T = [a b 0 0;
+     b a b 0;
+     0 b a b;
+     0 0 b a]
+
+vals = eigvals(T)</code></pre><p><strong>Matrix:</strong></p><pre><code class="language-julia hljs">LaTeX(T)</code></pre>\[
+\left[
+\begin{array}{cccc}
+a & b & 0 & 0 \\
+b & a & b & 0 \\
+0 & b & a & b \\
+0 & 0 & b & a \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues λₖ = a + 2b·cos(kπ/(n+1)):</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
 \[
 \begin{aligned}
-\lambda_{1} &= 4.99692479230196e-17 \\[0.3em]
-\lambda_{2} &= 0.3819660112501052 \\[0.3em]
-\lambda_{3} &= 1.3819660112501049 \\[0.3em]
-\lambda_{4} &= 2.6180339887498953 \\[0.3em]
-\lambda_{5} &= 3.6180339887498945
+\lambda_{1} &= a + 1.618 ~ b \\[0.3em]
+\lambda_{2} &= a + 0.61803 ~ b \\[0.3em]
+\lambda_{3} &= a - 0.61803 ~ b \\[0.3em]
+\lambda_{4} &= a - 1.618 ~ b
 \end{aligned}
-\]<h3 id="Hadamard-Matrices"><a class="docs-heading-anchor" href="#Hadamard-Matrices">Hadamard Matrices</a><a id="Hadamard-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Hadamard-Matrices" title="Permalink"></a></h3><p>Sylvester-Hadamard matrices have eigenvalues ±√(2ⁿ):</p><pre><code class="language-julia hljs">H = hadamard_matrix(3)  # 8×8
-vals = eigvals(H)</code></pre><p><strong>Hadamard eigenvalues (exact):</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
-\[
-\begin{aligned}
-\lambda_{1} &= -2.8284271247461907 \\[0.3em]
-\lambda_{2} &= -2.82842712474619 \\[0.3em]
-\lambda_{3} &= -2.82842712474619 \\[0.3em]
-\lambda_{4} &= -2.828427124746188 \\[0.3em]
-\lambda_{5} &= 2.828427124746188 \\[0.3em]
-\lambda_{6} &= 2.82842712474619 \\[0.3em]
-\lambda_{7} &= 2.82842712474619 \\[0.3em]
-\lambda_{8} &= 2.8284271247461907
-\end{aligned}
-\]<h3 id="DFT-Matrices"><a class="docs-heading-anchor" href="#DFT-Matrices">DFT Matrices</a><a id="DFT-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#DFT-Matrices" title="Permalink"></a></h3><p>Fourier matrices have eigenvalues in {±√n, ±i√n}:</p><pre><code class="language-julia hljs">F = dft_matrix(4)
-vals = eigvals(F)</code></pre><p><strong>DFT eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
-\[
-\begin{aligned}
-\lambda_{1} &= -2.0+2.0545454143613497e-16\mathit{i} \\[0.3em]
-\lambda_{2} &= 2.220446049250313e-16+2.0000000000000004\mathit{i} \\[0.3em]
-\lambda_{3} &= 1.9999999999999978-4.0939474033052647e-16\mathit{i} \\[0.3em]
-\lambda_{4} &= 2.0+6.848484714537829e-17\mathit{i}
-\end{aligned}
-\]<h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><ul><li><a href="../pattern_library/">Pattern Library</a> - Complete list of supported patterns</li><li><a href="../mathematical_background/">Mathematical Background</a> - Theory behind the algorithms</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../pattern_library/">Pattern Library »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 6 January 2026 14:00">Tuesday 6 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+\]<h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><ul><li><a href="../pattern_library/">Pattern Library</a> - Complete list of supported patterns</li><li><a href="../mathematical_background/">Mathematical Background</a> - Theory behind the algorithms</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../pattern_library/">Pattern Library »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 6 January 2026 15:21">Tuesday 6 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
