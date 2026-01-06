@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>User Guide · SymbolicDiagonalization</title><meta name="title" content="User Guide · SymbolicDiagonalization"/><meta property="og:title" content="User Guide · SymbolicDiagonalization"/><meta property="twitter:title" content="User Guide · SymbolicDiagonalization"/><meta name="description" content="Documentation for SymbolicDiagonalization."/><meta property="og:description" content="Documentation for SymbolicDiagonalization."/><meta property="twitter:description" content="Documentation for SymbolicDiagonalization."/><meta property="og:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/user_guide/"/><meta property="twitter:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/user_guide/"/><link rel="canonical" href="https://volkerkarle.github.io/SymbolicDiagonalization.jl/user_guide/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="SymbolicDiagonalization logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">SymbolicDiagonalization</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>User Guide</a><ul class="internal"><li><a class="tocitem" href="#Basic-Usage"><span>Basic Usage</span></a></li><li><a class="tocitem" href="#Working-with-Larger-Matrices"><span>Working with Larger Matrices</span></a></li><li><a class="tocitem" href="#Rotation-Matrices"><span>Rotation Matrices</span></a></li><li><a class="tocitem" href="#Tips-and-Best-Practices"><span>Tips and Best Practices</span></a></li><li><a class="tocitem" href="#Common-Patterns"><span>Common Patterns</span></a></li><li><a class="tocitem" href="#Next-Steps"><span>Next Steps</span></a></li></ul></li><li><a class="tocitem" href="../pattern_library/">Pattern Library</a></li><li><a class="tocitem" href="../mathematical_background/">Mathematical Background</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>User Guide</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>User Guide</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl/blob/main/docs/src/user_guide.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="User-Guide"><a class="docs-heading-anchor" href="#User-Guide">User Guide</a><a id="User-Guide-1"></a><a class="docs-heading-anchor-permalink" href="#User-Guide" title="Permalink"></a></h1><p>This guide covers practical workflows for using SymbolicDiagonalization.jl.</p><h2 id="Basic-Usage"><a class="docs-heading-anchor" href="#Basic-Usage">Basic Usage</a><a id="Basic-Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Usage" title="Permalink"></a></h2><h3 id="Getting-Eigenvalues"><a class="docs-heading-anchor" href="#Getting-Eigenvalues">Getting Eigenvalues</a><a id="Getting-Eigenvalues-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-Eigenvalues" title="Permalink"></a></h3><pre><code class="language-julia hljs">using SymbolicDiagonalization, Symbolics, LinearAlgebra
+using Main: LaTeX
+
+# Define symbolic variables
+@variables a b c
+
+# Create a matrix
+M = [a b; b c]
+
+# Get eigenvalues
+vals = eigvals(M)</code></pre><p><strong>Matrix:</strong></p><pre><code class="language-julia hljs">LaTeX(M)</code></pre>\[
+\left[
+\begin{array}{cc}
+a & b \\
+b & c \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \frac{a - c - \sqrt{\left( a - c \right)^{2} + 4 ~ b^{2}}}{2} + c \\[0.3em]
+\lambda_{2} &= \frac{a - c + \sqrt{\left( a - c \right)^{2} + 4 ~ b^{2}}}{2} + c
+\end{aligned}
+\]<h3 id="Getting-Eigenvectors"><a class="docs-heading-anchor" href="#Getting-Eigenvectors">Getting Eigenvectors</a><a id="Getting-Eigenvectors-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-Eigenvectors" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables x y
+
+# Symmetric matrix
+S = [x y; y x]
+E = eigen(S)</code></pre><p><strong>Eigenvectors (columns of E.vectors):</strong></p><pre><code class="language-julia hljs">LaTeX(E.vectors)</code></pre>\[
+\left[
+\begin{array}{cc}
+1 & 1 \\
+1 & -1 \\
+\end{array}
+\right]
+\]<h3 id="Full-Diagonalization"><a class="docs-heading-anchor" href="#Full-Diagonalization">Full Diagonalization</a><a id="Full-Diagonalization-1"></a><a class="docs-heading-anchor-permalink" href="#Full-Diagonalization" title="Permalink"></a></h3><p>For <code>M = P * D * P⁻¹</code> decomposition:</p><pre><code class="language-julia hljs">P, D, pairs = symbolic_diagonalize(S)</code></pre><p><strong>Diagonal matrix D:</strong></p><pre><code class="language-julia hljs">LaTeX(D)</code></pre>\[
+\left[
+\begin{array}{cc}
+x + y & 0 \\
+0 & x - y \\
+\end{array}
+\right]
+\]<h2 id="Working-with-Larger-Matrices"><a class="docs-heading-anchor" href="#Working-with-Larger-Matrices">Working with Larger Matrices</a><a id="Working-with-Larger-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Working-with-Larger-Matrices" title="Permalink"></a></h2><h3 id="Block-Diagonal-Matrices"><a class="docs-heading-anchor" href="#Block-Diagonal-Matrices">Block-Diagonal Matrices</a><a id="Block-Diagonal-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Block-Diagonal-Matrices" title="Permalink"></a></h3><p>The package automatically detects block structure:</p><pre><code class="language-julia hljs">@variables a b c d e f
+
+# 4×4 block-diagonal
+B = [a  b  0  0;
+     b  a  0  0;
+     0  0  c  d;
+     0  0  d  c]
+
+vals = eigvals(B)</code></pre><p><strong>Matrix:</strong></p><pre><code class="language-julia hljs">LaTeX(B)</code></pre>\[
+\left[
+\begin{array}{cccc}
+a & b & 0 & 0 \\
+b & a & 0 & 0 \\
+0 & 0 & c & d \\
+0 & 0 & d & c \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues (solved block-by-block):</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= a + b \\[0.3em]
+\lambda_{2} &= a - b \\[0.3em]
+\lambda_{3} &= c + d \\[0.3em]
+\lambda_{4} &= c - d
+\end{aligned}
+\]<h3 id="Circulant-Matrices"><a class="docs-heading-anchor" href="#Circulant-Matrices">Circulant Matrices</a><a id="Circulant-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Circulant-Matrices" title="Permalink"></a></h3><p>Any n×n circulant matrix has closed-form eigenvalues via the DFT:</p><pre><code class="language-julia hljs">@variables a b c d
+
+# 4×4 circulant
+C = [a b c d;
+     d a b c;
+     c d a b;
+     b c d a]
+
+vals = eigvals(C)</code></pre><p><strong>Matrix:</strong></p><pre><code class="language-julia hljs">LaTeX(C)</code></pre>\[
+\left[
+\begin{array}{cccc}
+a & b & c & d \\
+d & a & b & c \\
+c & d & a & b \\
+b & c & d & a \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= a + b + c + d \\[0.3em]
+\lambda_{2} &= a - c + \left( b - d \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= a - b + c - d \\[0.3em]
+\lambda_{4} &= a - c + \left(  - b + d \right) ~ \mathit{i}
+\end{aligned}
+\]<h3 id="Kronecker-Products"><a class="docs-heading-anchor" href="#Kronecker-Products">Kronecker Products</a><a id="Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#Kronecker-Products" title="Permalink"></a></h3><p>Eigenvalues of A ⊗ B are products of individual eigenvalues:</p><pre><code class="language-julia hljs">@variables α β γ δ
+
+A = [α 0; 0 β]
+B = [γ 0; 0 δ]
+K = kron(A, B)
+
+vals = eigvals(K)</code></pre><p><strong>The 4×4 Kronecker product:</strong></p><pre><code class="language-julia hljs">LaTeX(K)</code></pre>\[
+\left[
+\begin{array}{cccc}
+\alpha ~ \gamma & 0 & 0 & 0 \\
+0 & \alpha ~ \delta & 0 & 0 \\
+0 & 0 & \beta ~ \gamma & 0 \\
+0 & 0 & 0 & \beta ~ \delta \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues {αγ, αδ, βγ, βδ}:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \alpha ~ \gamma \\[0.3em]
+\lambda_{2} &= \alpha ~ \delta \\[0.3em]
+\lambda_{3} &= \beta ~ \gamma \\[0.3em]
+\lambda_{4} &= \beta ~ \delta
+\end{aligned}
+\]<h2 id="Rotation-Matrices"><a class="docs-heading-anchor" href="#Rotation-Matrices">Rotation Matrices</a><a id="Rotation-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Rotation-Matrices" title="Permalink"></a></h2><h3 id="SO(2):-2D-Rotations"><a class="docs-heading-anchor" href="#SO(2):-2D-Rotations">SO(2): 2D Rotations</a><a id="SO(2):-2D-Rotations-1"></a><a class="docs-heading-anchor-permalink" href="#SO(2):-2D-Rotations" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables θ
+
+R = SO2_rotation(θ)
+vals = eigvals(R)</code></pre><p><strong>Rotation matrix:</strong></p><pre><code class="language-julia hljs">LaTeX(R)</code></pre>\[
+\left[
+\begin{array}{cc}
+\cos\left( \theta \right) &  - \sin\left( \theta \right) \\
+\sin\left( \theta \right) & \cos\left( \theta \right) \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues e^{±iθ}:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \cos\left( \theta \right) + \sin\left( \theta \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \cos\left( \theta \right) - \sin\left( \theta \right) ~ \mathit{i}
+\end{aligned}
+\]<h3 id="SO(3):-3D-Rotations"><a class="docs-heading-anchor" href="#SO(3):-3D-Rotations">SO(3): 3D Rotations</a><a id="SO(3):-3D-Rotations-1"></a><a class="docs-heading-anchor-permalink" href="#SO(3):-3D-Rotations" title="Permalink"></a></h3><pre><code class="language-julia hljs">Rz = SO3_Rz(θ)
+vals = eigvals(Rz)</code></pre><p><strong>Rotation about z-axis:</strong></p><pre><code class="language-julia hljs">LaTeX(Rz)</code></pre>\[
+\left[
+\begin{array}{ccc}
+\cos\left( \theta \right) &  - \sin\left( \theta \right) & 0 \\
+\sin\left( \theta \right) & \cos\left( \theta \right) & 0 \\
+0 & 0 & 1 \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues {1, e^{±iθ}}:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \cos\left( \theta \right) + \sin\left( \theta \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \cos\left( \theta \right) - \sin\left( \theta \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= 1
+\end{aligned}
+\]<h3 id="Kronecker-Products-of-Rotations"><a class="docs-heading-anchor" href="#Kronecker-Products-of-Rotations">Kronecker Products of Rotations</a><a id="Kronecker-Products-of-Rotations-1"></a><a class="docs-heading-anchor-permalink" href="#Kronecker-Products-of-Rotations" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables θ φ
+
+K = kron(SO2_rotation(θ), SO2_rotation(φ))
+vals = eigvals(K)</code></pre><p><strong>Eigenvalues e^{i(±θ±φ)}:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \cos\left(  - \theta - \varphi \right) + \sin\left(  - \theta - \varphi \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \cos\left( \theta - \varphi \right) + \sin\left( \theta - \varphi \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= \cos\left(  - \theta + \varphi \right) + \sin\left(  - \theta + \varphi \right) ~ \mathit{i} \\[0.3em]
+\lambda_{4} &= \cos\left( \theta + \varphi \right) + \sin\left( \theta + \varphi \right) ~ \mathit{i}
+\end{aligned}
+\]<h2 id="Tips-and-Best-Practices"><a class="docs-heading-anchor" href="#Tips-and-Best-Practices">Tips and Best Practices</a><a id="Tips-and-Best-Practices-1"></a><a class="docs-heading-anchor-permalink" href="#Tips-and-Best-Practices" title="Permalink"></a></h2><h3 id="1.-Check-for-Structure-First"><a class="docs-heading-anchor" href="#1.-Check-for-Structure-First">1. Check for Structure First</a><a id="1.-Check-for-Structure-First-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Check-for-Structure-First" title="Permalink"></a></h3><p>Before calling <code>eigvals()</code>, consider if your matrix has exploitable structure:</p><pre><code class="language-julia hljs"># Good: Circulant structure detected automatically
+C = [1 2 3; 3 1 2; 2 3 1]
+eigvals(C)  # Instant via DFT
+
+# Slower: Generic 3×3 symmetric
+M = [a b c; b d e; c e f]
+eigvals(M)  # Uses Cardano formula (still exact, but larger expressions)</code></pre><h3 id="2.-Use-Constructors-for-Lie-Groups"><a class="docs-heading-anchor" href="#2.-Use-Constructors-for-Lie-Groups">2. Use Constructors for Lie Groups</a><a id="2.-Use-Constructors-for-Lie-Groups-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Use-Constructors-for-Lie-Groups" title="Permalink"></a></h3><p>The built-in constructors ensure proper structure detection:</p><pre><code class="language-julia hljs"># Good: Uses SO2_rotation constructor
+R = SO2_rotation(θ)
+
+# Works but less clear: Manual construction
+R = [cos(θ) -sin(θ); sin(θ) cos(θ)]</code></pre><h3 id="3.-Handle-Large-Expressions"><a class="docs-heading-anchor" href="#3.-Handle-Large-Expressions">3. Handle Large Expressions</a><a id="3.-Handle-Large-Expressions-1"></a><a class="docs-heading-anchor-permalink" href="#3.-Handle-Large-Expressions" title="Permalink"></a></h3><p>For complex matrices, expressions can grow large:</p><pre><code class="language-julia hljs"># Set timeout for expensive computations
+eigvals(M; timeout=60)  # 60 seconds max
+
+# Limit expression complexity
+eigvals(M; max_terms=1000)</code></pre><h3 id="4.-Numeric-Verification"><a class="docs-heading-anchor" href="#4.-Numeric-Verification">4. Numeric Verification</a><a id="4.-Numeric-Verification-1"></a><a class="docs-heading-anchor-permalink" href="#4.-Numeric-Verification" title="Permalink"></a></h3><p>Verify symbolic results numerically:</p><pre><code class="language-julia hljs">@variables a b
+M = [a b; b a]
+vals = eigvals(M)
+
+# Substitute numeric values
+using Symbolics: substitute
+val_numeric = substitute(vals[1], Dict(a =&gt; 1.0, b =&gt; 2.0))
+# Should match: eigvals([1.0 2.0; 2.0 1.0])</code></pre><h2 id="Common-Patterns"><a class="docs-heading-anchor" href="#Common-Patterns">Common Patterns</a><a id="Common-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Common-Patterns" title="Permalink"></a></h2><h3 id="Tridiagonal-Matrices"><a class="docs-heading-anchor" href="#Tridiagonal-Matrices">Tridiagonal Matrices</a><a id="Tridiagonal-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Tridiagonal-Matrices" title="Permalink"></a></h3><p>Symmetric Toeplitz tridiagonal matrices have closed-form eigenvalues:</p><pre><code class="language-julia hljs"># Path Laplacian is symmetric Toeplitz tridiagonal
+L = path_laplacian(5)
+vals = eigvals(L)</code></pre><p><strong>5×5 Path Laplacian eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= 4.99692479230196e-17 \\[0.3em]
+\lambda_{2} &= 0.3819660112501052 \\[0.3em]
+\lambda_{3} &= 1.3819660112501049 \\[0.3em]
+\lambda_{4} &= 2.6180339887498953 \\[0.3em]
+\lambda_{5} &= 3.6180339887498945
+\end{aligned}
+\]<h3 id="Hadamard-Matrices"><a class="docs-heading-anchor" href="#Hadamard-Matrices">Hadamard Matrices</a><a id="Hadamard-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Hadamard-Matrices" title="Permalink"></a></h3><p>Sylvester-Hadamard matrices have eigenvalues ±√(2ⁿ):</p><pre><code class="language-julia hljs">H = hadamard_matrix(3)  # 8×8
+vals = eigvals(H)</code></pre><p><strong>Hadamard eigenvalues (exact):</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= -2.8284271247461907 \\[0.3em]
+\lambda_{2} &= -2.82842712474619 \\[0.3em]
+\lambda_{3} &= -2.82842712474619 \\[0.3em]
+\lambda_{4} &= -2.828427124746188 \\[0.3em]
+\lambda_{5} &= 2.828427124746188 \\[0.3em]
+\lambda_{6} &= 2.82842712474619 \\[0.3em]
+\lambda_{7} &= 2.82842712474619 \\[0.3em]
+\lambda_{8} &= 2.8284271247461907
+\end{aligned}
+\]<h3 id="DFT-Matrices"><a class="docs-heading-anchor" href="#DFT-Matrices">DFT Matrices</a><a id="DFT-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#DFT-Matrices" title="Permalink"></a></h3><p>Fourier matrices have eigenvalues in {±√n, ±i√n}:</p><pre><code class="language-julia hljs">F = dft_matrix(4)
+vals = eigvals(F)</code></pre><p><strong>DFT eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= -2.0+2.0545454143613497e-16\mathit{i} \\[0.3em]
+\lambda_{2} &= 2.220446049250313e-16+2.0000000000000004\mathit{i} \\[0.3em]
+\lambda_{3} &= 1.9999999999999978-4.0939474033052647e-16\mathit{i} \\[0.3em]
+\lambda_{4} &= 2.0+6.848484714537829e-17\mathit{i}
+\end{aligned}
+\]<h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><ul><li><a href="../pattern_library/">Pattern Library</a> - Complete list of supported patterns</li><li><a href="../mathematical_background/">Mathematical Background</a> - Theory behind the algorithms</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../pattern_library/">Pattern Library »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 6 January 2026 14:00">Tuesday 6 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

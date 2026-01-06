@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Pattern Library · SymbolicDiagonalization</title><meta name="title" content="Pattern Library · SymbolicDiagonalization"/><meta property="og:title" content="Pattern Library · SymbolicDiagonalization"/><meta property="twitter:title" content="Pattern Library · SymbolicDiagonalization"/><meta name="description" content="Documentation for SymbolicDiagonalization."/><meta property="og:description" content="Documentation for SymbolicDiagonalization."/><meta property="twitter:description" content="Documentation for SymbolicDiagonalization."/><meta property="og:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/pattern_library/"/><meta property="twitter:url" content="https://volkerkarle.github.io/SymbolicDiagonalization.jl/pattern_library/"/><link rel="canonical" href="https://volkerkarle.github.io/SymbolicDiagonalization.jl/pattern_library/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="SymbolicDiagonalization logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">SymbolicDiagonalization</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../user_guide/">User Guide</a></li><li class="is-active"><a class="tocitem" href>Pattern Library</a><ul class="internal"><li><a class="tocitem" href="#Structural-Patterns"><span>Structural Patterns</span></a></li><li><a class="tocitem" href="#Finite-Group-Patterns"><span>Finite Group Patterns</span></a></li><li><a class="tocitem" href="#Transform-Matrices"><span>Transform Matrices</span></a></li><li><a class="tocitem" href="#Coxeter/Weyl-Groups"><span>Coxeter/Weyl Groups</span></a></li><li><a class="tocitem" href="#Graph-Laplacians"><span>Graph Laplacians</span></a></li><li><a class="tocitem" href="#Lie-Groups"><span>Lie Groups</span></a></li><li><a class="tocitem" href="#Kronecker-Products"><span>Kronecker Products</span></a></li><li><a class="tocitem" href="#Tridiagonal-Patterns"><span>Tridiagonal Patterns</span></a></li><li><a class="tocitem" href="#Pattern-Detection-Priority"><span>Pattern Detection Priority</span></a></li><li><a class="tocitem" href="#Adding-Custom-Patterns"><span>Adding Custom Patterns</span></a></li></ul></li><li><a class="tocitem" href="../mathematical_background/">Mathematical Background</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Pattern Library</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Pattern Library</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/volkerkarle/SymbolicDiagonalization.jl/blob/main/docs/src/pattern_library.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Pattern-Library"><a class="docs-heading-anchor" href="#Pattern-Library">Pattern Library</a><a id="Pattern-Library-1"></a><a class="docs-heading-anchor-permalink" href="#Pattern-Library" title="Permalink"></a></h1><p>SymbolicDiagonalization.jl automatically detects and exploits matrix structure to find closed-form eigenvalues. This page documents all supported patterns.</p><h2 id="Structural-Patterns"><a class="docs-heading-anchor" href="#Structural-Patterns">Structural Patterns</a><a id="Structural-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Structural-Patterns" title="Permalink"></a></h2><p>These patterns are detected in any matrix regardless of specific form.</p><h3 id="Block-Diagonal"><a class="docs-heading-anchor" href="#Block-Diagonal">Block-Diagonal</a><a id="Block-Diagonal-1"></a><a class="docs-heading-anchor-permalink" href="#Block-Diagonal" title="Permalink"></a></h3><p>Matrices with independent blocks are solved recursively:</p><pre><code class="language-julia hljs">using SymbolicDiagonalization, Symbolics, LinearAlgebra
+using Main: LaTeX
+
+@variables a b c d
+
+B = [a  b  0  0;
+     b  a  0  0;
+     0  0  c  d;
+     0  0  d  c]</code></pre><pre><code class="language-julia hljs">LaTeX(B)</code></pre>\[
+\left[
+\begin{array}{cccc}
+a & b & 0 & 0 \\
+b & a & 0 & 0 \\
+0 & 0 & c & d \\
+0 & 0 & d & c \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues (each block solved independently):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(B))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= a + b \\[0.3em]
+\lambda_{2} &= a - b \\[0.3em]
+\lambda_{3} &= c + d \\[0.3em]
+\lambda_{4} &= c - d
+\end{aligned}
+\]<h3 id="Persymmetric-(Symmetric-about-Anti-Diagonal)"><a class="docs-heading-anchor" href="#Persymmetric-(Symmetric-about-Anti-Diagonal)">Persymmetric (Symmetric about Anti-Diagonal)</a><a id="Persymmetric-(Symmetric-about-Anti-Diagonal)-1"></a><a class="docs-heading-anchor-permalink" href="#Persymmetric-(Symmetric-about-Anti-Diagonal)" title="Permalink"></a></h3><p>Persymmetric matrices decompose into two half-size problems:</p><pre><code class="language-julia hljs"># A persymmetric matrix satisfies J*A*J = A where J is the exchange matrix
+@variables a b c
+
+P = [a  b  c;
+     b  a  b;
+     c  b  a]  # Symmetric circulant is also persymmetric</code></pre><pre><code class="language-julia hljs">LaTeX(P)</code></pre>\[
+\left[
+\begin{array}{ccc}
+a & b & c \\
+b & a & b \\
+c & b & a \\
+\end{array}
+\right]
+\]<pre><code class="language-julia hljs">LaTeX(eigvals(P))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \frac{ - \frac{ - 12 ~ a^{2} + 4 ~ b^{2} + 2 ~ c^{2}}{2 ~ a} - \frac{ - a^{4} + 2 ~ b^{2} ~ a^{2} + c^{2} ~ a^{2} - 2 ~ b^{2} ~ a ~ c}{a^{3}} - \frac{4 ~ a^{3} - 4 ~ b^{2} ~ a - 2 ~ c^{2} ~ a + 2 ~ b^{2} ~ c}{a^{2}}}{3 ~ \left( 4 + \frac{ - 6 ~ a^{2} + 2 ~ b^{2} + c^{2}}{a^{2}} + \frac{ - a^{4} + 2 ~ b^{2} ~ a^{2} + c^{2} ~ a^{2} - 2 ~ b^{2} ~ a ~ c}{a^{4}} + \frac{4 ~ a^{3} - 4 ~ b^{2} ~ a - 2 ~ c^{2} ~ a + 2 ~ b^{2} ~ c}{a^{3}} \right)} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) + \left( \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \frac{ - \frac{ - 12 ~ a^{2} + 4 ~ b^{2} + 2 ~ c^{2}}{2 ~ a} - \frac{ - a^{4} + 2 ~ b^{2} ~ a^{2} + c^{2} ~ a^{2} - 2 ~ b^{2} ~ a ~ c}{a^{3}} - \frac{4 ~ a^{3} - 4 ~ b^{2} ~ a - 2 ~ c^{2} ~ a + 2 ~ b^{2} ~ c}{a^{2}}}{3 ~ \left( 4 + \frac{ - 6 ~ a^{2} + 2 ~ b^{2} + c^{2}}{a^{2}} + \frac{ - a^{4} + 2 ~ b^{2} ~ a^{2} + c^{2} ~ a^{2} - 2 ~ b^{2} ~ a ~ c}{a^{4}} + \frac{4 ~ a^{3} - 4 ~ b^{2} ~ a - 2 ~ c^{2} ~ a + 2 ~ b^{2} ~ c}{a^{3}} \right)} - 0.5 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.5 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) + 0.8660254037844386 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.8660254037844386 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) + \left( 0.8660254037844386 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.8660254037844386 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.5 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.5 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= \frac{ - \frac{ - 12 ~ a^{2} + 4 ~ b^{2} + 2 ~ c^{2}}{2 ~ a} - \frac{ - a^{4} + 2 ~ b^{2} ~ a^{2} + c^{2} ~ a^{2} - 2 ~ b^{2} ~ a ~ c}{a^{3}} - \frac{4 ~ a^{3} - 4 ~ b^{2} ~ a - 2 ~ c^{2} ~ a + 2 ~ b^{2} ~ c}{a^{2}}}{3 ~ \left( 4 + \frac{ - 6 ~ a^{2} + 2 ~ b^{2} + c^{2}}{a^{2}} + \frac{ - a^{4} + 2 ~ b^{2} ~ a^{2} + c^{2} ~ a^{2} - 2 ~ b^{2} ~ a ~ c}{a^{4}} + \frac{4 ~ a^{3} - 4 ~ b^{2} ~ a - 2 ~ c^{2} ~ a + 2 ~ b^{2} ~ c}{a^{3}} \right)} - 0.5 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.5 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.8660254037844386 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) + 0.8660254037844386 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) + \left(  - 0.8660254037844386 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) + 0.8660254037844386 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \cos\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.5 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left(  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}},  - \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) - 0.5 ~ \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2} + \left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)^{2}} \right)^{\frac{1}{3}} ~ \sin\left( \frac{\arctan\left( \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} + \frac{8}{27} ~ b^{6} - \frac{5}{9} ~ c^{2} ~ b^{4} + \frac{2}{9} ~ c^{4} ~ b^{2} + \frac{1}{27} ~ c^{6}}{2}}, \sqrt{\frac{\sqrt{\left(  - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6} \right)^{2}} - \frac{8}{27} ~ b^{6} + \frac{5}{9} ~ c^{2} ~ b^{4} - \frac{2}{9} ~ c^{4} ~ b^{2} - \frac{1}{27} ~ c^{6}}{2}} + b^{2} ~ c \right)}{3} \right) \right) ~ \mathit{i}
+\end{aligned}
+\]<hr/><h2 id="Finite-Group-Patterns"><a class="docs-heading-anchor" href="#Finite-Group-Patterns">Finite Group Patterns</a><a id="Finite-Group-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Finite-Group-Patterns" title="Permalink"></a></h2><p>Matrices with group-theoretic structure.</p><h3 id="Circulant-Matrices-(Cyclic-Group-Zₙ)"><a class="docs-heading-anchor" href="#Circulant-Matrices-(Cyclic-Group-Zₙ)">Circulant Matrices (Cyclic Group Zₙ)</a><a id="Circulant-Matrices-(Cyclic-Group-Zₙ)-1"></a><a class="docs-heading-anchor-permalink" href="#Circulant-Matrices-(Cyclic-Group-Zₙ)" title="Permalink"></a></h3><p>Any n×n circulant matrix has eigenvalues via the Discrete Fourier Transform:</p><p class="math-container">\[\lambda_k = \sum_{j=0}^{n-1} c_j \omega^{jk}, \quad \omega = e^{2\pi i/n}\]</p><pre><code class="language-julia hljs">@variables a b c d e
+
+# 5×5 circulant
+C = [a b c d e;
+     e a b c d;
+     d e a b c;
+     c d e a b;
+     b c d e a]</code></pre><pre><code class="language-julia hljs">LaTeX(C)</code></pre>\[
+\left[
+\begin{array}{ccccc}
+a & b & c & d & e \\
+e & a & b & c & d \\
+d & e & a & b & c \\
+c & d & e & a & b \\
+b & c & d & e & a \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues (via DFT of first row):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(C))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= a + b + c + d + e \\[0.3em]
+\lambda_{2} &= a + b ~ \cos\left( \frac{2}{5} ~ \pi \right) + c ~ \cos\left( \frac{4}{5} ~ \pi \right) + d ~ \cos\left( \frac{6}{5} ~ \pi \right) + e ~ \cos\left( \frac{8}{5} ~ \pi \right) + \left( b ~ \sin\left( \frac{2}{5} ~ \pi \right) + c ~ \sin\left( \frac{4}{5} ~ \pi \right) + d ~ \sin\left( \frac{6}{5} ~ \pi \right) + e ~ \sin\left( \frac{8}{5} ~ \pi \right) \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= a + b ~ \cos\left( \frac{4}{5} ~ \pi \right) + c ~ \cos\left( \frac{8}{5} ~ \pi \right) + d ~ \cos\left( \frac{2}{5} ~ \pi \right) + e ~ \cos\left( \frac{6}{5} ~ \pi \right) + \left( b ~ \sin\left( \frac{4}{5} ~ \pi \right) + c ~ \sin\left( \frac{8}{5} ~ \pi \right) + d ~ \sin\left( \frac{2}{5} ~ \pi \right) + e ~ \sin\left( \frac{6}{5} ~ \pi \right) \right) ~ \mathit{i} \\[0.3em]
+\lambda_{4} &= a + b ~ \cos\left( \frac{6}{5} ~ \pi \right) + c ~ \cos\left( \frac{2}{5} ~ \pi \right) + d ~ \cos\left( \frac{8}{5} ~ \pi \right) + e ~ \cos\left( \frac{4}{5} ~ \pi \right) + \left( b ~ \sin\left( \frac{6}{5} ~ \pi \right) + c ~ \sin\left( \frac{2}{5} ~ \pi \right) + d ~ \sin\left( \frac{8}{5} ~ \pi \right) + e ~ \sin\left( \frac{4}{5} ~ \pi \right) \right) ~ \mathit{i} \\[0.3em]
+\lambda_{5} &= a + b ~ \cos\left( \frac{8}{5} ~ \pi \right) + c ~ \cos\left( \frac{6}{5} ~ \pi \right) + d ~ \cos\left( \frac{4}{5} ~ \pi \right) + e ~ \cos\left( \frac{2}{5} ~ \pi \right) + \left( b ~ \sin\left( \frac{8}{5} ~ \pi \right) + c ~ \sin\left( \frac{6}{5} ~ \pi \right) + d ~ \sin\left( \frac{4}{5} ~ \pi \right) + e ~ \sin\left( \frac{2}{5} ~ \pi \right) \right) ~ \mathit{i}
+\end{aligned}
+\]<h3 id="Symmetric-Circulant-(Dihedral-Group-Dₙ)"><a class="docs-heading-anchor" href="#Symmetric-Circulant-(Dihedral-Group-Dₙ)">Symmetric Circulant (Dihedral Group Dₙ)</a><a id="Symmetric-Circulant-(Dihedral-Group-Dₙ)-1"></a><a class="docs-heading-anchor-permalink" href="#Symmetric-Circulant-(Dihedral-Group-Dₙ)" title="Permalink"></a></h3><p>When the first row is palindromic, eigenvalues simplify:</p><pre><code class="language-julia hljs">@variables a b
+
+# Symmetric circulant (first row = [a, b, b])
+S = [a b b;
+     b a b;
+     b b a]</code></pre><pre><code class="language-julia hljs">LaTeX(S)</code></pre>\[
+\left[
+\begin{array}{ccc}
+a & b & b \\
+b & a & b \\
+b & b & a \\
+\end{array}
+\right]
+\]<pre><code class="language-julia hljs">LaTeX(eigvals(S))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= a + 2 ~ b \\[0.3em]
+\lambda_{2} &= a - b \\[0.3em]
+\lambda_{3} &= a - b
+\end{aligned}
+\]<h3 id="Permutation-Matrices-(Symmetric-Group-Sₙ)"><a class="docs-heading-anchor" href="#Permutation-Matrices-(Symmetric-Group-Sₙ)">Permutation Matrices (Symmetric Group Sₙ)</a><a id="Permutation-Matrices-(Symmetric-Group-Sₙ)-1"></a><a class="docs-heading-anchor-permalink" href="#Permutation-Matrices-(Symmetric-Group-Sₙ)" title="Permalink"></a></h3><p>Eigenvalues are roots of unity determined by cycle structure:</p><pre><code class="language-julia hljs"># Cyclic permutation (1→2→3→1)
+P = [0 0 1;
+     1 0 0;
+     0 1 0]</code></pre><pre><code class="language-julia hljs">LaTeX(P)</code></pre>\[
+\left[
+\begin{array}{ccc}
+0 & 0 & 1 \\
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues (cube roots of unity):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(P))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= -0.5-0.8660254037844389\mathit{i} \\[0.3em]
+\lambda_{2} &= -0.5+0.8660254037844389\mathit{i} \\[0.3em]
+\lambda_{3} &= 0.9999999999999998+0.0\mathit{i}
+\end{aligned}
+\]<h3 id="Quaternion-Group-Q"><a class="docs-heading-anchor" href="#Quaternion-Group-Q">Quaternion Group Q₈</a><a id="Quaternion-Group-Q-1"></a><a class="docs-heading-anchor-permalink" href="#Quaternion-Group-Q" title="Permalink"></a></h3><h4 id="Single-Quaternion-Matrix"><a class="docs-heading-anchor" href="#Single-Quaternion-Matrix">Single Quaternion Matrix</a><a id="Single-Quaternion-Matrix-1"></a><a class="docs-heading-anchor-permalink" href="#Single-Quaternion-Matrix" title="Permalink"></a></h4><pre><code class="language-julia hljs">@variables q0 qi qj qk
+
+# 2×2 quaternion representation
+Q = [q0 + qi*im  qj + qk*im;
+    -qj + qk*im  q0 - qi*im]</code></pre><pre><code class="language-julia hljs">LaTeX(Q)</code></pre>\[
+\left[
+\begin{array}{cc}
+\mathtt{q0} + \mathtt{qi} ~ \mathit{i} & \mathtt{qj} + \mathtt{qk} ~ \mathit{i} \\
+ - \mathtt{qj} + \mathtt{qk} ~ \mathit{i} & \mathtt{q0} - \mathtt{qi} ~ \mathit{i} \\
+\end{array}
+\right]
+\]<pre><code class="language-julia hljs">LaTeX(eigvals(Q))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \mathtt{q0} + \sqrt{\mathtt{qi}^{2} + \mathtt{qj}^{2} + \mathtt{qk}^{2}} ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \mathtt{q0} - \sqrt{\mathtt{qi}^{2} + \mathtt{qj}^{2} + \mathtt{qk}^{2}} ~ \mathit{i}
+\end{aligned}
+\]<h4 id="Q-Regular-Representation-(88)"><a class="docs-heading-anchor" href="#Q-Regular-Representation-(88)">Q₈ Regular Representation (8×8)</a><a id="Q-Regular-Representation-(88)-1"></a><a class="docs-heading-anchor-permalink" href="#Q-Regular-Representation-(88)" title="Permalink"></a></h4><p>The 8-dimensional regular representation has 5 distinct eigenvalues via character theory:</p><pre><code class="language-julia hljs">M = Q8_invariant_matrix(1.0, 0.5, 0.3, 0.2, 0.4, 0.1, 0.25, 0.15)
+vals = eigvals(M)</code></pre><p><strong>Eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= 0.49999999999999967-0.3316624790355397\mathit{i} \\[0.3em]
+\lambda_{2} &= 0.49999999999999967+0.3316624790355397\mathit{i} \\[0.3em]
+\lambda_{3} &= 0.4999999999999998-0.33166247903554\mathit{i} \\[0.3em]
+\lambda_{4} &= 0.4999999999999998+0.33166247903554\mathit{i} \\[0.3em]
+\lambda_{5} &= 0.9000000000000004+0.0\mathit{i} \\[0.3em]
+\lambda_{6} &= 1.0999999999999996+0.0\mathit{i} \\[0.3em]
+\lambda_{7} &= 1.1000000000000008+0.0\mathit{i} \\[0.3em]
+\lambda_{8} &= 2.8999999999999995+0.0\mathit{i}
+\end{aligned}
+\]<hr/><h2 id="Transform-Matrices"><a class="docs-heading-anchor" href="#Transform-Matrices">Transform Matrices</a><a id="Transform-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Transform-Matrices" title="Permalink"></a></h2><h3 id="Hadamard-Matrices"><a class="docs-heading-anchor" href="#Hadamard-Matrices">Hadamard Matrices</a><a id="Hadamard-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#Hadamard-Matrices" title="Permalink"></a></h3><p>Sylvester-Hadamard matrices of order 2ⁿ have eigenvalues ±√(2ⁿ):</p><pre><code class="language-julia hljs">H2 = hadamard_matrix(2)  # 4×4</code></pre><pre><code class="language-julia hljs">LaTeX(H2)</code></pre>\[
+\left[
+\begin{array}{cccc}
+1 & 1 & 1 & 1 \\
+1 & -1 & 1 & -1 \\
+1 & 1 & -1 & -1 \\
+1 & -1 & -1 & 1 \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues (exact integers ±2):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(H2))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= -2.0 \\[0.3em]
+\lambda_{2} &= -2.0 \\[0.3em]
+\lambda_{3} &= 2.0 \\[0.3em]
+\lambda_{4} &= 2.0
+\end{aligned}
+\]<p><strong>Larger Hadamard (8×8):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(hadamard_matrix(3)))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= -2.8284271247461907 \\[0.3em]
+\lambda_{2} &= -2.82842712474619 \\[0.3em]
+\lambda_{3} &= -2.82842712474619 \\[0.3em]
+\lambda_{4} &= -2.828427124746188 \\[0.3em]
+\lambda_{5} &= 2.828427124746188 \\[0.3em]
+\lambda_{6} &= 2.82842712474619 \\[0.3em]
+\lambda_{7} &= 2.82842712474619 \\[0.3em]
+\lambda_{8} &= 2.8284271247461907
+\end{aligned}
+\]<h3 id="DFT-(Fourier)-Matrices"><a class="docs-heading-anchor" href="#DFT-(Fourier)-Matrices">DFT (Fourier) Matrices</a><a id="DFT-(Fourier)-Matrices-1"></a><a class="docs-heading-anchor-permalink" href="#DFT-(Fourier)-Matrices" title="Permalink"></a></h3><p>The n×n DFT matrix has eigenvalues in {±√n, ±i√n}:</p><pre><code class="language-julia hljs">F4 = dft_matrix(4)</code></pre><pre><code class="language-julia hljs">LaTeX(F4)</code></pre>\[
+\left[
+\begin{array}{cccc}
+1.0+0.0\mathit{i} & 1.0+0.0\mathit{i} & 1.0+0.0\mathit{i} & 1.0+0.0\mathit{i} \\
+1.0+0.0\mathit{i} & 6.123233995736766e-17+1.0\mathit{i} & -1.0+1.2246467991473532e-16\mathit{i} & -1.8369701987210297e-16-1.0\mathit{i} \\
+1.0+0.0\mathit{i} & -1.0+1.2246467991473532e-16\mathit{i} & 1.0-2.4492935982947064e-16\mathit{i} & -1.0+3.6739403974420594e-16\mathit{i} \\
+1.0+0.0\mathit{i} & -1.8369701987210297e-16-1.0\mathit{i} & -1.0+3.6739403974420594e-16\mathit{i} & 5.51091059616309e-16+1.0\mathit{i} \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(F4))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= -2.0+2.0545454143613497e-16\mathit{i} \\[0.3em]
+\lambda_{2} &= 2.220446049250313e-16+2.0000000000000004\mathit{i} \\[0.3em]
+\lambda_{3} &= 1.9999999999999978-4.0939474033052647e-16\mathit{i} \\[0.3em]
+\lambda_{4} &= 2.0+6.848484714537829e-17\mathit{i}
+\end{aligned}
+\]<hr/><h2 id="Coxeter/Weyl-Groups"><a class="docs-heading-anchor" href="#Coxeter/Weyl-Groups">Coxeter/Weyl Groups</a><a id="Coxeter/Weyl-Groups-1"></a><a class="docs-heading-anchor-permalink" href="#Coxeter/Weyl-Groups" title="Permalink"></a></h2><h3 id="Type-Aₙ-(Cartan-Matrix-of-SU(n1))"><a class="docs-heading-anchor" href="#Type-Aₙ-(Cartan-Matrix-of-SU(n1))">Type Aₙ (Cartan Matrix of SU(n+1))</a><a id="Type-Aₙ-(Cartan-Matrix-of-SU(n1))-1"></a><a class="docs-heading-anchor-permalink" href="#Type-Aₙ-(Cartan-Matrix-of-SU(n1))" title="Permalink"></a></h3><p>Closed-form eigenvalues via root system theory:</p><pre><code class="language-julia hljs">A4 = cartan_matrix_A(4)  # 4×4 Cartan matrix</code></pre><pre><code class="language-julia hljs">LaTeX(A4)</code></pre>\[
+\left[
+\begin{array}{cccc}
+2 & -1 & 0 & 0 \\
+-1 & 2 & -1 & 0 \\
+0 & -1 & 2 & -1 \\
+0 & 0 & -1 & 2 \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues λₖ = 4sin²(πk/(2(n+1))):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(A4))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= 0.3819660112501049 \\[0.3em]
+\lambda_{2} &= 1.3819660112501053 \\[0.3em]
+\lambda_{3} &= 2.618033988749895 \\[0.3em]
+\lambda_{4} &= 3.6180339887498953
+\end{aligned}
+\]<h3 id="Type-G"><a class="docs-heading-anchor" href="#Type-G">Type G₂</a><a id="Type-G-1"></a><a class="docs-heading-anchor-permalink" href="#Type-G" title="Permalink"></a></h3><pre><code class="language-julia hljs">G2 = cartan_matrix_G2()</code></pre><pre><code class="language-julia hljs">LaTeX(G2)</code></pre>\[
+\left[
+\begin{array}{cc}
+2 & -3 \\
+-1 & 2 \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(G2))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= 0.2679491924311226 \\[0.3em]
+\lambda_{2} &= 3.732050807568877
+\end{aligned}
+\]<hr/><h2 id="Graph-Laplacians"><a class="docs-heading-anchor" href="#Graph-Laplacians">Graph Laplacians</a><a id="Graph-Laplacians-1"></a><a class="docs-heading-anchor-permalink" href="#Graph-Laplacians" title="Permalink"></a></h2><h3 id="Path-Graph-Laplacian"><a class="docs-heading-anchor" href="#Path-Graph-Laplacian">Path Graph Laplacian</a><a id="Path-Graph-Laplacian-1"></a><a class="docs-heading-anchor-permalink" href="#Path-Graph-Laplacian" title="Permalink"></a></h3><pre><code class="language-julia hljs">L5 = path_laplacian(5)</code></pre><pre><code class="language-julia hljs">LaTeX(L5)</code></pre>\[
+\left[
+\begin{array}{ccccc}
+1 & -1 & 0 & 0 & 0 \\
+-1 & 2 & -1 & 0 & 0 \\
+0 & -1 & 2 & -1 & 0 \\
+0 & 0 & -1 & 2 & -1 \\
+0 & 0 & 0 & -1 & 1 \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues λₖ = 2 - 2cos(πk/n):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(L5))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= 4.99692479230196e-17 \\[0.3em]
+\lambda_{2} &= 0.3819660112501052 \\[0.3em]
+\lambda_{3} &= 1.3819660112501049 \\[0.3em]
+\lambda_{4} &= 2.6180339887498953 \\[0.3em]
+\lambda_{5} &= 3.6180339887498945
+\end{aligned}
+\]<h3 id="Cycle-Graph-Laplacian"><a class="docs-heading-anchor" href="#Cycle-Graph-Laplacian">Cycle Graph Laplacian</a><a id="Cycle-Graph-Laplacian-1"></a><a class="docs-heading-anchor-permalink" href="#Cycle-Graph-Laplacian" title="Permalink"></a></h3><pre><code class="language-julia hljs">C6 = cycle_laplacian(6)</code></pre><pre><code class="language-julia hljs">LaTeX(C6)</code></pre>\[
+\left[
+\begin{array}{cccccc}
+2 & -1 & 0 & 0 & 0 & -1 \\
+-1 & 2 & -1 & 0 & 0 & 0 \\
+0 & -1 & 2 & -1 & 0 & 0 \\
+0 & 0 & -1 & 2 & -1 & 0 \\
+0 & 0 & 0 & -1 & 2 & -1 \\
+-1 & 0 & 0 & 0 & -1 & 2 \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues:</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(C6))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= 3.800971412344211e-16 \\[0.3em]
+\lambda_{2} &= 0.9999999999999998 \\[0.3em]
+\lambda_{3} &= 0.9999999999999998 \\[0.3em]
+\lambda_{4} &= 3.0 \\[0.3em]
+\lambda_{5} &= 3.0000000000000018 \\[0.3em]
+\lambda_{6} &= 3.999999999999999
+\end{aligned}
+\]<h3 id="Hypercube-Graph-Qₙ"><a class="docs-heading-anchor" href="#Hypercube-Graph-Qₙ">Hypercube Graph Qₙ</a><a id="Hypercube-Graph-Qₙ-1"></a><a class="docs-heading-anchor-permalink" href="#Hypercube-Graph-Qₙ" title="Permalink"></a></h3><p>The n-dimensional hypercube has 2ⁿ vertices with eigenvalues n - 2k:</p><pre><code class="language-julia hljs"># 3-dimensional hypercube (8 vertices)
+Q3 = zeros(Int, 8, 8)
+for i in 0:7, j in 0:7
+    count_ones(xor(i, j)) == 1 &amp;&amp; (Q3[i+1, j+1] = 1)
+end</code></pre><pre><code class="language-julia hljs">LaTeX(Q3)</code></pre>\[
+\left[
+\begin{array}{cccccccc}
+0 & 1 & 1 & 0 & 1 & 0 & 0 & 0 \\
+1 & 0 & 0 & 1 & 0 & 1 & 0 & 0 \\
+1 & 0 & 0 & 1 & 0 & 0 & 1 & 0 \\
+0 & 1 & 1 & 0 & 0 & 0 & 0 & 1 \\
+1 & 0 & 0 & 0 & 0 & 1 & 1 & 0 \\
+0 & 1 & 0 & 0 & 1 & 0 & 0 & 1 \\
+0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1 & 0 & 1 & 1 & 0 \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues {-3, -1, 1, 3} with multiplicities {1, 3, 3, 1}:</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(Q3))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= -3.0 \\[0.3em]
+\lambda_{2} &= -1.0000000000000002 \\[0.3em]
+\lambda_{3} &= -0.9999999999999998 \\[0.3em]
+\lambda_{4} &= -0.9999999999999993 \\[0.3em]
+\lambda_{5} &= 0.9999999999999996 \\[0.3em]
+\lambda_{6} &= 0.9999999999999999 \\[0.3em]
+\lambda_{7} &= 1.0000000000000013 \\[0.3em]
+\lambda_{8} &= 2.9999999999999996
+\end{aligned}
+\]<hr/><h2 id="Lie-Groups"><a class="docs-heading-anchor" href="#Lie-Groups">Lie Groups</a><a id="Lie-Groups-1"></a><a class="docs-heading-anchor-permalink" href="#Lie-Groups" title="Permalink"></a></h2><h3 id="SO(2):-2D-Rotation-Group"><a class="docs-heading-anchor" href="#SO(2):-2D-Rotation-Group">SO(2): 2D Rotation Group</a><a id="SO(2):-2D-Rotation-Group-1"></a><a class="docs-heading-anchor-permalink" href="#SO(2):-2D-Rotation-Group" title="Permalink"></a></h3><pre><code class="language-julia hljs">@variables θ
+R2 = SO2_rotation(θ)</code></pre><pre><code class="language-julia hljs">LaTeX(R2)</code></pre>\[
+\left[
+\begin{array}{cc}
+\cos\left( \theta \right) &  - \sin\left( \theta \right) \\
+\sin\left( \theta \right) & \cos\left( \theta \right) \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues e^{±iθ}:</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(R2))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \cos\left( \theta \right) + \sin\left( \theta \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \cos\left( \theta \right) - \sin\left( \theta \right) ~ \mathit{i}
+\end{aligned}
+\]<h3 id="SO(3):-3D-Rotation-Group"><a class="docs-heading-anchor" href="#SO(3):-3D-Rotation-Group">SO(3): 3D Rotation Group</a><a id="SO(3):-3D-Rotation-Group-1"></a><a class="docs-heading-anchor-permalink" href="#SO(3):-3D-Rotation-Group" title="Permalink"></a></h3><p>Axis-aligned rotations:</p><pre><code class="language-julia hljs">Rx = SO3_Rx(θ)</code></pre><pre><code class="language-julia hljs">LaTeX(Rx)</code></pre>\[
+\left[
+\begin{array}{ccc}
+1 & 0 & 0 \\
+0 & \cos\left( \theta \right) &  - \sin\left( \theta \right) \\
+0 & \sin\left( \theta \right) & \cos\left( \theta \right) \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues {1, e^{±iθ}}:</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(Rx))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= 1 \\[0.3em]
+\lambda_{2} &= \cos\left( \theta \right) + \sin\left( \theta \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= \cos\left( \theta \right) - \sin\left( \theta \right) ~ \mathit{i}
+\end{aligned}
+\]<h3 id="SO(4):-4D-Rotation-Group"><a class="docs-heading-anchor" href="#SO(4):-4D-Rotation-Group">SO(4): 4D Rotation Group</a><a id="SO(4):-4D-Rotation-Group-1"></a><a class="docs-heading-anchor-permalink" href="#SO(4):-4D-Rotation-Group" title="Permalink"></a></h3><p>Double rotation structure:</p><pre><code class="language-julia hljs">@variables θ φ
+
+R4 = [cos(θ) -sin(θ) 0 0;
+      sin(θ)  cos(θ) 0 0;
+      0 0 cos(φ) -sin(φ);
+      0 0 sin(φ)  cos(φ)]</code></pre><pre><code class="language-julia hljs">LaTeX(R4)</code></pre>\[
+\left[
+\begin{array}{cccc}
+\cos\left( \theta \right) &  - \sin\left( \theta \right) & 0 & 0 \\
+\sin\left( \theta \right) & \cos\left( \theta \right) & 0 & 0 \\
+0 & 0 & \cos\left( \varphi \right) &  - \sin\left( \varphi \right) \\
+0 & 0 & \sin\left( \varphi \right) & \cos\left( \varphi \right) \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues {e^{±iθ}, e^{±iφ}}:</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(R4))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \cos\left( \theta \right) + \sin\left( \theta \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \cos\left( \theta \right) - \sin\left( \theta \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= \cos\left( \varphi \right) + \sin\left( \varphi \right) ~ \mathit{i} \\[0.3em]
+\lambda_{4} &= \cos\left( \varphi \right) - \sin\left( \varphi \right) ~ \mathit{i}
+\end{aligned}
+\]<h3 id="SU(2):-Special-Unitary-Group"><a class="docs-heading-anchor" href="#SU(2):-Special-Unitary-Group">SU(2): Special Unitary Group</a><a id="SU(2):-Special-Unitary-Group-1"></a><a class="docs-heading-anchor-permalink" href="#SU(2):-Special-Unitary-Group" title="Permalink"></a></h3><pre><code class="language-julia hljs">Uz = SU2_Uz(θ)</code></pre><pre><code class="language-julia hljs">LaTeX(Uz)</code></pre>\[
+\left[
+\begin{array}{cc}
+\cos\left( \frac{\theta}{2} \right) - \sin\left( \frac{\theta}{2} \right) ~ \mathit{i} & 0 \\
+0 & \cos\left( \frac{\theta}{2} \right) + \sin\left( \frac{\theta}{2} \right) ~ \mathit{i} \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues e^{±iθ/2}:</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(Uz))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \cos\left( \frac{\theta}{2} \right) - \sin\left( \frac{\theta}{2} \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \cos\left( \frac{\theta}{2} \right) + \sin\left( \frac{\theta}{2} \right) ~ \mathit{i}
+\end{aligned}
+\]<hr/><h2 id="Kronecker-Products"><a class="docs-heading-anchor" href="#Kronecker-Products">Kronecker Products</a><a id="Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#Kronecker-Products" title="Permalink"></a></h2><h3 id="General-Kronecker-Products"><a class="docs-heading-anchor" href="#General-Kronecker-Products">General Kronecker Products</a><a id="General-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#General-Kronecker-Products" title="Permalink"></a></h3><p>Eigenvalues of A ⊗ B are products of individual eigenvalues:</p><pre><code class="language-julia hljs">@variables a b c d
+
+A = [a 0; 0 b]
+B = [c 0; 0 d]
+K = kron(A, B)</code></pre><pre><code class="language-julia hljs">LaTeX(K)</code></pre>\[
+\left[
+\begin{array}{cccc}
+a ~ c & 0 & 0 & 0 \\
+0 & a ~ d & 0 & 0 \\
+0 & 0 & b ~ c & 0 \\
+0 & 0 & 0 & b ~ d \\
+\end{array}
+\right]
+\]<pre><code class="language-julia hljs">LaTeX(eigvals(K))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= a ~ c \\[0.3em]
+\lambda_{2} &= a ~ d \\[0.3em]
+\lambda_{3} &= b ~ c \\[0.3em]
+\lambda_{4} &= b ~ d
+\end{aligned}
+\]<h3 id="SO(2)-Kronecker-Products"><a class="docs-heading-anchor" href="#SO(2)-Kronecker-Products">SO(2) Kronecker Products</a><a id="SO(2)-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#SO(2)-Kronecker-Products" title="Permalink"></a></h3><p>Trigonometric simplification gives clean angle-sum/difference forms:</p><pre><code class="language-julia hljs">@variables θ φ
+
+K = kron(SO2_rotation(θ), SO2_rotation(φ))
+vals = eigvals(K)</code></pre><p><strong>Eigenvalues e^{i(±θ±φ)}:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \cos\left(  - \theta - \varphi \right) + \sin\left(  - \theta - \varphi \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \cos\left( \theta - \varphi \right) + \sin\left( \theta - \varphi \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= \cos\left(  - \theta + \varphi \right) + \sin\left(  - \theta + \varphi \right) ~ \mathit{i} \\[0.3em]
+\lambda_{4} &= \cos\left( \theta + \varphi \right) + \sin\left( \theta + \varphi \right) ~ \mathit{i}
+\end{aligned}
+\]<h3 id="SU(2)-Kronecker-Products"><a class="docs-heading-anchor" href="#SU(2)-Kronecker-Products">SU(2) Kronecker Products</a><a id="SU(2)-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#SU(2)-Kronecker-Products" title="Permalink"></a></h3><p>Half-angle formulas for spin-1/2 representations:</p><pre><code class="language-julia hljs">@variables α β
+K = SU2_kron([α, β])
+vals = eigvals(K)</code></pre><p><strong>Eigenvalues with half-angles:</strong></p><pre><code class="language-julia hljs">LaTeX(vals)</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= \cos\left( \frac{\beta}{2} \right) ~ \cos\left( \frac{\alpha}{2} \right) - \sin\left( \frac{\beta}{2} \right) ~ \sin\left( \frac{\alpha}{2} \right) + \left(  - \cos\left( \frac{\beta}{2} \right) ~ \sin\left( \frac{\alpha}{2} \right) - \cos\left( \frac{\alpha}{2} \right) ~ \sin\left( \frac{\beta}{2} \right) \right) ~ \mathit{i} \\[0.3em]
+\lambda_{2} &= \cos\left( \frac{\beta}{2} \right) ~ \cos\left( \frac{\alpha}{2} \right) + \sin\left( \frac{\beta}{2} \right) ~ \sin\left( \frac{\alpha}{2} \right) + \left(  - \cos\left( \frac{\beta}{2} \right) ~ \sin\left( \frac{\alpha}{2} \right) + \cos\left( \frac{\alpha}{2} \right) ~ \sin\left( \frac{\beta}{2} \right) \right) ~ \mathit{i} \\[0.3em]
+\lambda_{3} &= \cos\left( \frac{\beta}{2} \right) ~ \cos\left( \frac{\alpha}{2} \right) + \sin\left( \frac{\beta}{2} \right) ~ \sin\left( \frac{\alpha}{2} \right) + \left( \cos\left( \frac{\beta}{2} \right) ~ \sin\left( \frac{\alpha}{2} \right) - \cos\left( \frac{\alpha}{2} \right) ~ \sin\left( \frac{\beta}{2} \right) \right) ~ \mathit{i} \\[0.3em]
+\lambda_{4} &= \cos\left( \frac{\beta}{2} \right) ~ \cos\left( \frac{\alpha}{2} \right) - \sin\left( \frac{\beta}{2} \right) ~ \sin\left( \frac{\alpha}{2} \right) + \left( \cos\left( \frac{\beta}{2} \right) ~ \sin\left( \frac{\alpha}{2} \right) + \cos\left( \frac{\alpha}{2} \right) ~ \sin\left( \frac{\beta}{2} \right) \right) ~ \mathit{i}
+\end{aligned}
+\]<h3 id="Nested-Kronecker-Products"><a class="docs-heading-anchor" href="#Nested-Kronecker-Products">Nested Kronecker Products</a><a id="Nested-Kronecker-Products-1"></a><a class="docs-heading-anchor-permalink" href="#Nested-Kronecker-Products" title="Permalink"></a></h3><p>Arbitrary depth Kronecker products:</p><pre><code class="language-julia hljs"># 5-fold Kronecker product: 32×32 with 15 parameters
+@variables a1 b1 c1  a2 b2 c2  a3 b3 c3  a4 b4 c4  a5 b5 c5
+
+matrices = [[a1 b1; b1 c1], [a2 b2; b2 c2], [a3 b3; b3 c3],
+            [a4 b4; b4 c4], [a5 b5; b5 c5]]
+K = reduce(kron, matrices)  # 32×32
+eigvals(K)  # 32 symbolic eigenvalues</code></pre><hr/><h2 id="Tridiagonal-Patterns"><a class="docs-heading-anchor" href="#Tridiagonal-Patterns">Tridiagonal Patterns</a><a id="Tridiagonal-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Tridiagonal-Patterns" title="Permalink"></a></h2><h3 id="Symmetric-Toeplitz-Tridiagonal"><a class="docs-heading-anchor" href="#Symmetric-Toeplitz-Tridiagonal">Symmetric Toeplitz Tridiagonal</a><a id="Symmetric-Toeplitz-Tridiagonal-1"></a><a class="docs-heading-anchor-permalink" href="#Symmetric-Toeplitz-Tridiagonal" title="Permalink"></a></h3><p>Constant diagonals with closed-form eigenvalues:</p><pre><code class="language-julia hljs">@variables a b
+
+# Toeplitz tridiagonal [b, a, b]
+T = [a b 0 0;
+     b a b 0;
+     0 b a b;
+     0 0 b a]</code></pre><pre><code class="language-julia hljs">LaTeX(T)</code></pre>\[
+\left[
+\begin{array}{cccc}
+a & b & 0 & 0 \\
+b & a & b & 0 \\
+0 & b & a & b \\
+0 & 0 & b & a \\
+\end{array}
+\right]
+\]<p><strong>Eigenvalues λₖ = a + 2b·cos(kπ/(n+1)):</strong></p><pre><code class="language-julia hljs">LaTeX(eigvals(T))</code></pre><p><strong>Eigenvalues:</strong></p>
+\[
+\begin{aligned}
+\lambda_{1} &= a + 1.618 ~ b \\[0.3em]
+\lambda_{2} &= a + 0.61803 ~ b \\[0.3em]
+\lambda_{3} &= a - 0.61803 ~ b \\[0.3em]
+\lambda_{4} &= a - 1.618 ~ b
+\end{aligned}
+\]<hr/><h2 id="Pattern-Detection-Priority"><a class="docs-heading-anchor" href="#Pattern-Detection-Priority">Pattern Detection Priority</a><a id="Pattern-Detection-Priority-1"></a><a class="docs-heading-anchor-permalink" href="#Pattern-Detection-Priority" title="Permalink"></a></h2><p>When multiple patterns apply, the package uses this priority:</p><ol><li><strong>Diagonal</strong> - Trivial eigenvalues</li><li><strong>Block-diagonal</strong> - Recursive decomposition</li><li><strong>Lie groups</strong> - SO(2), SO(3), SO(4), SU(2), SU(3), Sp(2), Sp(4)</li><li><strong>Kronecker products</strong> - Detect and factor</li><li><strong>Circulant</strong> - DFT formula</li><li><strong>Hadamard/DFT</strong> - Transform eigenvalues</li><li><strong>Tridiagonal</strong> - Chebyshev formulas</li><li><strong>Permutation</strong> - Cycle decomposition</li><li><strong>Persymmetric</strong> - Half-size reduction</li><li><strong>General</strong> - Cardano/Ferrari formulas (up to 4×4)</li></ol><h2 id="Adding-Custom-Patterns"><a class="docs-heading-anchor" href="#Adding-Custom-Patterns">Adding Custom Patterns</a><a id="Adding-Custom-Patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-Custom-Patterns" title="Permalink"></a></h2><p>See <a href="../mathematical_background/">Mathematical Background</a> for extending the pattern library.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../user_guide/">« User Guide</a><a class="docs-footer-nextpage" href="../mathematical_background/">Mathematical Background »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Tuesday 6 January 2026 14:00">Tuesday 6 January 2026</span>. Using Julia version 1.12.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
