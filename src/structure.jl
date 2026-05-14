@@ -272,8 +272,9 @@ Check if a matrix is persymmetric: Q[i,j] == Q[n+1-j, n+1-i]
 """
 function _is_persymmetric(mat)
     n = size(mat, 1)
+    simp_mat = Symbolics.simplify.(mat)
     for i in 1:n, j in 1:n
-        if !isequal(Symbolics.simplify(mat[i, j] - mat[n+1-j, n+1-i]), 0)
+        if !isequal(Symbolics.simplify(simp_mat[i, j] - simp_mat[n+1-j, n+1-i]), 0)
             return false
         end
     end
@@ -386,7 +387,7 @@ end
 Count distinct symbolic variables appearing in matrix entries.
 """
 function _count_symbolic_vars(A)
-    vars = Set{Any}()
+    vars = Set{Num}()
     for elem in A
         if elem isa Num
             try
@@ -394,7 +395,12 @@ function _count_symbolic_vars(A)
                 for s in syms
                     push!(vars, s)
                 end
-            catch
+            catch e
+                if e isa Union{MethodError, ErrorException}
+                    # Expression is not fully symbolic, no variables to count
+                else
+                    rethrow()
+                end
             end
         end
     end
@@ -468,6 +474,8 @@ Compute the (row, col) minor determinant of matrix M.
 """
 function _minor_det(M, row, col)
     n = size(M, 1)
+    1 <= row <= n || throw(BoundsError(M, (row,)))
+    1 <= col <= n || throw(BoundsError(M, (:, col)))
     if n == 1
         return one(eltype(M))
     elseif n == 2

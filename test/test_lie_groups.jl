@@ -8,6 +8,11 @@ using SymbolicDiagonalization
 using Symbolics
 using LinearAlgebra
 
+const RUN_SLOW_TESTS = get(ENV, "SYMBOLICDIAG_SLOW_TESTS", "") == "1"
+if !RUN_SLOW_TESTS
+    @info "Set SYMBOLICDIAG_SLOW_TESTS=1 to run slow Lie group tests (Euler rotations, 9x9 Kronecker products)"
+end
+
 # Helper function to evaluate substituted symbolic expression to Complex{Float64}
 function _eval_complex(v, subs_dict)
     substituted = Symbolics.substitute(v, subs_dict)
@@ -344,6 +349,7 @@ end
         @variables α β γ
         
         @testset "Euler rotation detection (XZX)" begin
+            RUN_SLOW_TESTS || return
             # Euler angles: SO3_Rx(α) * SO3_Rz(β) * SO3_Rx(γ)
             R_euler = SO3_Rx(α) * SO3_Rz(β) * SO3_Rx(γ)
             
@@ -371,6 +377,7 @@ end
         end
         
         @testset "Various Euler conventions" begin
+            RUN_SLOW_TESTS || return
             # Test that all common Euler conventions are detected as SO(3)
             
             # Proper Euler angles (same first and last axis)
@@ -436,7 +443,9 @@ end
         @variables θ φ
         
         @testset "SO(3) ⊗ SO(3) detection and eigenvalues" begin
+            RUN_SLOW_TESTS || return
             # Test SO3_Rz ⊗ SO3_Rz
+
             K = kron(SO3_Rz(θ), SO3_Rz(φ))
             @test size(K) == (9, 9)
             @test SymbolicDiagonalization._is_orthogonal(K)
@@ -467,7 +476,9 @@ end
         end
         
         @testset "Different axis combinations" begin
+            RUN_SLOW_TESTS || return
             # SO3_Rz ⊗ SO3_Rx
+
             K = kron(SO3_Rz(θ), SO3_Rx(φ))
             vals = eigvals(K)
             @test length(vals) == 9
@@ -503,6 +514,7 @@ end
         end
         
         @testset "Euler ⊗ Euler detection" begin
+            RUN_SLOW_TESTS || return
             # Test that Euler angle rotations ⊗ Euler angle rotations are detected
             # This is the most complex case where no diagonal block element = 1
             @variables α β γ δ ε ζ

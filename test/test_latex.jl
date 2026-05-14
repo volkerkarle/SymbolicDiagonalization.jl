@@ -114,9 +114,8 @@ end
 end
 
 @testset "LaTeX Internal Functions" begin
-    # Test _ensure_latexify function
-    # This tests the lazy loading mechanism
-    result = SymbolicDiagonalization._ensure_latexify()
+    # Test _has_latexify function
+    result = SymbolicDiagonalization._has_latexify()
     @test result isa Bool
     
     # Test _to_latex function

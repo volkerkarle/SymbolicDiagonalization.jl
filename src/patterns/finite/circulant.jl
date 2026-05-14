@@ -261,7 +261,7 @@ function _circulant_eigenvalues(mat)
     has_symbolic = any(x -> x isa Num, first_row)
     
     # Compute eigenvalues using DFT formula
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     for j in 0:(n-1)
         # λⱼ = Σₖ cₖ ω^(jk)
@@ -387,7 +387,7 @@ function _block_circulant_eigenvalues(mat, n_blocks, block_size, blocks; var=not
     # Check if the matrix is fully numeric
     is_numeric = _is_numeric_matrix(mat)
     
-    all_eigenvalues = Vector{Any}()
+    all_eigenvalues = Vector{Number}()
     
     for j in 0:(n-1)
         # Compute Dⱼ = Σₖ ωʲᵏ Aₖ
@@ -511,7 +511,7 @@ where:
 This is the 2D DFT of the "generating matrix" c[p,q].
 """
 function _bccb_eigenvalues(n, m, first_rows)
-    eigenvalues = Vector{Any}(undef, n * m)
+    eigenvalues = Vector{Number}(undef, n * m)
     idx = 1
     
     for j in 0:(n-1)
@@ -574,7 +574,7 @@ function _dft_column(n::Int, k::Int; normalized::Bool=false)
     
     # Check if any symbolic entries would benefit from exact roots
     # For now, always use exact roots for cleaner output
-    vec = Vector{Any}(undef, n)
+    vec = Vector{Number}(undef, n)
     
     for j in 0:(n-1)
         # Entry j is ω^(jk)

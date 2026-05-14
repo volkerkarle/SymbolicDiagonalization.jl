@@ -127,7 +127,7 @@ Vector of eigenvalues (may include complex values for cycles of length > 2).
 function _compute_permutation_eigenvalues(A)
     cycles = _permutation_to_cycles(A)
     n = size(A, 1)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     idx = 1
     for cycle_length in cycles

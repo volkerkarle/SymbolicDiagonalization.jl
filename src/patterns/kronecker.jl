@@ -611,7 +611,7 @@ function _kronecker_eigenvalues(A, B, m, n; var=nothing, timeout=nothing, max_te
     end
     
     # Compute all products λᵢ * μⱼ
-    eigenvalues = Any[]
+    eigenvalues = Number[]
     for λ in λ_A, μ in λ_B
         push!(eigenvalues, λ * μ)
     end

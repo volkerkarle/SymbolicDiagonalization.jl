@@ -45,32 +45,16 @@ struct LaTeX{T}
     expr::T
 end
 
-# Flag to track if Latexify is available
-const _latexify_loaded = Ref(false)
-const _latexify_func = Ref{Any}(nothing)
-
 """
-    _ensure_latexify()
+    _has_latexify()
 
-Attempt to load Latexify.jl if not already loaded.
-Returns true if successful, false otherwise.
+Check if Latexify.jl is loaded (as a weak dependency).
+Returns true if Latexify is available, false otherwise.
 """
-function _ensure_latexify()
-    if _latexify_loaded[]
-        return true
-    end
-    
-    try
-        # Try to load Latexify
-        @eval Main begin
-            using Latexify
-        end
-        _latexify_func[] = Main.Latexify.latexify
-        _latexify_loaded[] = true
-        return true
-    catch e
-        return false
-    end
+function _has_latexify()
+    return isdefined(Base, :Latexify) ||
+           isdefined(Main, :Latexify) ||
+           isdefined(@__MODULE__, :Latexify)
 end
 
 """
@@ -80,9 +64,9 @@ Convert an expression to LaTeX string using Latexify.
 Falls back to string representation if Latexify is not available.
 """
 function _to_latex(expr; env=:raw)
-    if _ensure_latexify()
+    if _has_latexify()
         try
-            return string(_latexify_func[](expr, env=env))
+            return string(Latexify.latexify(expr, env=env))
         catch
             return string(expr)
         end
@@ -93,7 +77,7 @@ end
 
 # HTML display for LaTeX wrapper (used by notebooks, Documenter, etc.)
 function Base.show(io::IO, ::MIME"text/html", r::LaTeX)
-    if !_ensure_latexify()
+    if !_has_latexify()
         # Fallback: display as code block
         print(io, "<pre>", r.expr, "</pre>")
         print(io, "<p><em>Note: Install Latexify.jl for LaTeX rendering</em></p>")
@@ -139,7 +123,7 @@ end
 
 # LaTeX MIME for environments that support it directly
 function Base.show(io::IO, ::MIME"text/latex", r::LaTeX)
-    if !_ensure_latexify()
+    if !_has_latexify()
         print(io, string(r.expr))
         return
     end

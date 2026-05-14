@@ -79,7 +79,7 @@ The eigenvalues are all real (symmetric matrix).
 """
 function _symmetric_circulant_eigenvalues(first_row)
     n = length(first_row)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     for k in 0:(n-1)
         # Start with c₀
@@ -152,7 +152,7 @@ Eigenvalues: λₖ = 2·cos(2πk/n) for k = 0, 1, ..., n-1
 For the pentagon (n=5): {2, φ-1, φ-1, -φ, -φ} where φ = (1+√5)/2
 """
 function _polygon_eigenvalues(n)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     for k in 0:(n-1)
         θ = 2 * π * k / n
         eigenvalues[k + 1] = 2 * cos(θ)

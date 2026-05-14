@@ -294,6 +294,52 @@ eigvals(K)  # 32 symbolic eigenvalues
 
 ---
 
+## Hadamard and DFT Patterns
+
+### Sylvester-Hadamard Matrices
+
+Sylvester-Hadamard matrices Hₙ (size 2ⁿ × 2ⁿ) are constructed recursively via Kronecker products: Hₙ = H₁ ⊗ H_{n-1}, where H₁ = [1 1; 1 -1].
+
+```@example patterns
+H2 = hadamard_matrix(2)  # 4×4 Sylvester-Hadamard
+nothing # hide
+```
+
+```@example patterns
+LaTeX(H2)
+```
+
+**Eigenvalues ±2^(n/2) (each with multiplicity 2^(n-1)):**
+
+```@example patterns
+LaTeX(eigvals(H2))
+```
+
+**Eigenvectors** are constructed via Kronecker products of the 2×2 H₁ eigenbasis. The closed-form eigenvectors involve nested square roots (related to the silver ratio) and are derived from the recursive structure.
+
+### DFT Matrices
+
+The Discrete Fourier Transform matrix Fₙ has closed-form eigenvalues (4th roots of unity scaled by √n):
+
+```@example patterns
+F4 = dft_matrix(4)  # Unnormalized 4×4 DFT
+nothing # hide
+```
+
+```@example patterns
+LaTeX(F4)
+```
+
+**Eigenvalues {√n, -√n, i√n, -i√n}:**
+
+```@example patterns
+LaTeX(eigvals(F4))
+```
+
+For both Hadamard and DFT matrices, eigenvector computation falls back to generic nullspace when the matrix size exceeds 2×2. The Hadamard case has specialized eigenvectors for n = 1 (2×2) via `_hadamard_eigenpairs`.
+
+---
+
 ## Tridiagonal Patterns
 
 ### Symmetric Toeplitz Tridiagonal
@@ -331,10 +377,11 @@ When multiple patterns apply, the package uses this priority:
 2. **Block-diagonal** - Recursive decomposition
 3. **Lie groups** - SO(2), SO(3), SO(4), SU(2), SU(3)
 4. **Kronecker products** - Detect and factor
-5. **Circulant** - DFT formula
-6. **Tridiagonal** - Chebyshev formulas
-7. **Persymmetric** - Half-size reduction
-8. **General** - Cardano/Ferrari formulas (up to 4×4)
+5. **Hadamard/DFT** - Closed-form eigenvalues ±2^(n/2), 4th roots of unity
+6. **Circulant** - DFT formula
+7. **Tridiagonal** - Chebyshev formulas
+8. **Persymmetric** - Half-size reduction
+9. **General** - Cardano/Ferrari formulas (up to 4×4)
 
 ## Adding Custom Patterns
 

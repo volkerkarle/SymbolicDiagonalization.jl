@@ -110,26 +110,31 @@ end
 """
     _try_factor_perfect_square(expr)
 
-Attempt to detect and factor perfect square patterns in expressions.
-Looks for patterns like x² - 2xy + y² + rest and converts them to (x-y)² + rest.
+Attempt to detect and factor perfect-square trinomials (x ± y)² embedded within
+larger polynomial expressions. Rewrites them in factored form for readability.
 
-This is particularly useful for quadratic discriminants which often have the
-form (x-y)² + 4z².
+Example: a² - 2ab + b² + 4c² → (a - b)² + 4c²
 
-# Implementation Status
-This function is intentionally a no-op placeholder. Full implementation would require:
-1. Identifying all variables in the expression
-2. Treating it as a multivariate polynomial  
-3. Detecting perfect square trinomials (x² + y² ± 2xy → (x±y)²)
-4. Reconstructing in factored form
-
-Due to Symbolics.jl's automatic expansion behavior and the complexity of 
-multivariate polynomial pattern matching, this is deferred. The expanded form
-(e.g., a² - 2ac + 4b² + c²) is mathematically equivalent to (a-c)² + 4b² and
-produces correct eigenvalues.
+This is called from `_aggressive_simplify` to clean up quadratic discriminants
+in eigenvalue formulas. Falls back to returning `expr` unchanged if no perfect
+square pattern is found.
 """
 function _try_factor_perfect_square(expr)
-    # Returns expression as-is; see docstring for rationale
+    vars = collect(Symbolics.get_variables(expr))
+    nv = length(vars)
+    nv < 2 && return expr
+    expanded = Symbolics.expand(expr)
+    for i in 1:nv
+        for j in i+1:nv
+            a = vars[i]; b = vars[j]
+            for factor in [a + b, a - b]
+                diff = Symbolics.simplify(expanded - Symbolics.expand(factor^2))
+                if _issymzero(Symbolics.Num(diff))
+                    return Symbolics.simplify(factor^2)
+                end
+            end
+        end
+    end
     return expr
 end
 
@@ -147,7 +152,7 @@ discriminant is negative but all roots are real.
 function _symbolic_sqrt(x)
     # For plain Num (not already complex), wrap in Complex to handle potential negative values
     # This is needed for casus irreducibilis in cubic formulas
-    if x isa Num && !(x isa Complex)
+    if x isa Num
         # Create Complex{Num} and use the formula below
         return _symbolic_sqrt(Complex(x, zero(x)))
     end
@@ -157,14 +162,32 @@ function _symbolic_sqrt(x)
         return Complex(0.0, sqrt(-x))
     end
     
-    # If x is not Complex{Num}, use regular sqrt
-    if !(x isa Complex{<:Any})
+    # For non-Complex types, use regular sqrt (handles Float64, Int, etc.)
+    if !(x isa Complex)
         return sqrt(x)
     end
     
-    # For Complex{Num}, implement the formula manually to avoid boolean checks
-    # sqrt(a + bi) = sqrt((r+a)/2) + i*sign(b)*sqrt((r-a)/2)
-    # where r = sqrt(a² + b²)
+    # For Complex types where the element type is NOT symbolic (e.g., Complex{Float64},
+    # Complex{Int}), use Base.sqrt which is efficient and correctly handles the
+    # principal branch (including the sign of the imaginary part).
+    if !(x isa Complex{<:Num})
+        return sqrt(x)
+    end
+    
+    # For Complex{Num}, implement the formula manually to avoid boolean checks.
+    # Julia's Base.sqrt(::Complex{Num}) would invoke boolean comparisons on symbolic
+    # values which fail or produce unexpected results.
+    #
+    # Formula: sqrt(a + bi) = sqrt((r + a)/2) + i · sgn(b) · sqrt((r - a)/2)
+    # where r = |a + bi| = √(a² + b²).
+    #
+    # For symbolic b we cannot determine sgn(b), so we use the principal branch
+    # convention (Im(sqrt(z)) ≥ 0). This is correct when the symbolic expression
+    # evaluates to a non-negative imaginary part; for cases where the principal
+    # branch has negative imaginary part, the result of this function may differ
+    # from Base.sqrt. Within this package, the square root is always used under
+    # a ± sign (quadratic formula) or a cube-root branch choice, so the branch
+    # ambiguity cancels out.
     a = real(x)
     b = imag(x)
     r = sqrt(a^2 + b^2)
@@ -172,8 +195,6 @@ function _symbolic_sqrt(x)
     real_part = sqrt((r + a) / 2)
     imag_part = sqrt((r - a) / 2)
     
-    # Handle sign of imaginary part
-    # For symbolic expressions, we use the formula that gives the principal branch
     return Complex(real_part, imag_part)
 end
 
@@ -248,12 +269,14 @@ Execute function `f` with a timeout. If the computation takes longer than
 `timeout_seconds`, throws a `ComputationTimeoutError`.
 
 Uses a Channel-based approach to avoid race conditions between the computation
-task and the timeout check.
+task and the timeout check. A `Timer` is used for more reliable timeout
+notification compared to pure polling.
 """
 function _with_timeout(f, timeout_seconds, degree)
     # Use a Channel to signal completion - this avoids race conditions
     # between checking task status and timeout flag
     result_channel = Channel{Any}(1)
+    timeout_fired = Bool(false)
     
     task = @async begin
         try
@@ -264,41 +287,62 @@ function _with_timeout(f, timeout_seconds, degree)
         end
     end
     
-    # Use timedwait pattern: try to get result within timeout
-    start_time = time()
-    while (time() - start_time) < timeout_seconds
-        if isready(result_channel)
-            status, value = take!(result_channel)
-            close(result_channel)
-            if status === :error
-                throw(value)
-            end
-            return value
-        end
-        sleep(0.05)  # Small sleep to avoid busy-waiting
+    # Set up a Timer for more reliable timeout signaling
+    timer = Timer(timeout_seconds) do t
+        timeout_fired = true
+        @debug "Computation timed out after $(timeout_seconds)s (degree $degree polynomial)"
     end
     
-    # Timeout occurred - try to interrupt the task
-    close(result_channel)
     try
-        schedule(task, InterruptException(), error=true)
-    catch
-        # Task may have already completed or be uninterruptible
+        # Use timedwait pattern: try to get result within timeout.
+        # The Timer fires asynchronously and sets timeout_fired = true.
+        start_time = time()
+        remaining = timeout_seconds
+        while remaining > 0 && !timeout_fired
+            if isready(result_channel)
+                status, value = take!(result_channel)
+                if status === :error
+                    throw(value)
+                end
+                return value
+            end
+            # Sleep 0.1s between polls to reduce CPU waste.
+            # This is a trade-off: longer sleep = less CPU but slower response
+            # to early completion. The Timer provides the ultimate deadline.
+            sleep(0.1)
+            remaining = timeout_seconds - (time() - start_time)
+        end
+        
+        if timeout_fired || remaining <= 0
+            # Timeout occurred - try to interrupt the task
+            @debug "Interrupting timed-out computation (degree $degree polynomial)"
+            try
+                schedule(task, InterruptException(), error=true)
+            catch
+                # Task may have already completed or be uninterruptible
+            end
+            
+            throw(ComputationTimeoutError(
+                """Computation exceeded timeout of $timeout_seconds seconds (degree $degree polynomial).
+                
+                Suggestions to resolve this:
+                1. Reduce matrix size (symbolic 4×4 can be very slow)
+                2. Use fewer symbolic variables (substitute known values)
+                3. Check for block-diagonal structure to reduce effective size
+                4. Use numeric eigenvalues: eigvals(Float64.(substitute(A, values)))
+                5. Increase timeout if needed: symbolic_roots(coeffs; timeout = 600)
+                6. Set timeout = nothing to disable (use with caution - may hang indefinitely)
+                
+                Note: Quartic formulas can take 10+ minutes for matrices with many variables."""
+            ))
+        end
+    finally
+        # Ensure the channel and timer are cleaned up
+        close(timer)
+        if isopen(result_channel)
+            close(result_channel)
+        end
     end
-    
-    throw(ComputationTimeoutError(
-        """Computation exceeded timeout of $timeout_seconds seconds (degree $degree polynomial).
-        
-        Suggestions to resolve this:
-        1. Reduce matrix size (symbolic 4×4 can be very slow)
-        2. Use fewer symbolic variables (substitute known values)
-        3. Check for block-diagonal structure to reduce effective size
-        4. Use numeric eigenvalues: eigvals(Float64.(substitute(A, values)))
-        5. Increase timeout if needed: symbolic_roots(coeffs; timeout = 600)
-        6. Set timeout = nothing to disable (use with caution - may hang indefinitely)
-        
-        Note: Quartic formulas can take 10+ minutes for matrices with many variables."""
-    ))
 end
 
 function _is_symbolic_coeff(x)

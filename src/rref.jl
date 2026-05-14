@@ -19,7 +19,19 @@ function _issymzero(x)
             sx = Symbolics.simplify(x)
             v = Symbolics.iszero(sx)
             return v === true
-        catch
+        catch e
+            e isa MethodError || rethrow()
+        end
+    end
+    
+    # Fast path 1b: Raw symbolic types (not Num, not plain Number)
+    if !(x isa Number)
+        try
+            sx = Symbolics.simplify(x)
+            v = Symbolics.iszero(sx)
+            return v === true
+        catch e
+            e isa MethodError || rethrow()
         end
     end
     
@@ -32,7 +44,8 @@ function _issymzero(x)
         if v isa Bool
             return v
         end
-    catch
+    catch e
+        e isa MethodError || rethrow()
     end
     
     # Expensive path: simplify then check (only if needed)
@@ -40,14 +53,16 @@ function _issymzero(x)
         sx = Symbolics.simplify(x)
         v = Symbolics.iszero(sx)
         return v === true
-    catch
+    catch e
+        e isa MethodError || rethrow()
     end
     
     # Last resort: check without simplification
     try
         v = Symbolics.iszero(x)
         return v === true
-    catch
+    catch e
+        e isa MethodError || rethrow()
     end
     
     # Fall back to "not proven zero" to keep elimination moving.

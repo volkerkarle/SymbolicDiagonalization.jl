@@ -414,7 +414,7 @@ function _SO2_kron_eigenvalues_from_pairs(pairs)
     k = length(pairs)
     
     # Try to extract angles directly from the pairs
-    angles = Any[]
+    angles = Num[]
     for (c, s) in pairs
         θ = _try_extract_angle_from_cos_sin(c, s)
         if isnothing(θ)

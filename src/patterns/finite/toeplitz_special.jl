@@ -130,7 +130,7 @@ function _anticirculant_eigenvalues(c::AbstractVector)
     # where the phase depends on the relationship between anti-circ and circ
     
     ω = exp(2π * im / n)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     for k in 0:n-1
         # For anti-circulant, use half-integer frequencies
@@ -238,7 +238,7 @@ for k = 1, 2, ..., n.
 function _kms_eigenvalues(ρ, n::Int)
     n >= 1 || error("Size must be positive")
     
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     # Handle special cases
     if _issymzero(ρ)
@@ -305,7 +305,7 @@ Returns expressions involving ρ and trigonometric functions.
 function _kms_eigenvalues_symbolic(ρ, n::Int)
     n >= 1 || error("Size must be positive")
     
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     for k in 1:n
         θ = k * π / (n + 1)

@@ -6,7 +6,6 @@
 # Helper function to convert symbolic Num to Float64
 function num_to_float64(x)
     if x isa Symbolics.Num
-        # Use toexpr and eval to evaluate symbolic expressions like sqrt(3)
         return Float64(eval(Symbolics.toexpr(x)))
     else
         return Float64(x)

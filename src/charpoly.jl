@@ -25,8 +25,13 @@ function characteristic_polynomial(A; var = nothing)
     # For Hermitian matrices, the characteristic polynomial is always real.
     # For general complex matrices, the imaginary part would also need handling,
     # but eigenvalues of non-Hermitian complex matrices are outside our scope.
+    #
+    # Only drop the imaginary part if it is symbolically zero — otherwise the
+    # polynomial is genuinely complex and should not be truncated.
     if poly isa Complex && (real(poly) isa Num || imag(poly) isa Num)
-        poly = real(poly)
+        if _issymzero(imag(poly))
+            poly = real(poly)
+        end
     end
     
     # Extract coefficients via derivatives instead of polynomial division to

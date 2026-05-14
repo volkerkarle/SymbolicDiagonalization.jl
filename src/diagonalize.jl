@@ -80,8 +80,7 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
     # These produce cleaner eigenvalues than block decomposition for diagonal cases
     # =========================================================================
     
-    # Note: SU(3) Kronecker detection was removed - diagonal SU(3) Kronecker products
-    # have trivial eigenvectors (standard basis), providing no computational value.
+    # SU(3) Kronecker detection omitted — not computationally valuable
     
     # Check for Kronecker product of SU(2) matrices (SU(2)^⊗k)
     # For 4×4, 8×8, etc. matrices that are products of spin-1/2 rotations
@@ -120,8 +119,8 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
             
             if all_solvable
                 # Solve each block recursively
-                all_vals = Any[]
-                all_polys = Any[]
+                all_vals = Number[]
+                all_polys = Number[]
                 for (start, stop) in multiple_blocks
                     block = mat[start:stop, start:stop]
                     vals_block, poly_block, λ = symbolic_eigenvalues(block; var = λ, structure = struct_hint, expand = expand, complexity_threshold = nothing, timeout = timeout, max_terms = max_terms)
@@ -138,7 +137,7 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
     # LIE GROUP AND ALGEBRA STRUCTURE
     # =========================================================================
 
-    # Check for Lie group structure (SO(n), SU(n), Sp(2n), etc.)
+    # Check for Lie group/algebra structure (SO(n), SU(n), Sp(2n), spin-j of so(3)/su(2), etc.)
     # These have exact closed-form eigenvalue formulas.
     # Only for symbolic matrices - numeric matrices are handled efficiently by LinearAlgebra
     if eltype(mat) <: Num || eltype(mat) <: Complex{Num}
@@ -146,12 +145,7 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         if !isnothing(lie_vals)
             return _build_eigenvalue_result(lie_vals, λ, expand)
         end
-    end
-    
-    # Check for Lie algebra representations (spin-j of so(3)/su(2), etc.)
-    # These are elements of Lie algebra representations with constrained eigenvalue spectra.
-    # Only for symbolic matrices.
-    if eltype(mat) <: Num || eltype(mat) <: Complex{Num}
+        
         algebra_vals = _lie_algebra_eigenvalues(mat)
         if !isnothing(algebra_vals)
             return _build_eigenvalue_result(algebra_vals, λ, expand)
@@ -378,8 +372,8 @@ function symbolic_eigenvalues(A; var = nothing, structure = :auto, expand = true
         
         if all_solvable
             # Solve each block recursively
-            all_vals = Any[]
-            all_polys = Any[]
+            all_vals = Number[]
+            all_polys = Number[]
             for (start, stop) in multiple_blocks
                 block = mat[start:stop, start:stop]
                 vals_block, poly_block, λ = symbolic_eigenvalues(block; var = λ, structure = struct_hint, expand = expand, complexity_threshold = nothing, timeout = timeout, max_terms = max_terms)
@@ -514,17 +508,13 @@ function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure
         return circ_pairs, poly, λ
     end
     
-    # Note: Hadamard matrices have complex eigenvectors involving sin/cos of π/2^k
-    # For now, we use the eigenvalue formula but let eigenvectors fall back to
-    # generic nullspace computation. This is an area for future improvement.
-    
     split = _block_split(mat)
     if !isnothing(split)
         left = mat[1:split, 1:split]
         right = mat[split+1:end, split+1:end]
         pairs_left, poly_left, λ = symbolic_eigenpairs(left; var = λ, compute_vectors = compute_vectors, structure = struct_hint, expand = expand, complexity_threshold = complexity_threshold, timeout = timeout, max_terms = max_terms)
         pairs_right, poly_right, _ = symbolic_eigenpairs(right; var = λ, compute_vectors = compute_vectors, structure = struct_hint, expand = expand, complexity_threshold = complexity_threshold, timeout = timeout, max_terms = max_terms)
-        pairs = Vector{Tuple{Any, Vector}}()
+    pairs = Vector{Tuple{Any, Vector{Any}}}()
         for (val, vecs) in pairs_left
             # Use first element type or default to eltype of mat for zeros
             T = isempty(vecs) || isempty(first(vecs)) ? eltype(mat) : typeof(first(first(vecs)))
@@ -532,7 +522,7 @@ function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure
             if T == Any
                 T = eltype(mat) == Any ? Float64 : eltype(mat)
             end
-            padded = compute_vectors ? [vcat(vec, zeros(T, n - split)) for vec in vecs] : Vector{Any}()
+            padded = compute_vectors ? [vcat(vec, zeros(T, n - split)) for vec in vecs] : Vector{Union{Num, Complex{Num}}}[]
             push!(pairs, (val, padded))
         end
         for (val, vecs) in pairs_right
@@ -540,7 +530,7 @@ function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure
             if T == Any
                 T = eltype(mat) == Any ? Float64 : eltype(mat)
             end
-            padded = compute_vectors ? [vcat(zeros(T, split), vec) for vec in vecs] : Vector{Any}()
+            padded = compute_vectors ? [vcat(zeros(T, split), vec) for vec in vecs] : Vector{Union{Num, Complex{Num}}}[]
             push!(pairs, (val, padded))
         end
         poly = expand ? Symbolics.expand(poly_left * poly_right) : poly_left * poly_right
@@ -552,23 +542,46 @@ function symbolic_eigenpairs(A; var = nothing, compute_vectors = true, structure
         pairs = [(v, Vector{Any}()) for v in vals]
         return pairs, poly, λ
     end
+    
+    # Specialized Hadamard eigenpairs using Kronecker product structure
+    if !isnothing(_is_hadamard_sylvester(mat))
+        n_float = log2(size(mat, 1))
+        n_int = Integer(round(n_float))
+        if abs(n_float - n_int) < 1e-10
+            pairs = _hadamard_eigenpairs(n_int)
+            return pairs, poly, λ
+        end
+    end
 
     I_n = Matrix(I, n, n)
-    pairs = Vector{Tuple{Any, Vector}}()
+    pairs = Vector{Tuple{Any, Vector{Any}}}()
     
-    # Note: Eigenvector computation for each eigenvalue is independent and could
-    # theoretically be parallelized. However, Symbolics.jl uses task-local storage
-    # for hashconsing which is not thread-safe. Attempting to use Threads.@threads
-    # here causes crashes due to concurrent access to the hashcons cache.
+    # Note: Eigenvector computation for each eigenvalue is independent and is
+    # parallelized via Distributed.pmap when Distributed is loaded and workers
+    # are available. Distributed uses separate processes (not threads), avoiding
+    # SymbolicUtils hashcons cache data races that occur with Threads.@threads.
     # See: https://github.com/JuliaSymbolics/SymbolicUtils.jl/issues/
-    for v in vals
-        shifted = Symbolics.simplify.(mat .- v .* I_n)
-        # Try adjugate-based eigenvectors for small matrices to avoid brittle pivots.
-        vecs = _adjugate_vectors(shifted)
-        if isempty(vecs)
-            vecs = _nullspace(shifted)
+    if isdefined(Base, :Distributed) && Distributed.nworkers() > 0
+        # Parallel eigenvector computation via Distributed workers
+        vec_results = Distributed.pmap(vals) do v
+            shifted = Symbolics.simplify.(mat .- v .* I_n)
+            vecs = _adjugate_vectors(shifted)
+            if isempty(vecs)
+                vecs = _nullspace(shifted)
+            end
+            return (v, vecs)
         end
-        push!(pairs, (v, vecs))
+        pairs = vec_results
+    else
+        for v in vals
+            shifted = Symbolics.simplify.(mat .- v .* I_n)
+            # Try adjugate-based eigenvectors for small matrices to avoid brittle pivots.
+            vecs = _adjugate_vectors(shifted)
+            if isempty(vecs)
+                vecs = _nullspace(shifted)
+            end
+            push!(pairs, (v, vecs))
+        end
     end
     return pairs, poly, λ
 end
@@ -637,7 +650,7 @@ function symbolic_diagonalize(A; var = nothing, structure = :auto, expand = true
     n = size(A, 1)
     struct_hint = structure === :auto ? _detect_structure(A) : structure
     eigenvectors = Vector{Any}()
-    eigenvalues = Any[]
+    eigenvalues = Number[]
     for (val, vecs) in pairs
         for v in vecs
             push!(eigenvectors, v)
@@ -654,7 +667,7 @@ function symbolic_diagonalize(A; var = nothing, structure = :auto, expand = true
         # Use the promoted type of eigenvalues and eigenvectors for D
         # This handles cases where eigenvectors are constant (e.g., [1, im]) but
         # eigenvalues are symbolic (Complex{Num})
-        # Infer actual eltype from first eigenvalue since eigenvalues is Any[]
+        # Infer actual eltype from first eigenvalue
         λ_eltype = isempty(eigenvalues) ? eltype(P) : typeof(first(eigenvalues))
         D_eltype = promote_type(eltype(P), λ_eltype)
         # Build diagonal matrix directly to avoid zero(Any) issue with Diagonal type

@@ -117,7 +117,7 @@ function _hadamard_eigenvalues(n::Int)
     size = 2^n
     multiplicity = 2^(n - 1)
     
-    eigenvalues = Vector{Any}(undef, size)
+    eigenvalues = Vector{Number}(undef, size)
     
     # Eigenvalue is √(2^n) = 2^(n/2)
     # For even n: 2^n is a perfect square, use exact integer 2^(n÷2)
@@ -140,6 +140,47 @@ function _hadamard_eigenvalues(n::Int)
     end
     
     return eigenvalues
+end
+
+"""
+    _hadamard_eigenpairs(n::Int)
+
+Compute eigenvalues and eigenvectors of the Sylvester-Hadamard matrix Hₙ
+(size 2ⁿ × 2ⁿ) using the Kronecker product structure.
+
+Since Hₙ = H₁ ⊗ H_{n-1}, the eigenvectors are Kronecker products of the
+H₁ eigenvectors, and the eigenvalues are corresponding products.
+
+Returns a vector of (eigenvalue, eigenvector) tuples (length 2ⁿ), matching
+the format expected by symbolic_eigenpairs.
+"""
+function _hadamard_eigenpairs(n::Int)
+    n >= 1 || error("Hadamard eigenpairs require n ≥ 1")
+    
+    if n == 1
+        # H₁ = [1 1; 1 -1]
+        # Eigenvectors: [1, √2-1] for λ = +√2, [1, -√2-1] for λ = -√2
+        sqrt2 = sqrt(Symbolics.Num(2))
+        return [
+            ( sqrt2, Vector{Number}([1, sqrt2 - 1])),
+            (-sqrt2, Vector{Number}([1, -sqrt2 - 1])),
+        ]
+    end
+    
+    # Hₙ = H₁ ⊗ H_{n-1}: eigenvectors are Kronecker products
+    pairs_1 = _hadamard_eigenpairs(1)
+    pairs_n1 = _hadamard_eigenpairs(n - 1)
+    
+    size = 2^n
+    result = Vector{Tuple{Any, Vector{Number}}}(undef, size)
+    idx = 1
+    for (λ1, v1) in pairs_1
+        for (λn1, vn1) in pairs_n1
+            result[idx] = (λ1 * λn1, kron(v1, vn1))
+            idx += 1
+        end
+    end
+    return result
 end
 
 # ============================================================================
@@ -265,7 +306,7 @@ function _dft_eigenvalues(n::Int)
         sqrtn = sqrt(Symbolics.Num(n))  # Keep symbolic
     end
     
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     idx = 1
     
     for _ in 1:m1
@@ -329,7 +370,7 @@ function _dft_eigenvalues_normalized(n::Int)
         m_negi = (n - 1) ÷ 4 # swapped for positive omega
     end
     
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     idx = 1
     
     for _ in 1:m1
@@ -352,6 +393,37 @@ function _dft_eigenvalues_normalized(n::Int)
     return eigenvalues
 end
 
+"""
+    _hadamard_eigenpairs(n)
+
+Compute eigenvalues and eigenvectors of the n-th Sylvester-Hadamard matrix H_n
+(where H_n is 2^n × 2^n). Uses the Kronecker product structure:
+since H_n = H_1 ⊗ H_{n-1}, the eigenvectors of H_n are Kronecker products
+of eigenvectors of H_1.
+"""
+function _hadamard_eigenpairs(n)
+    n == 1 && return _hadamard_eigenpairs_1()
+    sub = _hadamard_eigenpairs(n - 1)
+    h1 = _hadamard_eigenpairs(1)
+    result = Vector{Tuple{Any, Vector{Number}}}()
+    for (λ1, v1) in h1
+        for (λsub, vsub) in sub
+            push!(result, (λ1 * λsub, kron(v1, vsub)))
+        end
+    end
+    return result
+end
+
+function _hadamard_eigenpairs_1()
+    sqrt2 = sqrt(Symbolics.Num(2))
+    return [
+        ( sqrt2, Vector{Number}([1, Symbolics.simplify(sqrt2 - 1)])),
+        (-sqrt2, Vector{Number}([1, Symbolics.simplify(-sqrt2 - 1)])),
+    ]
+end
+
+# ============================================================================
+# DFT Matrix (Discrete Fourier Transform)
 # ============================================================================
 # Public API
 # ============================================================================

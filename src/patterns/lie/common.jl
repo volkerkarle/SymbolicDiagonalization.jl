@@ -127,16 +127,12 @@ end
 Check if matrix contains complex (imaginary) components.
 Used to disambiguate SU(n) from SO(n).
 """
-function _has_complex_entries(mat)
-    for entry in mat
+function _has_complex_entries(A)
+    T = eltype(A)
+    T <: Complex && return true
+    for entry in A
         if entry isa Complex
             if !_issymzero(imag(entry))
-                return true
-            end
-        elseif entry isa Num
-            # Check if the symbolic expression contains 'im'
-            str = string(entry)
-            if occursin("im", str)
                 return true
             end
         end
@@ -292,7 +288,11 @@ Returns eigenvalues if A belongs to a supported Lie group, nothing otherwise.
 
 Supports: SO(2), SO(3), SO(4), SU(2), SU(3), Sp(2), Sp(4)
 """
-function _lie_group_eigenvalues(A)
+function _lie_group_eigenvalues(A; timeout=30)
+    _with_timeout(() -> _lie_group_eigenvalues_impl(A), timeout, size(A, 1))
+end
+
+function _lie_group_eigenvalues_impl(A)
     group, params = _detect_lie_group(A)
     
     isnothing(group) && return nothing
@@ -342,7 +342,11 @@ NOT supported (trivial or requires nullspace):
 
 For complex cases, returns nothing and falls back to nullspace computation.
 """
-function _lie_group_eigenpairs(A)
+function _lie_group_eigenpairs(A; timeout=30)
+    _with_timeout(() -> _lie_group_eigenpairs_impl(A), timeout, size(A, 1))
+end
+
+function _lie_group_eigenpairs_impl(A)
     group, params = _detect_lie_group(A)
     
     isnothing(group) && return nothing

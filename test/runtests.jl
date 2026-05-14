@@ -10,7 +10,7 @@ using Aqua
         Aqua.test_all(SymbolicDiagonalization;
             ambiguities = false,  # Disabled: Symbolics has many ambiguities we can't control
             stale_deps = false,   # Disabled: Test deps handled separately
-            deps_compat = false,  # Disabled: LinearAlgebra is stdlib
+            deps_compat = true,
             piracies = false,     # Disabled: Intentionally extending eigen/eigvals for Num matrices
         )
     end

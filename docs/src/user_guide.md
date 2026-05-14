@@ -254,7 +254,33 @@ eigvals(M; timeout=60)  # 60 seconds max
 eigvals(M; max_terms=1000)
 ```
 
-### 4. Numeric Verification
+### 4. Parallel Eigenvector Computation
+
+For large symbolic matrices, eigenvector computation for each eigenvalue is independent and can be parallelized:
+
+```julia
+using Distributed
+addprocs(4)
+@everywhere using SymbolicDiagonalization
+
+# Eigenvector computation will automatically use Distributed.pmap
+# when workers are available, falling back to sequential otherwise
+pairs, poly, λ = symbolic_eigenpairs(M)
+```
+
+### 5. Running Slow Tests
+
+The Lie group test suite includes heavy symbolic computations that can take several minutes. Run them selectively:
+
+```bash
+# Skip slow Euler/Kronecker tests (default):
+julia --project -e 'include("test/test_lie_groups.jl")'
+
+# Include slow tests:
+SYMBOLICDIAG_SLOW_TESTS=1 julia --project -e 'include("test/test_lie_groups.jl")'
+```
+
+### 6. Numeric Verification
 
 Verify symbolic results numerically:
 

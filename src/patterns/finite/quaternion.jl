@@ -193,7 +193,7 @@ Given vector of (a, b, c, d) tuples for each 2×2 quaternion block,
 returns all eigenvalues.
 """
 function _block_quaternion_eigenvalues(quaternions)
-    all_eigenvalues = Vector{Any}()
+    all_eigenvalues = Vector{Number}()
     
     for (a, b, c, d) in quaternions
         block_eigs = _quaternion_eigenvalues(a, b, c, d)
@@ -290,7 +290,7 @@ function _is_Q8_regular_representation(mat)
     
     # Extract the coefficient for each group element by finding a representative entry
     # For each group element g (index 1-8), find the first (i,j) such that g_i⁻¹·g_j = g
-    coeffs = Vector{Any}(undef, 8)
+    coeffs = Vector{Number}(undef, 8)
     for g in 1:8
         # Find first (i,j) with quotient_idx[i,j] == g
         found = false

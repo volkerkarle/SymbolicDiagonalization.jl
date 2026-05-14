@@ -473,7 +473,7 @@ for k = 1, 2, ..., n.
 These are all positive (Cartan matrices are positive definite for finite types).
 """
 function _cartan_eigenvalues_A(n::Int)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     for k in 1:n
         # λₖ = 4·sin²(πk / 2(n+1)) = 2 - 2·cos(πk/(n+1))
@@ -841,7 +841,7 @@ Eigenvalues: λₖ = 2 - 2·cos(πk/n) = 4·sin²(πk/2n) for k = 0, 1, ..., n-1
 Note: λ₀ = 0 (constant eigenvector).
 """
 function _path_laplacian_eigenvalues(n::Int)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     for k in 0:n-1
         # λₖ = 2 - 2·cos(πk/n)
@@ -903,7 +903,7 @@ Eigenvalues: λₖ = 2 - 2·cos(2πk/n) = 4·sin²(πk/n) for k = 0, 1, ..., n-1
 Note: λ₀ = 0 (constant eigenvector).
 """
 function _cycle_laplacian_eigenvalues(n::Int)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     for k in 0:n-1
         # λₖ = 2 - 2·cos(2πk/n)
@@ -931,7 +931,7 @@ Compute symbolic eigenvalues of type Aₙ Cartan matrix.
 Returns expressions in terms of cos(πk/(n+1)).
 """
 function _cartan_eigenvalues_A_symbolic(n::Int)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     for k in 1:n
         # λₖ = 2 - 2·cos(πk/(n+1))

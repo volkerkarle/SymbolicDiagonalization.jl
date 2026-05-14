@@ -205,7 +205,7 @@ For a symmetric tridiagonal matrix (b = c), the eigenvalues are:
 This formula comes from the theory of orthogonal polynomials and is exact.
 """
 function _toeplitz_tridiagonal_eigenvalues(n, a, b, c)
-    eigenvalues = Vector{Any}(undef, n)
+    eigenvalues = Vector{Number}(undef, n)
     
     # For the symmetric case: λₖ = a + 2b·cos(kπ/(n+1))
     # (We verified b = c in the detection function)
@@ -452,7 +452,7 @@ function _antidiagonal_eigenvalues(mat)
     
     # For now, handle the symmetric case
     if _is_symmetric(mat)
-        eigenvalues = Vector{Any}(undef, n)
+        eigenvalues = Vector{Number}(undef, n)
         if n % 2 == 1
             # Odd dimension: one zero eigenvalue, rest come in pairs
             mid = (n + 1) ÷ 2

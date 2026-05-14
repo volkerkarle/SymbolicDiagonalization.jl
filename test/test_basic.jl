@@ -84,3 +84,22 @@ end
 
 # NOTE: Skipping general 3×3 symbolic matrix test - too many variables (9) makes it very slow
 # For 3×3 symbolic testing, use triangular matrices or matrices with fewer unique variables
+
+@testset "Perfect Square Factoring" begin
+    @variables a b c d
+
+    # Test 1: Simple perfect square (a-b)²
+    expr1 = a^2 - 2*a*b + b^2
+    result1 = SymbolicDiagonalization._try_factor_perfect_square(expr1)
+    @test isequal(result1, Symbolics.simplify((a - b)^2))
+
+    # Test 2: Pure perfect square (a+b)²
+    expr2 = a^2 + 2*a*b + b^2
+    result2 = SymbolicDiagonalization._try_factor_perfect_square(expr2)
+    @test isequal(result2, Symbolics.simplify((a + b)^2))
+
+    # Test 3: No perfect square present
+    expr3 = a^2 + b^2 + c^2
+    result3 = SymbolicDiagonalization._try_factor_perfect_square(expr3)
+    @test isequal(result3 - expr3, 0)
+end

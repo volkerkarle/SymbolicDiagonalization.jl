@@ -556,7 +556,10 @@ function _issymzero_trig(expr)
         if _issymzero(simplified)
             return true
         end
-    catch
+    catch e
+        if !(e isa MethodError)
+            rethrow()
+        end
     end
     
     # Try expand then simplify - this is key for some Euler angle terms
@@ -566,7 +569,10 @@ function _issymzero_trig(expr)
         if _issymzero(simplified)
             return true
         end
-    catch
+    catch e
+        if !(e isa MethodError)
+            rethrow()
+        end
     end
     
     # Apply Pythagorean substitution: sin²(x) → 1 - cos²(x)
@@ -583,7 +589,10 @@ function _issymzero_trig(expr)
         if _issymzero(result)
             return true
         end
-    catch
+    catch e
+        if !(e isa MethodError)
+            rethrow()
+        end
     end
     
     # Try trig_simplify rules
