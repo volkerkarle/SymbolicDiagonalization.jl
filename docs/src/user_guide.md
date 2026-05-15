@@ -1,332 +1,95 @@
 # User Guide
 
-This guide covers practical workflows for using SymbolicDiagonalization.jl.
+This page focuses on usage decisions rather than listing every supported matrix family. For the full catalog, see the [Pattern Library](pattern_library.md).
 
-## Basic Usage
+## Choose the Right Entry Point
 
-### Getting Eigenvalues
+Use the `LinearAlgebra` functions unless you need intermediate symbolic data:
 
-```@example guide
-using SymbolicDiagonalization, Symbolics, LinearAlgebra
-using Main: LaTeX
+```julia
+using LinearAlgebra, Symbolics, SymbolicDiagonalization
 
-# Define symbolic variables
-@variables a b c
-
-# Create a matrix
-M = [a b; b c]
-
-# Get eigenvalues
-vals = eigvals(M)
-nothing # hide
-```
-
-**Matrix:**
-
-```@example guide
-LaTeX(M)
-```
-
-**Eigenvalues:**
-
-```@example guide
-LaTeX(vals)
-```
-
-### Getting Eigenvectors
-
-```@example guide
-@variables x y
-
-# Symmetric matrix
-S = [x y; y x]
-E = eigen(S)
-nothing # hide
-```
-
-**Eigenvectors (columns of E.vectors):**
-
-```@example guide
-LaTeX(E.vectors)
-```
-
-### Full Diagonalization
-
-For `M = P * D * P⁻¹` decomposition:
-
-```@example guide
-P, D, pairs = symbolic_diagonalize(S)
-nothing # hide
-```
-
-**Diagonal matrix D:**
-
-```@example guide
-LaTeX(D)
-```
-
-## Working with Larger Matrices
-
-### Block-Diagonal Matrices
-
-The package automatically detects block structure:
-
-```@example guide
-@variables a b c d e f
-
-# 4×4 block-diagonal
-B = [a  b  0  0;
-     b  a  0  0;
-     0  0  c  d;
-     0  0  d  c]
-
-vals = eigvals(B)
-nothing # hide
-```
-
-**Matrix:**
-
-```@example guide
-LaTeX(B)
-```
-
-**Eigenvalues (solved block-by-block):**
-
-```@example guide
-LaTeX(vals)
-```
-
-### Circulant Matrices
-
-Any n×n circulant matrix has closed-form eigenvalues via the DFT:
-
-```@example guide
-@variables a b c d
-
-# 4×4 circulant
-C = [a b c d;
-     d a b c;
-     c d a b;
-     b c d a]
-
-vals = eigvals(C)
-nothing # hide
-```
-
-**Matrix:**
-
-```@example guide
-LaTeX(C)
-```
-
-**Eigenvalues:**
-
-```@example guide
-LaTeX(vals)
-```
-
-### Kronecker Products
-
-Eigenvalues of A ⊗ B are products of individual eigenvalues. A 4×4 Kronecker product that would require solving a quartic is reduced to two quadratics:
-
-```@example guide
-@variables a b c d
-
+@variables a b
 A = [a b; b a]
-B = [c d; d c]
-K = kron(A, B)
 
-vals = eigvals(K)
-nothing # hide
+eigvals(A)
 ```
 
-**The 4×4 Kronecker product:**
-
-```@example guide
-LaTeX(K)
-```
-
-**Eigenvalues (products of 2×2 eigenvalues):**
-
-```@example guide
-LaTeX(vals)
-```
-
-## Rotation Matrices
-
-### SO(2): 2D Rotations
-
-```@example guide
-@variables θ
-
-R = SO2_rotation(θ)
-vals = eigvals(R)
-nothing # hide
-```
-
-**Rotation matrix:**
-
-```@example guide
-LaTeX(R)
-```
-
-**Eigenvalues e^{±iθ}:**
-
-```@example guide
-LaTeX(vals)
-```
-
-### SO(3): 3D Rotations
-
-```@example guide
-Rz = SO3_Rz(θ)
-vals = eigvals(Rz)
-nothing # hide
-```
-
-**Rotation about z-axis:**
-
-```@example guide
-LaTeX(Rz)
-```
-
-**Eigenvalues {1, e^{±iθ}}:**
-
-```@example guide
-LaTeX(vals)
-```
-
-### Kronecker Products of Rotations
-
-```@example guide
-@variables θ φ
-
-K = kron(SO2_rotation(θ), SO2_rotation(φ))
-vals = eigvals(K)
-nothing # hide
-```
-
-**Eigenvalues e^{i(±θ±φ)}:**
-
-```@example guide
-LaTeX(vals)
-```
-
-## Tips and Best Practices
-
-### 1. Check for Structure First
-
-Before calling `eigvals()`, consider if your matrix has exploitable structure:
+The lower-level functions expose extra data:
 
 ```julia
-@variables a b c d e f
-
-# Good: Circulant structure detected automatically
-C = [a b c; c a b; b c a]
-eigvals(C)  # Instant via DFT
-
-# Slower: Generic 3×3 symmetric (no special structure)
-M = [a b c; b d e; c e f]
-eigvals(M)  # Uses Cardano formula (larger expressions)
+values, poly, lambda = symbolic_eigenvalues(A)
+pairs, poly, lambda = symbolic_eigenpairs(A)
+P, D, pairs = symbolic_diagonalize(A)
 ```
 
-### 2. Use Constructors for Lie Groups
+Use `eigvals(A)` for eigenvalues, `eigen(A)` for vectors, and `symbolic_diagonalize(A)` only when you need an explicit `P * D * inv(P)` factorization.
 
-The built-in constructors ensure proper structure detection:
+## Prefer Detectable Structure
+
+The package works best when structure is explicit in the matrix representation.
 
 ```julia
-# Good: Uses SO2_rotation constructor
-R = SO2_rotation(θ)
+@variables c0 c1 c2 c3
+C = [c0 c1 c2 c3;
+     c3 c0 c1 c2;
+     c2 c3 c0 c1;
+     c1 c2 c3 c0]
 
-# Works but less clear: Manual construction
-R = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+eigvals(C)
 ```
 
-### 3. Handle Large Expressions
-
-For complex matrices, expressions can grow large:
+For Lie-group matrices, prefer package constructors over manual reconstruction:
 
 ```julia
-# Set timeout for expensive computations
-eigvals(M; timeout=60)  # 60 seconds max
-
-# Limit expression complexity
-eigvals(M; max_terms=1000)
+R = SO2_rotation(theta)        # preferred
+R = [cos(theta) -sin(theta); sin(theta) cos(theta)]
 ```
 
-### 4. Parallel Eigenvector Computation
+Both may work, but constructors avoid ambiguity and usually lead to cleaner expressions.
 
-For large symbolic matrices, eigenvector computation for each eigenvalue is independent and can be parallelized:
+## Manage Expression Growth
+
+Symbolic eigenvalues can become large even for 3x3 or 4x4 matrices. Prefer reducing the problem before asking for a full eigensystem.
+
+Practical order of operations:
+
+1. Try `eigvals(A)` before `eigen(A)`.
+2. Look for block, Kronecker, circulant, tridiagonal, or Lie-group structure.
+3. Use constructors for supported matrix families.
+4. Add a timeout for exploratory symbolic work.
+
+```julia
+eigvals(A; timeout=60)
+eigvals(A; max_terms=1000)
+```
+
+If a result is too large to inspect, use substitution to validate it numerically before simplifying further.
+
+```julia
+using Symbolics: substitute
+vals = eigvals(A)
+substitute(vals[1], Dict(a => 1.0, b => 2.0))
+```
+
+## Eigenvectors and Parallelism
+
+Eigenvectors are more expensive than eigenvalues because each eigenspace requires a nullspace computation. When Julia workers are available, `symbolic_eigenpairs` can parallelize independent eigenvector computations.
 
 ```julia
 using Distributed
 addprocs(4)
 @everywhere using SymbolicDiagonalization
 
-# Eigenvector computation will automatically use Distributed.pmap
-# when workers are available, falling back to sequential otherwise
-pairs, poly, λ = symbolic_eigenpairs(M)
+pairs, poly, lambda = symbolic_eigenpairs(A)
 ```
 
-### 5. Running Slow Tests
+This helps most when eigenvalues are already known but eigenvectors are expensive.
 
-The Lie group test suite includes heavy symbolic computations that can take several minutes. Run them selectively:
+## Development Tests
+
+The default test suite skips some slow Lie-group cases. Run them explicitly when changing Lie-group or Kronecker logic:
 
 ```bash
-# Skip slow Euler/Kronecker tests (default):
-julia --project -e 'include("test/test_lie_groups.jl")'
-
-# Include slow tests:
 SYMBOLICDIAG_SLOW_TESTS=1 julia --project -e 'include("test/test_lie_groups.jl")'
 ```
-
-### 6. Numeric Verification
-
-Verify symbolic results numerically:
-
-```julia
-@variables a b
-M = [a b; b a]
-vals = eigvals(M)
-
-# Substitute numeric values
-using Symbolics: substitute
-val_numeric = substitute(vals[1], Dict(a => 1.0, b => 2.0))
-# Should match: eigvals([1.0 2.0; 2.0 1.0])
-```
-
-## Common Patterns
-
-### Symmetric Toeplitz Tridiagonal
-
-Matrices with constant diagonals have closed-form eigenvalues:
-
-```@example guide
-@variables a b
-
-# 4×4 symmetric Toeplitz tridiagonal
-T = [a b 0 0;
-     b a b 0;
-     0 b a b;
-     0 0 b a]
-
-vals = eigvals(T)
-nothing # hide
-```
-
-**Matrix:**
-
-```@example guide
-LaTeX(T)
-```
-
-**Eigenvalues λₖ = a + 2b·cos(kπ/(n+1)):**
-
-```@example guide
-LaTeX(vals)
-```
-
-## Next Steps
-
-- [Pattern Library](pattern_library.md) - Complete list of supported patterns
-- [Mathematical Background](mathematical_background.md) - Theory behind the algorithms

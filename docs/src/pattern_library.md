@@ -1,388 +1,101 @@
 # Pattern Library
 
-SymbolicDiagonalization.jl automatically detects and exploits matrix structure to find closed-form eigenvalues. This page documents all supported patterns.
+SymbolicDiagonalization.jl tries specialized reductions before using the generic characteristic-polynomial solver. This page is a compact reference for those reductions.
+
+## Detection Order
+
+Earlier matches avoid more expensive or less structured algorithms.
+
+| Priority | Pattern | Reduction |
+|---:|---|---|
+| 1 | Diagonal and triangular | Read diagonal entries |
+| 2 | Block diagonal | Solve blocks independently |
+| 3 | Lie groups | Use trace, determinant, or angle invariants |
+| 4 | Kronecker products | Multiply factor eigenvalues |
+| 5 | Hadamard and DFT matrices | Use known spectra |
+| 6 | Circulant and symmetric circulant | Use Fourier diagonalization |
+| 7 | Tridiagonal Toeplitz and Cartan type A | Use cosine/Chebyshev formulas |
+| 8 | Persymmetric | Split into symmetric and antisymmetric sectors |
+| 9 | Generic size <= 4 | Solve characteristic polynomial in radicals |
 
 ## Structural Patterns
 
-These patterns are detected in any matrix regardless of specific form.
+| Pattern | Form | Spectrum |
+|---|---|---|
+| Diagonal | `diag(d1, ..., dn)` | `d1, ..., dn` |
+| Triangular | upper or lower triangular | diagonal entries |
+| Block diagonal | `diag(B1, ..., Bk)` | union of spectra of the blocks |
+| Persymmetric | `J * A * J == A` | spectra of two smaller projected matrices |
 
-### Block-Diagonal
+Block and persymmetric reductions are useful because they lower the effective polynomial degree. A 6x6 block matrix made of 2x2 blocks is solved as three quadratic problems, not one sextic.
 
-Matrices with independent blocks are solved recursively:
+## Finite-Group Patterns
 
-```@example patterns
-using SymbolicDiagonalization, Symbolics, LinearAlgebra
-using Main: LaTeX
+| Pattern | Constructor or form | Eigenvalue formula |
+|---|---|---|
+| Circulant | rows cyclically shifted from first row `c` | `lambda_k = sum_j c_j * omega^(j*k)` |
+| Symmetric circulant | circulant with palindromic first row | real cosine form of the DFT spectrum |
+| Permutation matrix | disjoint cycles | roots of unity for each cycle length |
+| Quaternion structure | `Q8_invariant_matrix` or equivalent 2x2 form | scalar part plus/minus quaternion norm |
+| Graph Laplacians | `path_laplacian`, `cycle_laplacian` | standard path/cycle spectra |
+| Coxeter and Cartan | `cartan_matrix_A`, ..., `cartan_matrix_G2` | closed forms for type A and G2; other types may fall back |
+| Hadamard | `hadamard_matrix(n)` | `+/-sqrt(2^n)` for order `2^n` |
+| DFT | `dft_matrix(n)` | fourth roots of `n`, with multiplicities depending on `n mod 4` |
+
+Example:
+
+```julia
+using LinearAlgebra, Symbolics, SymbolicDiagonalization
 
 @variables a b c d
+C = [a b c d;
+     d a b c;
+     c d a b;
+     b c d a]
 
-B = [a  b  0  0;
-     b  a  0  0;
-     0  0  c  d;
-     0  0  d  c]
-nothing # hide
+eigvals(C)
 ```
 
-```@example patterns
-LaTeX(B)
-```
+## Lie-Group Patterns
 
-**Eigenvalues (each block solved independently):**
+| Family | Constructors | Spectrum |
+|---|---|---|
+| `SO(2)` | `SO2_rotation(theta)` | `exp(+/-im*theta)` |
+| `SO(3)` | `SO3_Rx`, `SO3_Ry`, `SO3_Rz` | `1`, `exp(+/-im*theta)` |
+| `SO(4)` | block/double rotations | two conjugate rotation pairs |
+| `SU(2)` | `SU2_Ux`, `SU2_Uy`, `SU2_Uz` | `exp(+/-im*theta/2)` |
+| Symplectic | detected symplectic form | reciprocal-pair constraint, not a complete closed-form solver |
 
-```@example patterns
-LaTeX(eigvals(B))
-```
-
-### Persymmetric (Symmetric about Anti-Diagonal)
-
-Persymmetric matrices decompose into two half-size problems:
-
-```@example patterns
-# A persymmetric matrix satisfies J*A*J = A where J is the exchange matrix
-@variables a b c
-
-P = [a  b  c;
-     b  a  b;
-     c  b  a]  # Symmetric circulant is also persymmetric
-nothing # hide
-```
-
-```@example patterns
-LaTeX(P)
-```
-
-```@example patterns
-LaTeX(eigvals(P))
-```
-
----
-
-## Finite Group Patterns
-
-Matrices with group-theoretic structure.
-
-### Circulant Matrices (Cyclic Group Zₙ)
-
-Any n×n circulant matrix has eigenvalues via the Discrete Fourier Transform:
-
-```math
-\lambda_k = \sum_{j=0}^{n-1} c_j \omega^{jk}, \quad \omega = e^{2\pi i/n}
-```
-
-```@example patterns
-@variables a b c d e
-
-# 5×5 circulant
-C = [a b c d e;
-     e a b c d;
-     d e a b c;
-     c d e a b;
-     b c d e a]
-nothing # hide
-```
-
-```@example patterns
-LaTeX(C)
-```
-
-**Eigenvalues (via DFT of first row):**
-
-```@example patterns
-LaTeX(eigvals(C))
-```
-
-### Symmetric Circulant (Dihedral Group Dₙ)
-
-When the first row is palindromic, eigenvalues simplify:
-
-```@example patterns
-@variables a b
-
-# Symmetric circulant (first row = [a, b, b])
-S = [a b b;
-     b a b;
-     b b a]
-nothing # hide
-```
-
-```@example patterns
-LaTeX(S)
-```
-
-```@example patterns
-LaTeX(eigvals(S))
-```
-
-### Quaternion Group Q₈
-
-#### Single Quaternion Matrix
-
-```@example patterns
-@variables q0 qi qj qk
-
-# 2×2 quaternion representation
-Q = [q0 + qi*im  qj + qk*im;
-    -qj + qk*im  q0 - qi*im]
-nothing # hide
-```
-
-```@example patterns
-LaTeX(Q)
-```
-
-```@example patterns
-LaTeX(eigvals(Q))
-```
-
----
-
-## Lie Groups
-
-### SO(2): 2D Rotation Group
-
-```@example patterns
-@variables θ
-R2 = SO2_rotation(θ)
-nothing # hide
-```
-
-```@example patterns
-LaTeX(R2)
-```
-
-**Eigenvalues e^{±iθ}:**
-
-```@example patterns
-LaTeX(eigvals(R2))
-```
-
-### SO(3): 3D Rotation Group
-
-Axis-aligned rotations:
-
-```@example patterns
-Rx = SO3_Rx(θ)
-nothing # hide
-```
-
-```@example patterns
-LaTeX(Rx)
-```
-
-**Eigenvalues {1, e^{±iθ}}:**
-
-```@example patterns
-LaTeX(eigvals(Rx))
-```
-
-### SO(4): 4D Rotation Group
-
-Double rotation structure:
-
-```@example patterns
-@variables θ φ
-
-R4 = [cos(θ) -sin(θ) 0 0;
-      sin(θ)  cos(θ) 0 0;
-      0 0 cos(φ) -sin(φ);
-      0 0 sin(φ)  cos(φ)]
-nothing # hide
-```
-
-```@example patterns
-LaTeX(R4)
-```
-
-**Eigenvalues {e^{±iθ}, e^{±iφ}}:**
-
-```@example patterns
-LaTeX(eigvals(R4))
-```
-
-### SU(2): Special Unitary Group
-
-```@example patterns
-Uz = SU2_Uz(θ)
-nothing # hide
-```
-
-```@example patterns
-LaTeX(Uz)
-```
-
-**Eigenvalues e^{±iθ/2}:**
-
-```@example patterns
-LaTeX(eigvals(Uz))
-```
-
----
+The package also exports Pauli matrices, spin generators, and Gell-Mann matrices. The Gell-Mann helpers are constructors/generators; SU(3) matrices use the generic solver unless another supported structure is detected.
 
 ## Kronecker Products
 
-### General Kronecker Products
+For eigenpairs `(lambda, v)` of `A` and `(mu, w)` of `B`:
 
-Eigenvalues of A ⊗ B are products of individual eigenvalues. A 4×4 matrix (degree-4 polynomial) reduces to two quadratics:
-
-```@example patterns
-@variables a b c d
-
-A = [a b; b a]
-B = [c d; d c]
-K = kron(A, B)
-nothing # hide
+```math
+(A \otimes B)(v \otimes w) = (\lambda \mu)(v \otimes w)
 ```
 
-```@example patterns
-LaTeX(K)
-```
-
-**Eigenvalues (products of factor eigenvalues):**
-
-```@example patterns
-LaTeX(eigvals(K))
-```
-
-### SO(2) Kronecker Products
-
-Trigonometric simplification gives clean angle-sum/difference forms:
-
-```@example patterns
-@variables θ φ
-
-K = kron(SO2_rotation(θ), SO2_rotation(φ))
-vals = eigvals(K)
-nothing # hide
-```
-
-**Eigenvalues e^{i(±θ±φ)}:**
-
-```@example patterns
-LaTeX(vals)
-```
-
-### SU(2) Kronecker Products
-
-Half-angle formulas for spin-1/2 representations:
-
-```@example patterns
-@variables α β
-K = SU2_kron([α, β])
-vals = eigvals(K)
-nothing # hide
-```
-
-**Eigenvalues with half-angles:**
-
-```@example patterns
-LaTeX(vals)
-```
-
-### Nested Kronecker Products
-
-Arbitrary depth Kronecker products:
+So the spectrum of `A \otimes B` is all products `lambda_i * mu_j`. Nested Kronecker products apply the same rule recursively.
 
 ```julia
-# 5-fold Kronecker product: 32×32 with 15 parameters
-@variables a1 b1 c1  a2 b2 c2  a3 b3 c3  a4 b4 c4  a5 b5 c5
-
-matrices = [[a1 b1; b1 c1], [a2 b2; b2 c2], [a3 b3; b3 c3],
-            [a4 b4; b4 c4], [a5 b5; b5 c5]]
-K = reduce(kron, matrices)  # 32×32
-eigvals(K)  # 32 symbolic eigenvalues
+@variables x y theta
+K = kron([x y; y x], SO2_rotation(theta))
+eigvals(K)
 ```
 
----
-
-## Hadamard and DFT Patterns
-
-### Sylvester-Hadamard Matrices
-
-Sylvester-Hadamard matrices Hₙ (size 2ⁿ × 2ⁿ) are constructed recursively via Kronecker products: Hₙ = H₁ ⊗ H_{n-1}, where H₁ = [1 1; 1 -1].
-
-```@example patterns
-H2 = hadamard_matrix(2)  # 4×4 Sylvester-Hadamard
-nothing # hide
-```
-
-```@example patterns
-LaTeX(H2)
-```
-
-**Eigenvalues ±2^(n/2) (each with multiplicity 2^(n-1)):**
-
-```@example patterns
-LaTeX(eigvals(H2))
-```
-
-**Eigenvectors** are constructed via Kronecker products of the 2×2 H₁ eigenbasis. The closed-form eigenvectors involve nested square roots (related to the silver ratio) and are derived from the recursive structure.
-
-### DFT Matrices
-
-The Discrete Fourier Transform matrix Fₙ has closed-form eigenvalues (4th roots of unity scaled by √n):
-
-```@example patterns
-F4 = dft_matrix(4)  # Unnormalized 4×4 DFT
-nothing # hide
-```
-
-```@example patterns
-LaTeX(F4)
-```
-
-**Eigenvalues {√n, -√n, i√n, -i√n}:**
-
-```@example patterns
-LaTeX(eigvals(F4))
-```
-
-For both Hadamard and DFT matrices, eigenvector computation falls back to generic nullspace when the matrix size exceeds 2×2. The Hadamard case has specialized eigenvectors for n = 1 (2×2) via `_hadamard_eigenpairs`.
-
----
+Specialized constructors `SO2_kron` and `SU2_kron` return cleaner trigonometric forms for repeated rotation/unitary products.
 
 ## Tridiagonal Patterns
 
-### Symmetric Toeplitz Tridiagonal
+For the symmetric Toeplitz tridiagonal matrix with diagonal `a` and off-diagonal `b`,
 
-Constant diagonals with closed-form eigenvalues:
-
-```@example patterns
-@variables a b
-
-# Toeplitz tridiagonal [b, a, b]
-T = [a b 0 0;
-     b a b 0;
-     0 b a b;
-     0 0 b a]
-nothing # hide
+```math
+\lambda_k = a + 2b\cos\left(\frac{k\pi}{n+1}\right), \quad k = 1, \ldots, n.
 ```
 
-```@example patterns
-LaTeX(T)
-```
+The type-A Cartan matrix is the special case `a = 2`, `b = -1`.
 
-**Eigenvalues λₖ = a + 2b·cos(kπ/(n+1)):**
+## Generic Fallback
 
-```@example patterns
-LaTeX(eigvals(T))
-```
-
----
-
-## Pattern Detection Priority
-
-When multiple patterns apply, the package uses this priority:
-
-1. **Diagonal** - Trivial eigenvalues
-2. **Block-diagonal** - Recursive decomposition
-3. **Lie groups** - SO(2), SO(3), SO(4), SU(2), SU(3)
-4. **Kronecker products** - Detect and factor
-5. **Hadamard/DFT** - Closed-form eigenvalues ±2^(n/2), 4th roots of unity
-6. **Circulant** - DFT formula
-7. **Tridiagonal** - Chebyshev formulas
-8. **Persymmetric** - Half-size reduction
-9. **General** - Cardano/Ferrari formulas (up to 4×4)
-
-## Adding Custom Patterns
-
-See [Mathematical Background](mathematical_background.md) for extending the pattern library.
+If no pattern matches, the package forms the characteristic polynomial and solves it in radicals for degrees 1 through 4. For generic degree 5 and above, no radical formula exists in general, so the package raises an error instead of returning misleading expressions.

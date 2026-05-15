@@ -6,8 +6,10 @@
 # beautifully formatted LaTeX/MathJax output in notebooks, documentation,
 # and other environments that support HTML rendering.
 #
-# Requires Latexify.jl to be loaded (weak dependency).
+# Uses Latexify.jl when the weak-dependency extension is loaded.
 # ============================================================================
+
+const _latexify_backend = Ref{Union{Nothing, Function}}(nothing)
 
 """
     LaTeX(expr)
@@ -38,8 +40,8 @@ LaTeX(a^2 + sqrt(b))
 
 # Requirements
 
-Requires `Latexify.jl` to be installed. The package will attempt to load
-it automatically when `LaTeX` is first used.
+Load `Latexify.jl` for rendered LaTeX output. Without it, display falls
+back to the expression's string representation.
 """
 struct LaTeX{T}
     expr::T
@@ -51,11 +53,7 @@ end
 Check if Latexify.jl is loaded (as a weak dependency).
 Returns true if Latexify is available, false otherwise.
 """
-function _has_latexify()
-    return isdefined(Base, :Latexify) ||
-           isdefined(Main, :Latexify) ||
-           isdefined(@__MODULE__, :Latexify)
-end
+_has_latexify() = _latexify_backend[] !== nothing
 
 """
     _to_latex(expr; env=:raw)
@@ -64,13 +62,14 @@ Convert an expression to LaTeX string using Latexify.
 Falls back to string representation if Latexify is not available.
 """
 function _to_latex(expr; env=:raw)
-    if _has_latexify()
-        try
-            return string(Latexify.latexify(expr, env=env))
-        catch
-            return string(expr)
-        end
-    else
+    latexify_backend = _latexify_backend[]
+    if isnothing(latexify_backend)
+        return string(expr)
+    end
+
+    try
+        return latexify_backend(expr; env=env)
+    catch
         return string(expr)
     end
 end
