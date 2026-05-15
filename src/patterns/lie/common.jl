@@ -259,10 +259,6 @@ function _detect_lie_group(A)
         if _is_SO3(A)
             return (:SO3, nothing)
         end
-        
-        if _is_SU3(A)
-            return (:SU3, nothing)
-        end
     end
     
     # 4x4 matrices
@@ -305,8 +301,6 @@ function _lie_group_eigenvalues_impl(A)
         return _SO4_eigenvalues(A)
     elseif group == :SU2
         return _SU2_eigenvalues(A)
-    elseif group == :SU3
-        return _SU3_eigenvalues(A)
     elseif group == :Sp2
         return _Sp2_eigenvalues(A)
     elseif group == :Sp4

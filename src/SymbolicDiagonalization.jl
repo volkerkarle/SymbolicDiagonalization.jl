@@ -90,8 +90,8 @@ include("patterns/lie/SO4.jl")
 # SU(2): Special unitary 2D, e^{±iθ/2} (spin-1/2)
 include("patterns/lie/SU2.jl")
 
-# SU(3): Special unitary 3D, cubic formula
-include("patterns/lie/SU3.jl")
+# SU(3): Gell-Mann generators only
+include("patterns/lie/gellmann.jl")
 
 # Sp(2n): Symplectic groups, reciprocal eigenvalue pairs
 include("patterns/lie/Sp.jl")

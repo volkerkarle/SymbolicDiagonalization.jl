@@ -39,19 +39,11 @@ function _is_symmetric_circulant(mat)
     size(mat, 2) == n || return nothing
     n <= 1 && return mat[1, :]
     
-    # First check if circulant
-    first_row = mat[1, :]
-    for i in 2:n
-        for j in 1:n
-            expected_idx = mod1(j - (i - 1), n)
-            if !_issymzero(mat[i, j] - first_row[expected_idx])
-                return nothing
-            end
-        end
-    end
+    # Check circulant property first
+    _is_circulant(mat) || return nothing
     
     # Now check if first row is palindromic: cⱼ = cₙ₋ⱼ (indices 1-based)
-    # c[j] should equal c[n - j + 2] for j = 2, ..., floor(n/2) + 1
+    first_row = mat[1, :]
     for j in 2:div(n, 2) + 1
         mirror_idx = n - j + 2
         if mirror_idx != j && !_issymzero(first_row[j] - first_row[mirror_idx])

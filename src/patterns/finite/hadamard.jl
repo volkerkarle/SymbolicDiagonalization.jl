@@ -393,35 +393,6 @@ function _dft_eigenvalues_normalized(n::Int)
     return eigenvalues
 end
 
-"""
-    _hadamard_eigenpairs(n)
-
-Compute eigenvalues and eigenvectors of the n-th Sylvester-Hadamard matrix H_n
-(where H_n is 2^n × 2^n). Uses the Kronecker product structure:
-since H_n = H_1 ⊗ H_{n-1}, the eigenvectors of H_n are Kronecker products
-of eigenvectors of H_1.
-"""
-function _hadamard_eigenpairs(n)
-    n == 1 && return _hadamard_eigenpairs_1()
-    sub = _hadamard_eigenpairs(n - 1)
-    h1 = _hadamard_eigenpairs(1)
-    result = Vector{Tuple{Any, Vector{Number}}}()
-    for (λ1, v1) in h1
-        for (λsub, vsub) in sub
-            push!(result, (λ1 * λsub, kron(v1, vsub)))
-        end
-    end
-    return result
-end
-
-function _hadamard_eigenpairs_1()
-    sqrt2 = sqrt(Symbolics.Num(2))
-    return [
-        ( sqrt2, Vector{Number}([1, Symbolics.simplify(sqrt2 - 1)])),
-        (-sqrt2, Vector{Number}([1, Symbolics.simplify(-sqrt2 - 1)])),
-    ]
-end
-
 # ============================================================================
 # DFT Matrix (Discrete Fourier Transform)
 # ============================================================================

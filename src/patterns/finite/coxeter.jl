@@ -923,40 +923,6 @@ end
 # Symbolic Eigenvalue Functions for Cartan Matrices
 # ============================================================================
 
-"""
-    _cartan_eigenvalues_A_symbolic(n)
-
-Compute symbolic eigenvalues of type Aₙ Cartan matrix.
-
-Returns expressions in terms of cos(πk/(n+1)).
-"""
-function _cartan_eigenvalues_A_symbolic(n::Int)
-    eigenvalues = Vector{Number}(undef, n)
-    
-    for k in 1:n
-        # λₖ = 2 - 2·cos(πk/(n+1))
-        # For small n, use exact values
-        if n == 1
-            eigenvalues[1] = 2  # cos(π/2) = 0
-        elseif n == 2
-            # cos(π/3) = 1/2, cos(2π/3) = -1/2
-            eigenvalues[1] = 1  # 2 - 2*(1/2)
-            eigenvalues[2] = 3  # 2 - 2*(-1/2)
-        elseif n == 3
-            # cos(π/4) = √2/2, cos(π/2) = 0, cos(3π/4) = -√2/2
-            eigenvalues[1] = 2 - sqrt(2)
-            eigenvalues[2] = 2
-            eigenvalues[3] = 2 + sqrt(2)
-        else
-            # Fall back to numeric
-            θ = π * k / (n + 1)
-            eigenvalues[k] = 2 - 2 * cos(θ)
-        end
-    end
-    
-    return eigenvalues
-end
-
 # ============================================================================
 # Public API Functions
 # ============================================================================
